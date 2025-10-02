@@ -1,12 +1,26 @@
 <template>
   <div id="app">
-    <router-view />
+    <!-- ถ้าไม่ใช่หน้า Login → แสดง Sidebar + Content -->
+    <div v-if="!$route.meta.hideLayout" class="app-layout">
+      <Sidebar />
+      <div class="content-wrapper">
+        <router-view />
+      </div>
+    </div>
+
+    <!-- ถ้าเป็นหน้า Login → แสดงเฉพาะ LoginView เต็มจอ -->
+    <router-view v-else />
   </div>
 </template>
 
 <script>
+import Sidebar from '@/components/Sidebar.vue'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    Sidebar
+  }
 }
 </script>
 
@@ -18,68 +32,58 @@ export default {
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  background: #f8fafc;
+  background: #f0f4f8;
   color: #1a202c;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
+  width: 100%;
   min-height: 100vh;
-  background: #f8fafc;
-  color: #1a202c;
 }
 
-/* ===== Scrollbar Styling ===== */
+/* ===== Layout with Sidebar ===== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.content-wrapper {
+  flex: 1;
+  margin-left: 260px;
+  padding: 2rem;
+  background: #f0f4f8;
+  min-height: 100vh;
+}
+
+/* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #e5e7eb;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #9ca3af;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* ===== Utility Classes ===== */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-/* ===== Responsive ===== */
-@media (max-width: 767px) {
-  .container {
-    padding: 0 0.5rem;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .container {
-    padding: 0 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container {
-    padding: 0 1.5rem;
-  }
+  background: #6b7280;
 }
 </style>
