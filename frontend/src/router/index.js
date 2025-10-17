@@ -30,6 +30,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: "/statistics",
+    name: "Statistics",
+    component: () => import("@/views/StatisticsView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/settings",
+    name: "Settings",
+    component: () => import("@/views/SettingsView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
     path: "/:catchAll(.*)",
     redirect: "/login"
   }
