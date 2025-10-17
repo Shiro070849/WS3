@@ -1,40 +1,34 @@
 <template>
-  <div class="statistics-view">
-    <SidebarMenu />
-    <main class="main-content">
-      <h1 class="page-title">Statistics</h1>
-      <p class="page-description">สถิติและการวิเคราะห์ข้อมูล</p>
-    </main>
+  <div class="statistics-container">
+    <h1 class="page-title">สถิติ</h1>
+    <p class="page-subtitle">สถิติและการวิเคราะห์ข้อมูล</p>
+
+    <!-- เตรียมไว้สำหรับเนื้อหา Statistics -->
   </div>
 </template>
 
-<script>
-import SidebarMenu from '@/components/SidebarMenu.vue';
-
-export default {
-  name: 'StatisticsView',
-  components: {
-    SidebarMenu
-  }
-}
+<script setup>
+// Statistics logic จะเขียนตอนทำ Backend API เสร็จ
 </script>
 
 <style scoped>
-.statistics-view {
-  display: flex;
-}
-
-.main-content {
-  flex: 1;
-  padding: 2rem;
+.statistics-container {
+  width: 100%;
+  min-height: 100vh;
 }
 
 .page-title {
-  font-size: 1.8rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
   margin-bottom: 0.5rem;
+  font-family: 'Prompt', sans-serif;
 }
 
-.page-description {
-  color: #555;
+.page-subtitle {
+  font-size: 1rem;
+  color: #718096;
+  margin-bottom: 2rem;
+  font-family: 'Prompt', sans-serif;
 }
 </style>

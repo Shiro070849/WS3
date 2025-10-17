@@ -2,7 +2,7 @@
   <aside 
     :class="[
       'h-screen bg-[#047685] flex flex-col fixed left-0 top-0 shadow-[3px_0_10px_rgba(0,0,0,0.08)] overflow-y-auto font-[\'Prompt\'] z-[1000] custom-scrollbar transition-all duration-300 ease-in-out',
-      isCollapsed ? 'w-[70px]' : 'w-40'
+      isCollapsed ? 'w-[60px]' : 'w-40'
     ]"
   >
     
@@ -183,11 +183,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, defineEmits } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
 const route = useRoute();
+
+// Define emits
+const emit = defineEmits(['toggle']);
 
 // Sidebar State
 const isCollapsed = ref(false);
@@ -198,6 +201,7 @@ const showLogoutModal = ref(false);
 // Toggle Sidebar
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value;
+  emit('toggle', isCollapsed.value);
 };
 
 // User Data from localStorage

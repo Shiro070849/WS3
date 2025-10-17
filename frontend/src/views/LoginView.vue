@@ -147,6 +147,10 @@ const handleLogin = async () => {
 
       // Store user session
       localStorage.setItem('user', JSON.stringify({ username: email.value }))
+      localStorage.setItem('isLoggedIn', 'true')
+      localStorage.setItem('userName', email.value)
+      localStorage.setItem('userEmail', '')
+      localStorage.setItem('companyName', 'Smart Security')
 
       // Show success message
       successMessage.value = 'Login successful! Redirecting to dashboard...'

@@ -2,8 +2,11 @@
   <div id="app">
     <!-- ถ้าไม่ใช่หน้า Login → แสดง Sidebar + Content -->
     <div v-if="!$route.meta.hideLayout" class="app-layout">
-      <Sidebar />
-      <div class="content-wrapper">
+      <Sidebar @toggle="handleSidebarToggle" />
+      <div
+        class="content-wrapper"
+        :style="{ paddingLeft: `calc(${sidebarWidth} + 2rem)` }"
+      >
         <router-view />
       </div>
     </div>
@@ -14,12 +17,25 @@
 </template>
 
 <script>
+import { ref } from 'vue'
 import Sidebar from '@/components/SidebarMenu.vue'
 
 export default {
   name: 'App',
   components: {
     Sidebar
+  },
+  setup() {
+    const sidebarWidth = ref('160px') // default: expanded (w-40 = 160px)
+
+    const handleSidebarToggle = (isCollapsed) => {
+      sidebarWidth.value = isCollapsed ? '70px' : '160px'
+    }
+
+    return {
+      sidebarWidth,
+      handleSidebarToggle
+    }
   }
 }
 </script>
@@ -62,10 +78,11 @@ body {
 
 .content-wrapper {
   flex: 1;
-  margin-left: 260px;
   padding: 2rem;
   background: #f0f4f8;
   min-height: 100vh;
+  transition: margin-left 0.3s ease-in-out;
+  width: 100%;
 }
 
 /* ===== Scrollbar ===== */
