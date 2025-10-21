@@ -65,6 +65,10 @@ app.get("/", (req, res) => {
 // API Routes
 require("./routes/wayin.routes")(app);
 require("./routes/wayout.routes")(app);
+require("./routes/settings.routes")(app);
+require("./routes/dashboard.routes")(app);
+require("./routes/vehicle.routes")(app);
+require("./routes/report.routes")(app);
 
 // 404 handler
 app.use((req, res) => {

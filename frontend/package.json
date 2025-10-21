@@ -57,6 +57,12 @@
     },
     "rules": {
       "no-unused-vars": "off"
+    },
+    "globals": {
+      "defineProps": "readonly",
+      "defineEmits": "readonly",
+      "defineExpose": "readonly",
+      "withDefaults": "readonly"
     }
   },
   "browserslist": [

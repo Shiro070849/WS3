@@ -1,409 +1,497 @@
 <template>
-  <div class="settings-container">
-    <h1 class="page-title">ตั้งค่าระบบ</h1>
-    <p class="page-subtitle">จัดการการตั้งค่าและข้อมูลหลักของระบบ Smart Security</p>
-
-    <!-- Settings Tabs -->
-    <div class="settings-tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        @click="activeTab = tab.id"
-        :class="['tab-button', { active: activeTab === tab.id }]"
-      >
-        <span v-html="tab.icon"></span>
-        <span>{{ tab.name }}</span>
-      </button>
+  <div class="page-container">
+    <div class="page-header">
+      <h1 class="page-title">ตั้งค่า</h1>
+      <p class="page-subtitle">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
     </div>
 
-    <!-- Tab Content -->
-    <div class="tab-content">
-      <!-- Company Settings Tab -->
-      <div v-if="activeTab === 'company'" class="content-section">
-        <h2 class="section-title">ข้อมูลบริษัท</h2>
-        <p class="section-description">จัดการข้อมูลบริษัทและสาขา (Multi-tenant)</p>
+    <div class="page-content">
+      <BaseTabs v-model="activeTab" :tabs="tabs">
+        <!-- ==================== TAB 1: จัดการบริษัท ==================== -->
+        <template #companies>
+          <BaseCard>
+            <div class="flex justify-between items-center mb-6">
+              <div>
+                <h2 class="text-xl font-semibold text-[#1a202c]">รายการบริษัท</h2>
+                <p class="text-sm text-gray-500 mt-1">จัดการข้อมูลบริษัทในระบบ</p>
+              </div>
+              <BaseButton @click="openCompanyModal" variant="primary">
+                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                เพิ่มบริษัท
+              </BaseButton>
+            </div>
 
-        <div class="info-box">
-          <p>⏳ รอ API จาก Backend Team</p>
-          <p class="small">หลังจาก Backend API เสร็จ จะทำ CRUD สำหรับ:</p>
-          <ul>
-            <li>เพิ่ม/ลบ/แก้ไข บริษัท</li>
-            <li>จัดการสาขา (Branches)</li>
-            <li>กำหนด Company Code</li>
-          </ul>
-        </div>
-      </div>
+            <BaseTable :columns="companyColumns" :data="companies" :loading="companyLoading">
+              <template #cell-IC_IsActive="{ value }">
+                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-2 py-1 rounded-full text-xs font-medium">
+                  {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
+                </span>
+              </template>
 
-      <!-- User Management Tab -->
-      <div v-if="activeTab === 'users'" class="content-section">
-        <h2 class="section-title">จัดการผู้ใช้งาน</h2>
-        <p class="section-description">เพิ่ม ลบ แก้ไข User และกำหนดสิทธิ์</p>
+              <template #actions="{ row }">
+                <div class="flex gap-2 justify-end">
+                  <button @click="editCompany(row)" class="text-[#0090D3] hover:text-[#007AB8]" title="แก้ไข">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button @click="deleteCompany(row)" class="text-red-600 hover:text-red-800" title="ลบ">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </template>
+            </BaseTable>
+          </BaseCard>
+        </template>
 
-        <div class="info-box">
-          <p>⏳ รอ API จาก Backend Team</p>
-          <p class="small">หลังจาก Backend API เสร็จ จะทำ CRUD สำหรับ:</p>
-          <ul>
-            <li>เพิ่ม/ลบ/แก้ไข User</li>
-            <li>กำหนด Role & Permissions</li>
-            <li>Reset Password</li>
-            <li>Assign User ให้แต่ละ Company</li>
-          </ul>
-        </div>
-      </div>
+        <!-- ==================== TAB 2: จัดการผู้ใช้งาน ==================== -->
+        <template #users>
+          <BaseCard>
+            <div class="flex justify-between items-center mb-6">
+              <div>
+                <h2 class="text-xl font-semibold text-[#1a202c]">รายการผู้ใช้งาน</h2>
+                <p class="text-sm text-gray-500 mt-1">จัดการข้อมูลผู้ใช้งานในระบบ</p>
+              </div>
+              <BaseButton @click="openUserModal" variant="primary">
+                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                เพิ่มผู้ใช้งาน
+              </BaseButton>
+            </div>
 
-      <!-- Vehicle Settings Tab -->
-      <div v-if="activeTab === 'vehicles'" class="content-section">
-        <h2 class="section-title">การตั้งค่ายานพาหนะ</h2>
-        <p class="section-description">จัดการประเภทรถ ป้ายทะเบียน</p>
+            <BaseTable :columns="userColumns" :data="users" :loading="userLoading">
+              <template #cell-SU_Active="{ value }">
+                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-2 py-1 rounded-full text-xs font-medium">
+                  {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
+                </span>
+              </template>
 
-        <div class="info-box">
-          <p>⏳ รอ API จาก Backend Team</p>
-          <p class="small">หลังจาก Backend API เสร็จ จะทำ:</p>
-          <ul>
-            <li>จัดการประเภทยานพาหนะ</li>
-            <li>License Plate Recognition Settings</li>
-            <li>Whitelist/Blacklist รถ</li>
-          </ul>
-        </div>
-      </div>
+              <template #actions="{ row }">
+                <div class="flex gap-2 justify-end">
+                  <button @click="editUser(row)" class="text-[#0090D3] hover:text-[#007AB8]" title="แก้ไข">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button @click="deleteUser(row)" class="text-red-600 hover:text-red-800" title="ลบ">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </template>
+            </BaseTable>
+          </BaseCard>
+        </template>
 
-      <!-- Weighbridge Settings Tab -->
-      <div v-if="activeTab === 'weighbridge'" class="content-section">
-        <h2 class="section-title">การตั้งค่าเครื่องชั่ง</h2>
-        <p class="section-description">กำหนดค่าน้ำหนัก ขีดจำกัด และระบบชั่งน้ำหนัก</p>
+        <!-- ==================== TAB 3: จัดการแผนก ==================== -->
+        <template #departments>
+          <BaseCard>
+            <div class="flex justify-between items-center mb-6">
+              <div>
+                <h2 class="text-xl font-semibold text-[#1a202c]">รายการแผนก</h2>
+                <p class="text-sm text-gray-500 mt-1">จัดการข้อมูลแผนกในระบบ</p>
+              </div>
+              <BaseButton @click="openDepartmentModal" variant="primary">
+                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                เพิ่มแผนก
+              </BaseButton>
+            </div>
 
-        <div class="info-box">
-          <p>⏳ รอ API จาก Backend Team</p>
-          <p class="small">หลังจาก Backend API เสร็จ จะทำ:</p>
-          <ul>
-            <li>กำหนดขีดจำกัดน้ำหนัก (Max/Min)</li>
-            <li>ตั้งค่า Entry/Exit Weighing</li>
-            <li>Weight Alert Threshold</li>
-            <li>เชื่อมต่อกับ Weighing Device</li>
-          </ul>
-        </div>
-      </div>
+            <BaseTable :columns="departmentColumns" :data="departments" :loading="departmentLoading">
+              <template #cell-ID_IsActive="{ value }">
+                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-2 py-1 rounded-full text-xs font-medium">
+                  {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
+                </span>
+              </template>
 
-      <!-- App Integration Tab -->
-      <div v-if="activeTab === 'app'" class="content-section">
-        <h2 class="section-title">การเชื่อมต่อกับ Mobile App</h2>
-        <p class="section-description">API Endpoints และการซิงค์ข้อมูลระหว่าง App กับระบบ</p>
-
-        <div class="info-box">
-          <p>📱 รอทีม App และ Backend</p>
-          <p class="small">API Endpoints ที่ต้องมี:</p>
-          <ul>
-            <li>POST /api/entry - บันทึกการเข้า</li>
-            <li>POST /api/exit - บันทึกการออก</li>
-            <li>POST /api/weight - บันทึกน้ำหนัก</li>
-            <li>GET /api/vehicle/:licensePlate - ดึงข้อมูลรถ</li>
-            <li>POST /api/license-plate/scan - อ่านป้ายทะเบียน</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- System Settings Tab -->
-      <div v-if="activeTab === 'system'" class="content-section">
-        <h2 class="section-title">ตั้งค่าระบบทั่วไป</h2>
-        <p class="section-description">การตั้งค่าพื้นฐานของระบบ</p>
-
-        <div class="settings-grid">
-          <div class="setting-item">
-            <label class="setting-label">ภาษาระบบ</label>
-            <select class="setting-input">
-              <option value="th">ไทย</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-
-          <div class="setting-item">
-            <label class="setting-label">Timezone</label>
-            <select class="setting-input">
-              <option value="Asia/Bangkok">Asia/Bangkok (GMT+7)</option>
-              <option value="UTC">UTC</option>
-            </select>
-          </div>
-
-          <div class="setting-item">
-            <label class="setting-label">รูปแบบวันที่</label>
-            <select class="setting-input">
-              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-            </select>
-          </div>
-
-          <div class="setting-item">
-            <label class="setting-label">Auto Logout (นาที)</label>
-            <input type="number" class="setting-input" value="30" min="5" max="120">
-          </div>
-        </div>
-
-        <div class="save-section">
-          <button class="btn-save">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-            บันทึกการตั้งค่า
-          </button>
-        </div>
-      </div>
+              <template #actions="{ row }">
+                <div class="flex gap-2 justify-end">
+                  <button @click="editDepartment(row)" class="text-[#0090D3] hover:text-[#007AB8]" title="แก้ไข">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button @click="deleteDepartment(row)" class="text-red-600 hover:text-red-800" title="ลบ">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </template>
+            </BaseTable>
+          </BaseCard>
+        </template>
+      </BaseTabs>
     </div>
+
+    <!-- ==================== MODAL: บริษัท ==================== -->
+    <BaseModal :show="companyModal.show" :title="companyModal.title" @close="closeCompanyModal" size="lg">
+      <div class="space-y-4">
+        <BaseInput v-model="companyForm.code" label="รหัสบริษัท" placeholder="เช่น RC, MRG" required />
+        <BaseInput v-model="companyForm.localName" label="ชื่อบริษัท (ไทย)" placeholder="เช่น บริษัท รักชัยห้องเย็น จำกัด" required />
+        <BaseInput v-model="companyForm.englishName" label="ชื่อบริษัท (อังกฤษ)" placeholder="เช่น Ruxchai Cold Storage" />
+        <div>
+          <label class="flex items-center">
+            <input v-model="companyForm.isActive" type="checkbox" class="w-4 h-4 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3]" />
+            <span class="ml-2 text-sm text-gray-700">ใช้งาน</span>
+          </label>
+        </div>
+        <BaseInput v-model="companyForm.remarks" label="หมายเหตุ" placeholder="หมายเหตุเพิ่มเติม" />
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="closeCompanyModal">ยกเลิก</BaseButton>
+          <BaseButton variant="primary" @click="saveCompany" :loading="companySaving">
+            {{ companyModal.isEdit ? 'บันทึก' : 'สร้าง' }}
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- ==================== MODAL: ผู้ใช้งาน ==================== -->
+    <BaseModal :show="userModal.show" :title="userModal.title" @close="closeUserModal" size="lg">
+      <div class="space-y-4">
+        <BaseInput v-model="userForm.code" label="รหัสพนักงาน" placeholder="เช่น 100001" required />
+        <BaseInput v-model="userForm.name1" label="ชื่อ (ไทย)" placeholder="เช่น นายสมชาย ใจดี" required />
+        <BaseInput v-model="userForm.name2" label="ชื่อ (อังกฤษ)" placeholder="เช่น Mr. Somchai Jaidee" />
+        <BaseInput v-model="userForm.username" label="Username" placeholder="ชื่อผู้ใช้สำหรับเข้าสู่ระบบ" required />
+        <BaseInput v-if="!userModal.isEdit" v-model="userForm.password" label="Password" type="password" placeholder="รหัสผ่าน" required />
+        <BaseInput v-model="userForm.email" label="Email" type="email" placeholder="email@example.com" />
+        <div>
+          <label class="flex items-center">
+            <input v-model="userForm.active" type="checkbox" class="w-4 h-4 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3]" />
+            <span class="ml-2 text-sm text-gray-700">ใช้งาน</span>
+          </label>
+        </div>
+        <BaseInput v-model="userForm.remarks" label="หมายเหตุ" placeholder="หมายเหตุเพิ่มเติม" />
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="closeUserModal">ยกเลิก</BaseButton>
+          <BaseButton variant="primary" @click="saveUser" :loading="userSaving">
+            {{ userModal.isEdit ? 'บันทึก' : 'สร้าง' }}
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- ==================== MODAL: แผนก ==================== -->
+    <BaseModal :show="departmentModal.show" :title="departmentModal.title" @close="closeDepartmentModal" size="lg">
+      <div class="space-y-4">
+        <BaseInput v-model="departmentForm.code" label="รหัสแผนก" placeholder="เช่น IT, HR, CS" required />
+        <BaseInput v-model="departmentForm.localName" label="ชื่อแผนก (ไทย)" placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ" required />
+        <BaseInput v-model="departmentForm.englishName" label="ชื่อแผนก (อังกฤษ)" placeholder="เช่น Information Technology" />
+        <div>
+          <label class="flex items-center">
+            <input v-model="departmentForm.isActive" type="checkbox" class="w-4 h-4 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3]" />
+            <span class="ml-2 text-sm text-gray-700">ใช้งาน</span>
+          </label>
+        </div>
+        <BaseInput v-model="departmentForm.remarks" label="หมายเหตุ" placeholder="หมายเหตุเพิ่มเติม" />
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="closeDepartmentModal">ยกเลิก</BaseButton>
+          <BaseButton variant="primary" @click="saveDepartment" :loading="departmentSaving">
+            {{ departmentModal.isEdit ? 'บันทึก' : 'สร้าง' }}
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue';
+import BaseTabs from '../components/base/BaseTabs.vue';
+import BaseCard from '../components/base/BaseCard.vue';
+import BaseTable from '../components/base/BaseTable.vue';
+import BaseButton from '../components/base/BaseButton.vue';
+import BaseInput from '../components/base/BaseInput.vue';
+import BaseModal from '../components/base/BaseModal.vue';
+import { companiesAPI, usersAPI, departmentsAPI } from '../services/api';
 
-const activeTab = ref('company')
+// ==================== Tab State ====================
+const activeTab = ref('companies');
 
 const tabs = [
-  {
-    id: 'company',
-    name: 'ข้อมูลบริษัท',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v1a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V7m-18 0V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2M3 7h18"/><path d="M13 7v4m-2-4v4m-2-4v4"/></svg>'
-  },
-  {
-    id: 'users',
-    name: 'ผู้ใช้งาน',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
-  },
-  {
-    id: 'vehicles',
-    name: 'ยานพาหนะ',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>'
-  },
-  {
-    id: 'weighbridge',
-    name: 'เครื่องชั่ง',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/></svg>'
-  },
-  {
-    id: 'app',
-    name: 'App Integration',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>'
-  },
-  {
-    id: 'system',
-    name: 'ระบบทั่วไป',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg>'
+  { key: 'companies', label: 'จัดการบริษัท', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+  { key: 'users', label: 'จัดการผู้ใช้งาน', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+  { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+];
+
+// ==================== บริษัท (Companies) ====================
+const companies = ref([]);
+const companyLoading = ref(false);
+const companySaving = ref(false);
+const companyModal = ref({ show: false, isEdit: false, title: '', id: null });
+const companyForm = ref({ code: '', localName: '', englishName: '', isActive: true, remarks: '' });
+
+const companyColumns = [
+  { key: 'IC_Code', label: 'รหัส' },
+  { key: 'IC_LocalName', label: 'ชื่อบริษัท (ไทย)' },
+  { key: 'IC_EnglishName', label: 'ชื่อบริษัท (EN)' },
+  { key: 'IC_IsActive', label: 'สถานะ' },
+  { key: 'IC_Remarks', label: 'หมายเหตุ' },
+];
+
+const fetchCompanies = async () => {
+  companyLoading.value = true;
+  try {
+    const response = await companiesAPI.getAll();
+    companies.value = response.data.data;
+  } catch (error) {
+    console.error('Error:', error);
+    alert('ไม่สามารถโหลดข้อมูลบริษัทได้');
+  } finally {
+    companyLoading.value = false;
   }
-]
+};
+
+const openCompanyModal = () => {
+  companyModal.value = { show: true, isEdit: false, title: 'เพิ่มบริษัทใหม่', id: null };
+  companyForm.value = { code: '', localName: '', englishName: '', isActive: true, remarks: '' };
+};
+
+const editCompany = (row) => {
+  companyModal.value = { show: true, isEdit: true, title: 'แก้ไขบริษัท', id: row.IC_ID };
+  companyForm.value = { code: row.IC_Code, localName: row.IC_LocalName, englishName: row.IC_EnglishName, isActive: row.IC_IsActive, remarks: row.IC_Remarks || '' };
+};
+
+const closeCompanyModal = () => {
+  companyModal.value.show = false;
+};
+
+const saveCompany = async () => {
+  companySaving.value = true;
+  try {
+    const payload = { code: companyForm.value.code, localName: companyForm.value.localName, englishName: companyForm.value.englishName, isActive: companyForm.value.isActive, remarks: companyForm.value.remarks };
+    if (companyModal.value.isEdit) {
+      await companiesAPI.update(companyModal.value.id, payload);
+      alert('บันทึกข้อมูลสำเร็จ');
+    } else {
+      await companiesAPI.create(payload);
+      alert('สร้างบริษัทใหม่สำเร็จ');
+    }
+    closeCompanyModal();
+    fetchCompanies();
+  } catch (error) {
+    console.error('Error:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  } finally {
+    companySaving.value = false;
+  }
+};
+
+const deleteCompany = async (row) => {
+  if (!confirm(`ต้องการลบบริษัท "${row.IC_LocalName}" ใช่หรือไม่?`)) return;
+  try {
+    await companiesAPI.delete(row.IC_ID);
+    alert('ลบบริษัทสำเร็จ');
+    fetchCompanies();
+  } catch (error) {
+    console.error('Error:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+// ==================== ผู้ใช้งาน (Users) ====================
+const users = ref([]);
+const userLoading = ref(false);
+const userSaving = ref(false);
+const userModal = ref({ show: false, isEdit: false, title: '', id: null });
+const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '' });
+
+const userColumns = [
+  { key: 'SU_Code', label: 'รหัส' },
+  { key: 'SU_Name1', label: 'ชื่อ (ไทย)' },
+  { key: 'SU_Username', label: 'Username' },
+  { key: 'SU_Email', label: 'Email' },
+  { key: 'SU_Active', label: 'สถานะ' },
+  { key: 'SU_Remarks', label: 'หมายเหตุ' },
+];
+
+const fetchUsers = async () => {
+  userLoading.value = true;
+  try {
+    const response = await usersAPI.getAll();
+    users.value = response.data.data;
+  } catch (error) {
+    console.error('Error:', error);
+    alert('ไม่สามารถโหลดข้อมูลผู้ใช้งานได้');
+  } finally {
+    userLoading.value = false;
+  }
+};
+
+const openUserModal = () => {
+  userModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งานใหม่', id: null };
+  userForm.value = { code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '' };
+};
+
+const editUser = (row) => {
+  userModal.value = { show: true, isEdit: true, title: 'แก้ไขผู้ใช้งาน', id: row.SU_ID };
+  userForm.value = { code: row.SU_Code, name1: row.SU_Name1, name2: row.SU_Name2, username: row.SU_Username, password: '', email: row.SU_Email || '', active: row.SU_Active, remarks: row.SU_Remarks || '' };
+};
+
+const closeUserModal = () => {
+  userModal.value.show = false;
+};
+
+const saveUser = async () => {
+  userSaving.value = true;
+  try {
+    const payload = { code: userForm.value.code, name1: userForm.value.name1, name2: userForm.value.name2, username: userForm.value.username, email: userForm.value.email, active: userForm.value.active, remarks: userForm.value.remarks };
+    if (userModal.value.isEdit) {
+      await usersAPI.update(userModal.value.id, payload);
+      alert('บันทึกข้อมูลสำเร็จ');
+    } else {
+      payload.password = userForm.value.password;
+      await usersAPI.create(payload);
+      alert('สร้างผู้ใช้งานใหม่สำเร็จ');
+    }
+    closeUserModal();
+    fetchUsers();
+  } catch (error) {
+    console.error('Error:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  } finally {
+    userSaving.value = false;
+  }
+};
+
+const deleteUser = async (row) => {
+  if (!confirm(`ต้องการลบผู้ใช้งาน "${row.SU_Name1}" ใช่หรือไม่?`)) return;
+  try {
+    await usersAPI.delete(row.SU_ID);
+    alert('ลบผู้ใช้งานสำเร็จ');
+    fetchUsers();
+  } catch (error) {
+    console.error('Error:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+// ==================== แผนก (Departments) ====================
+const departments = ref([]);
+const departmentLoading = ref(false);
+const departmentSaving = ref(false);
+const departmentModal = ref({ show: false, isEdit: false, title: '', id: null });
+const departmentForm = ref({ code: '', localName: '', englishName: '', isActive: true, remarks: '' });
+
+const departmentColumns = [
+  { key: 'ID_Code', label: 'รหัส' },
+  { key: 'ID_LocalName', label: 'ชื่อแผนก (ไทย)' },
+  { key: 'ID_EnglishName', label: 'ชื่อแผนก (EN)' },
+  { key: 'ID_IsActive', label: 'สถานะ' },
+  { key: 'ID_Remarks', label: 'หมายเหตุ' },
+];
+
+const fetchDepartments = async () => {
+  departmentLoading.value = true;
+  try {
+    const response = await departmentsAPI.getAll();
+    departments.value = response.data.data;
+  } catch (error) {
+    console.error('Error:', error);
+    alert('ไม่สามารถโหลดข้อมูลแผนกได้');
+  } finally {
+    departmentLoading.value = false;
+  }
+};
+
+const openDepartmentModal = () => {
+  departmentModal.value = { show: true, isEdit: false, title: 'เพิ่มแผนกใหม่', id: null };
+  departmentForm.value = { code: '', localName: '', englishName: '', isActive: true, remarks: '' };
+};
+
+const editDepartment = (row) => {
+  departmentModal.value = { show: true, isEdit: true, title: 'แก้ไขแผนก', id: row.ID_ID };
+  departmentForm.value = { code: row.ID_Code, localName: row.ID_LocalName, englishName: row.ID_EnglishName, isActive: row.ID_IsActive, remarks: row.ID_Remarks || '' };
+};
+
+const closeDepartmentModal = () => {
+  departmentModal.value.show = false;
+};
+
+const saveDepartment = async () => {
+  departmentSaving.value = true;
+  try {
+    const payload = { code: departmentForm.value.code, localName: departmentForm.value.localName, englishName: departmentForm.value.englishName, isActive: departmentForm.value.isActive, remarks: departmentForm.value.remarks };
+    if (departmentModal.value.isEdit) {
+      await departmentsAPI.update(departmentModal.value.id, payload);
+      alert('บันทึกข้อมูลสำเร็จ');
+    } else {
+      await departmentsAPI.create(payload);
+      alert('สร้างแผนกใหม่สำเร็จ');
+    }
+    closeDepartmentModal();
+    fetchDepartments();
+  } catch (error) {
+    console.error('Error:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  } finally {
+    departmentSaving.value = false;
+  }
+};
+
+const deleteDepartment = async (row) => {
+  if (!confirm(`ต้องการลบแผนก "${row.ID_LocalName}" ใช่หรือไม่?`)) return;
+  try {
+    await departmentsAPI.delete(row.ID_ID);
+    alert('ลบแผนกสำเร็จ');
+    fetchDepartments();
+  } catch (error) {
+    console.error('Error:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+// ==================== Load Data on Mount ====================
+onMounted(() => {
+  fetchCompanies();
+  fetchUsers();
+  fetchDepartments();
+});
 </script>
 
 <style scoped>
-.settings-container {
+.page-container {
   width: 100%;
-  min-height: 100vh;
-  font-family: 'Prompt', sans-serif;
+  max-width: 100%;
+}
+
+.page-header {
+  margin-bottom: 2rem;
 }
 
 .page-title {
   font-size: 2rem;
   font-weight: 700;
   color: #1a202c;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem 0;
+  font-family: 'Prompt', sans-serif;
 }
 
 .page-subtitle {
   font-size: 1rem;
   color: #718096;
-  margin-bottom: 2rem;
-}
-
-/* Tabs */
-.settings-tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #e2e8f0;
-  overflow-x: auto;
-  padding-bottom: 0;
-}
-
-.tab-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  color: #718096;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  margin: 0;
   font-family: 'Prompt', sans-serif;
 }
 
-.tab-button:hover {
-  color: #047685;
-  background: rgba(4, 118, 133, 0.05);
-}
-
-.tab-button.active {
-  color: #047685;
-  border-bottom-color: #047685;
-  font-weight: 600;
-}
-
-/* Tab Content */
-.tab-content {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.content-section {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 0.5rem;
-}
-
-.section-description {
-  font-size: 0.95rem;
-  color: #718096;
-  margin-bottom: 1.5rem;
-}
-
-/* Info Box */
-.info-box {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-top: 1rem;
-}
-
-.info-box p {
-  margin: 0 0 0.75rem 0;
-  font-weight: 600;
-}
-
-.info-box .small {
-  font-size: 0.9rem;
-  font-weight: 400;
-  opacity: 0.9;
-}
-
-.info-box ul {
-  margin: 0.5rem 0 0 1.5rem;
-  padding: 0;
-}
-
-.info-box li {
-  margin-bottom: 0.4rem;
-  font-size: 0.9rem;
-}
-
-/* Settings Grid */
-.settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.setting-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.setting-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.setting-input {
-  padding: 0.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-family: 'Prompt', sans-serif;
-  transition: all 0.2s;
-}
-
-.setting-input:focus {
-  outline: none;
-  border-color: #047685;
-  box-shadow: 0 0 0 3px rgba(4, 118, 133, 0.1);
-}
-
-/* Save Section */
-.save-section {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 2px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-save {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #047685 0%, #0090D3 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: 'Prompt', sans-serif;
-  box-shadow: 0 4px 12px rgba(4, 118, 133, 0.3);
-}
-
-.btn-save:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(4, 118, 133, 0.4);
-}
-
-.btn-save:active {
-  transform: translateY(0);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .settings-tabs {
-    gap: 0.25rem;
-  }
-
-  .tab-button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-  }
-
-  .tab-content {
-    padding: 1.5rem;
-  }
-
-  .settings-grid {
-    grid-template-columns: 1fr;
-  }
+.page-content {
+  width: 100%;
 }
 </style>
