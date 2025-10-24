@@ -33,7 +33,10 @@
       "Bash(npm install exceljs)",
       "Bash(npm install:*)",
       "Bash(timeout /t 3)",
-      "Read(//c/Windows/Fonts/**)"
+      "Read(//c/Windows/Fonts/**)",
+      "Bash(tree:*)",
+      "Bash(dir:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

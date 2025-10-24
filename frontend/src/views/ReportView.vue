@@ -370,14 +370,20 @@ const exportPDF = async () => {
 
 const formatDateTime = (dateTime) => {
   if (!dateTime) return '-';
-  const date = new Date(dateTime);
-  return date.toLocaleString('th-TH', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+
+  // ตัด 'Z' ออกเพื่อบังคับให้อ่านเป็น Local Time แทน UTC
+  // เพราะ Database บันทึกเวลาเป็น Local Time แต่ส่งออกมามี Z ต่อท้าย
+  const dateStr = dateTime.replace('Z', '');
+  const date = new Date(dateStr);
+
+  // Format: DD/MM/YYYY HH:MM (ใช้ปี ค.ศ.)
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear(); // ปี ค.ศ. 4 หลัก
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
 onMounted(() => {
