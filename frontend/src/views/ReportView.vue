@@ -316,16 +316,25 @@ const fetchReport = async () => {
 
 const exportExcel = async () => {
   try {
-    const params = {
-      startDate: filters.value.startDate || undefined,
-      endDate: filters.value.endDate || undefined,
-      companyId: filters.value.companyId || undefined,
-      status: filters.value.status || undefined,
-    };
+    const params = new URLSearchParams({
+      ...(filters.value.startDate && { startDate: filters.value.startDate }),
+      ...(filters.value.endDate && { endDate: filters.value.endDate }),
+      ...(filters.value.companyId && { companyId: filters.value.companyId }),
+      ...(filters.value.status && { status: filters.value.status }),
+    });
 
-    const response = await reportsAPI.exportExcel(params);
-    alert('ส่งออก Excel สำเร็จ');
-    console.log('Excel data:', response.data);
+    // สร้าง URL สำหรับ download
+    const url = `http://localhost:8088/api/reports/export/excel?${params.toString()}`;
+
+    // สร้าง link element และ click เพื่อ download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `รายงานยานพาหนะ_${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    alert('กำลังดาวน์โหลดไฟล์ Excel...');
   } catch (error) {
     console.error('Error exporting Excel:', error);
     alert('เกิดข้อผิดพลาดในการส่งออก Excel');
@@ -334,16 +343,25 @@ const exportExcel = async () => {
 
 const exportPDF = async () => {
   try {
-    const params = {
-      startDate: filters.value.startDate || undefined,
-      endDate: filters.value.endDate || undefined,
-      companyId: filters.value.companyId || undefined,
-      status: filters.value.status || undefined,
-    };
+    const params = new URLSearchParams({
+      ...(filters.value.startDate && { startDate: filters.value.startDate }),
+      ...(filters.value.endDate && { endDate: filters.value.endDate }),
+      ...(filters.value.companyId && { companyId: filters.value.companyId }),
+      ...(filters.value.status && { status: filters.value.status }),
+    });
 
-    const response = await reportsAPI.exportPDF(params);
-    alert('ส่งออก PDF สำเร็จ');
-    console.log('PDF data:', response.data);
+    // สร้าง URL สำหรับ download
+    const url = `http://localhost:8088/api/reports/export/pdf?${params.toString()}`;
+
+    // สร้าง link element และ click เพื่อ download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `รายงานยานพาหนะ_${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    alert('กำลังดาวน์โหลดไฟล์ PDF...');
   } catch (error) {
     console.error('Error exporting PDF:', error);
     alert('เกิดข้อผิดพลาดในการส่งออก PDF');

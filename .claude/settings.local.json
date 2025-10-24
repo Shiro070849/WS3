@@ -29,7 +29,11 @@
       "Bash(taskkill:*)",
       "Bash(findstr:*)",
       "Bash(curl:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npm install exceljs)",
+      "Bash(npm install:*)",
+      "Bash(timeout /t 3)",
+      "Read(//c/Windows/Fonts/**)"
     ],
     "deny": [],
     "ask": []

@@ -42,15 +42,16 @@ exports.exportExcel = async (req, res) => {
       status: req.query.status,
     };
 
-    const result = await ReportService.exportExcel(filters);
+    const buffer = await ReportService.exportExcel(filters);
 
-    // TODO: ส่งไฟล์ Excel กลับไป
-    // สำหรับตอนนี้ส่ง JSON ไปก่อน
-    res.status(200).json({
-      success: true,
-      message: "เตรียมข้อมูล Excel สำเร็จ",
-      data: result.data,
-    });
+    // กำหนด headers สำหรับ download ไฟล์
+    const filename = `รายงานยานพาหนะ_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.setHeader('Content-Length', buffer.length);
+
+    res.send(buffer);
   } catch (error) {
     console.error("Error in exportExcel controller:", error);
     res.status(500).json({
@@ -73,15 +74,16 @@ exports.exportPDF = async (req, res) => {
       status: req.query.status,
     };
 
-    const result = await ReportService.exportPDF(filters);
+    const buffer = await ReportService.exportPDF(filters);
 
-    // TODO: ส่งไฟล์ PDF กลับไป
-    // สำหรับตอนนี้ส่ง JSON ไปก่อน
-    res.status(200).json({
-      success: true,
-      message: "เตรียมข้อมูล PDF สำเร็จ",
-      data: result.data,
-    });
+    // กำหนด headers สำหรับ download ไฟล์
+    const filename = `รายงานยานพาหนะ_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.setHeader('Content-Length', buffer.length);
+
+    res.send(buffer);
   } catch (error) {
     console.error("Error in exportPDF controller:", error);
     res.status(500).json({

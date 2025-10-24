@@ -16,7 +16,7 @@
     <!-- Login Form -->
     <form
       @submit.prevent="handleLogin"
-      class="relative block p-7 max-w-xs w-full bg-gradient-to-br from-slate-900/80 via-indigo-950/70 to-cyan-900 border-2 border-white shadow-[0_0_50px_-15px_rgba(0,212,255,0.7)] overflow-hidden z-10 rounded-sm scale-90"
+      class="relative block p-7 max-w-md w-full bg-gradient-to-br from-slate-900/80 via-indigo-950/70 to-cyan-900 border-2 border-white shadow-[0_0_50px_-15px_rgba(0,212,255,0.7)] overflow-hidden z-10 rounded-sm scale-125"
     >
       <!-- Animated Stars Background -->
       <section class="bg-stars">
