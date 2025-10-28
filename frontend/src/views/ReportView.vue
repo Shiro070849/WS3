@@ -147,7 +147,7 @@
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
           <div class="flex items-center">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center">
               <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
@@ -370,20 +370,17 @@ const exportPDF = async () => {
 
 const formatDateTime = (dateTime) => {
   if (!dateTime) return '-';
-
-  // ตัด 'Z' ออกเพื่อบังคับให้อ่านเป็น Local Time แทน UTC
-  // เพราะ Database บันทึกเวลาเป็น Local Time แต่ส่งออกมามี Z ต่อท้าย
+  // Remove 'Z' to force local time interpretation
   const dateStr = dateTime.replace('Z', '');
   const date = new Date(dateStr);
-
-  // Format: DD/MM/YYYY HH:MM (ใช้ปี ค.ศ.)
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear(); // ปี ค.ศ. 4 หลัก
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
+  return date.toLocaleString('th-TH', {
+    timeZone: 'Asia/Bangkok',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 onMounted(() => {
@@ -402,28 +399,71 @@ onMounted(() => {
 .page-container {
   width: 100%;
   max-width: 100%;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0 0 0.5rem 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0B4F6C 0%, #0090D3 50%, #20B2AA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 0.75rem 0;
   font-family: 'Prompt', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  font-size: 1rem;
-  color: #718096;
+  font-size: 1.05rem;
+  color: #64748b;
   margin: 0;
   font-family: 'Prompt', sans-serif;
+  font-weight: 500;
 }
 
 .page-content {
   width: 100%;
+}
+
+/* Modern Cards */
+.bg-white {
+  background: white;
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.1),
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.3s ease;
+}
+
+.bg-white:hover {
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.15),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -4px rgba(0, 0, 0, 0.08);
+  border-color: rgba(191, 219, 254, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.75rem;
+  }
 }
 </style>

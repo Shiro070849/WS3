@@ -583,8 +583,11 @@ const saveCheckout = async () => {
 
 const formatDateTime = (dateTime) => {
   if (!dateTime) return '-';
-  const date = new Date(dateTime);
+  // Remove 'Z' to force local time interpretation
+  const dateStr = dateTime.replace('Z', '');
+  const date = new Date(dateStr);
   return date.toLocaleString('th-TH', {
+    timeZone: 'Asia/Bangkok',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -599,33 +602,75 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* เพิ่มขนาดหน้าทะเบียนรถ 20% */
 .page-container {
   width: 100%;
   max-width: 100%;
-  font-size: 1.2em; /* เพิ่มขนาด 20% */
+  font-size: 1.2em;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0 0 0.5rem 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0B4F6C 0%, #0090D3 50%, #20B2AA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 0.75rem 0;
   font-family: 'Prompt', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  font-size: 1rem;
-  color: #718096;
+  font-size: 1.05rem;
+  color: #64748b;
   margin: 0;
   font-family: 'Prompt', sans-serif;
+  font-weight: 500;
 }
 
 .page-content {
   width: 100%;
+}
+
+/* Modern Cards & Inputs */
+.bg-white {
+  background: white;
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.1),
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.3s ease;
+}
+
+.bg-white:hover {
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.15),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -4px rgba(0, 0, 0, 0.08);
+  border-color: rgba(191, 219, 254, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.75rem;
+  }
 }
 </style>

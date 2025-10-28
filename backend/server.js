@@ -27,8 +27,10 @@ const corsOptions = {
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 นาที
-  max: 100, // จำกัดแต่ละ IP ให้ส่งคำขอได้ 100 ครั้งต่อหน้าต่างเวลา
-  message: 'คำขอจาก IP นี้มากเกินไป กรุณาลองใหม่ภายหลัง'
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Development: 1000 requests, Production: 100 requests
+  message: 'คำขอจาก IP นี้มากเกินไป กรุณาลองใหม่ภายหลัง',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
 app.use(limiter);
@@ -69,6 +71,7 @@ require("./routes/settings.routes")(app);
 require("./routes/dashboard.routes")(app);
 require("./routes/vehicle.routes")(app);
 require("./routes/report.routes")(app);
+require("./routes/statistics.routes")(app);
 
 // 404 handler
 app.use((req, res) => {

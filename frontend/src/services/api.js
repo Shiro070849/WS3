@@ -73,4 +73,14 @@ export const reportsAPI = {
   getStatistics: (params) => apiClient.get('/reports/statistics', { params }),
 };
 
+// ==================== STATISTICS API ====================
+export const statisticsAPI = {
+  getOverview: (period = 'week') => apiClient.get(`/statistics/overview?period=${period}`),
+  getVehicleTypes: (period = 'week') => apiClient.get(`/statistics/vehicle-types?period=${period}`),
+  getPeakHours: (period = 'week') => apiClient.get(`/statistics/peak-hours?period=${period}`),
+  getTopCompanies: (period = 'week', limit = 5) => apiClient.get(`/statistics/top-companies?period=${period}&limit=${limit}`),
+  getTrafficTrend: (period = 'week') => apiClient.get(`/statistics/traffic-trend?period=${period}`),
+  getAdditional: (period = 'week') => apiClient.get(`/statistics/additional?period=${period}`),
+};
+
 export default apiClient;
