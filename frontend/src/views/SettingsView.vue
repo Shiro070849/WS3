@@ -5,8 +5,45 @@
       <p class="page-subtitle">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
     </div>
 
+    <!-- Company Selector -->
+    <div v-if="accessibleCompanies.length > 0" class="company-selector-container">
+      <div class="company-selector-label-wrapper">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        <span>เลือกบริษัท:</span>
+      </div>
+
+      <div class="select">
+        <div class="selected" :data-selected="getSelectedCompanyName()">
+          <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" class="arrow">
+            <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path>
+          </svg>
+        </div>
+        <div class="options">
+          <div v-for="company in accessibleCompanies" :key="company.IC_ID" :title="company.IC_LocalName">
+            <input
+              :id="`company-${company.IC_ID}`"
+              name="company-option"
+              type="radio"
+              :value="company.IC_ID"
+              v-model="selectedCompanyId"
+              @change="onCompanyChange"
+              :checked="company.IC_ID === selectedCompanyId"
+            />
+            <label class="option" :for="`company-${company.IC_ID}`" :data-txt="`${company.IC_LocalName} (${company.IC_Code})`"></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="page-content">
       <BaseTabs v-model="activeTab" :tabs="tabs">
+        <!-- ==================== TAB 0: ทั่วไป ==================== -->
+        <template #general>
+          <GeneralSettings />
+        </template>
+
         <!-- ==================== TAB 1: จัดการบริษัท ==================== -->
         <template #companies>
           <BaseCard>
@@ -220,12 +257,43 @@ import BaseTable from '../components/base/BaseTable.vue';
 import BaseButton from '../components/base/BaseButton.vue';
 import BaseInput from '../components/base/BaseInput.vue';
 import BaseModal from '../components/base/BaseModal.vue';
-import { companiesAPI, usersAPI, departmentsAPI } from '../services/api';
+import GeneralSettings from '../components/settings/GeneralSettings.vue';
+import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../services/api';
+
+// ==================== Company Selection ====================
+const accessibleCompanies = ref([]);
+const selectedCompanyId = ref(null);
+
+const fetchAccessibleCompanies = async () => {
+  try {
+    const response = await systemSettingsAPI.getAccessibleCompanies();
+    accessibleCompanies.value = response.data.data;
+
+    // Set default selected company to first one
+    if (accessibleCompanies.value.length > 0) {
+      selectedCompanyId.value = accessibleCompanies.value[0].IC_ID;
+    }
+  } catch (error) {
+    console.error('Error fetching accessible companies:', error);
+    alert('ไม่สามารถโหลดรายการบริษัทได้');
+  }
+};
+
+const onCompanyChange = () => {
+  console.log('Selected company changed to:', selectedCompanyId.value);
+  // TODO: Reload all settings based on selected company
+};
+
+const getSelectedCompanyName = () => {
+  const company = accessibleCompanies.value.find(c => c.IC_ID === selectedCompanyId.value);
+  return company ? `${company.IC_LocalName} (${company.IC_Code})` : 'เลือกบริษัท';
+};
 
 // ==================== Tab State ====================
-const activeTab = ref('companies');
+const activeTab = ref('general');
 
 const tabs = [
+  { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
   { key: 'companies', label: 'จัดการบริษัท', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
   { key: 'users', label: 'จัดการผู้ใช้งาน', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
   { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
@@ -460,6 +528,7 @@ const deleteDepartment = async (row) => {
 
 // ==================== Load Data on Mount ====================
 onMounted(() => {
+  fetchAccessibleCompanies();
   fetchCompanies();
   fetchUsers();
   fetchDepartments();
@@ -485,7 +554,125 @@ onMounted(() => {
 }
 
 .page-header {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.company-selector-container {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.company-selector-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a202c;
+  white-space: nowrap;
+}
+
+.company-selector-label-wrapper .icon {
+  width: 20px;
+  height: 20px;
+  color: #0090D3;
+}
+
+.select {
+  width: fit-content;
+  cursor: pointer;
+  position: relative;
+  transition: 300ms;
+  color: white;
+  overflow: hidden;
+}
+
+.selected {
+  background-color: #2a2f3b;
+  padding: 10px 15px;
+  margin-bottom: 3px;
+  border-radius: 8px;
+  position: relative;
+  z-index: 100000;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 300px;
+  gap: 1rem;
+}
+
+.selected::before {
+  content: attr(data-selected);
+}
+
+.arrow {
+  position: relative;
+  right: 0px;
+  height: 10px;
+  transform: rotate(-90deg);
+  width: 25px;
+  fill: white;
+  z-index: 100000;
+  transition: 300ms;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  padding: 5px;
+  background-color: #2a2f3b;
+  position: absolute;
+  top: -100px;
+  opacity: 0;
+  transition: 300ms;
+  min-width: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.select:hover > .options {
+  opacity: 1;
+  top: 45px;
+}
+
+.select:hover > .selected .arrow {
+  transform: rotate(0deg);
+}
+
+.option {
+  border-radius: 5px;
+  padding: 10px 15px;
+  transition: 300ms;
+  background-color: #2a2f3b;
+  width: 100%;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.option:hover {
+  background-color: #323741;
+}
+
+.options input[type="radio"] {
+  display: none;
+}
+
+.options label {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.options label::before {
+  content: attr(data-txt);
+}
+
+.options input[type="radio"]:checked + label {
+  display: none;
 }
 
 .page-title {

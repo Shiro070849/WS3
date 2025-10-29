@@ -19,6 +19,11 @@ apiClient.interceptors.response.use(
   }
 );
 
+// ==================== AUTH API ====================
+export const authAPI = {
+  login: (username, password) => apiClient.post('/auth/login', { username, password }),
+};
+
 // ==================== COMPANIES API ====================
 export const companiesAPI = {
   getAll: () => apiClient.get('/settings/companies'),
@@ -81,6 +86,16 @@ export const statisticsAPI = {
   getTopCompanies: (period = 'week', limit = 5) => apiClient.get(`/statistics/top-companies?period=${period}&limit=${limit}`),
   getTrafficTrend: (period = 'week') => apiClient.get(`/statistics/traffic-trend?period=${period}`),
   getAdditional: (period = 'week') => apiClient.get(`/statistics/additional?period=${period}`),
+};
+
+// ==================== SYSTEM SETTINGS API ====================
+export const systemSettingsAPI = {
+  // Companies
+  getAccessibleCompanies: () => apiClient.get('/settings/companies/accessible'),
+
+  // General Settings
+  getGeneral: () => apiClient.get('/settings/general'),
+  updateGeneral: (data) => apiClient.put('/settings/general', data),
 };
 
 export default apiClient;

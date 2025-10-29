@@ -3,6 +3,8 @@ const settingsController = require('../controllers/settings.controller');
 module.exports = (app) => {
   // ==================== COMPANIES ====================
 
+  // ดึงรายการบริษัทที่ user มีสิทธิ์เข้าถึง (ต้องอยู่ก่อน /:id)
+  app.get('/api/settings/companies/accessible', settingsController.getUserAccessibleCompanies);
   // ดึงรายการบริษัททั้งหมด
   app.get('/api/settings/companies', settingsController.getAllCompanies);
   // ดึงข้อมูลบริษัทตาม ID
@@ -42,4 +44,11 @@ module.exports = (app) => {
   app.put('/api/settings/departments/:id', settingsController.updateDepartment);
   // ลบแผนก (Soft Delete)
   app.delete('/api/settings/departments/:id', settingsController.deleteDepartment);
+
+  // ==================== GENERAL SETTINGS ====================
+
+  // ดึงข้อมูล General Settings
+  app.get('/api/settings/general', settingsController.getGeneralSettings);
+  // บันทึก General Settings
+  app.put('/api/settings/general', settingsController.updateGeneralSettings);
 };

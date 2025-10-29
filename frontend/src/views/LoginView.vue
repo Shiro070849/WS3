@@ -116,14 +116,6 @@
             {{ isLoading ? 'Signing in...' : 'Login' }}
           </button>
 
-          <!-- Remember Me & Forgot Password -->
-          <div class="flex items-center justify-between text-sm">
-            <label class="flex items-center text-white/80 cursor-pointer">
-              <input v-model="rememberMe" type="checkbox" class="mr-2 w-4 h-4 text-[#0090D3] bg-white/20 border-white/30 rounded focus:ring-[#0090D3]/50">
-              <span>Remember me</span>
-            </label>
-            <a href="#" class="text-[#3AAA35] hover:text-green-400 transition-colors">Forgot password?</a>
-          </div>
         </form>
 
         <!-- Footer -->
@@ -138,19 +130,15 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { authAPI } from '../services/api'
 
 const router = useRouter()
 const username = ref('')
 const password = ref('')
 const showPassword = ref(false)
-const rememberMe = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const isLoading = ref(false)
-
-// Hardcoded credentials for testing
-const VALID_USERNAME = 'admin'
-const VALID_PASSWORD = 'admin123'
 
 // Generate snowflakes once (static positions)
 const snowflakes = Array.from({ length: 20 }, () => ({
@@ -165,20 +153,18 @@ const handleLogin = async () => {
     successMessage.value = ''
     isLoading.value = true
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800))
+    // Call API
+    const response = await authAPI.login(username.value, password.value)
 
-    if (username.value === VALID_USERNAME && password.value === VALID_PASSWORD) {
+    if (response.data.success) {
+      const userData = response.data.data
+
       // Store user session
-      localStorage.setItem('user', JSON.stringify({ username: username.value }))
+      localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('isLoggedIn', 'true')
-      localStorage.setItem('userName', username.value)
-      localStorage.setItem('userEmail', '')
+      localStorage.setItem('userName', userData.SU_Name1 || username.value)
+      localStorage.setItem('userEmail', userData.SU_Email || '')
       localStorage.setItem('companyName', 'Smart Security')
-
-      if (rememberMe.value) {
-        localStorage.setItem('rememberMe', 'true')
-      }
 
       successMessage.value = 'Login successful! Redirecting...'
 
@@ -186,14 +172,11 @@ const handleLogin = async () => {
         router.push('/dashboard')
       }, 1000)
     } else {
-      errorMessage.value = 'Invalid username or password'
-      setTimeout(() => {
-        errorMessage.value = ''
-      }, 3000)
+      errorMessage.value = response.data.message || 'Invalid username or password'
     }
   } catch (error) {
     console.error('Login error:', error)
-    errorMessage.value = 'An error occurred. Please try again.'
+    errorMessage.value = error.response?.data?.message || 'Invalid username or password'
   } finally {
     isLoading.value = false
   }

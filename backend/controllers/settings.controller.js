@@ -47,6 +47,25 @@ class SettingsController {
     }
   }
 
+  async getUserAccessibleCompanies(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1002; // Hardcoded for now
+      const companies = await settingsService.getUserAccessibleCompanies(userId);
+      res.status(200).json({
+        success: true,
+        count: companies.length,
+        data: companies
+      });
+    } catch (error) {
+      console.error('Error in getUserAccessibleCompanies:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting user accessible companies',
+        error: error.message
+      });
+    }
+  }
+
   async createCompany(req, res) {
     try {
       const { code, localName, englishName, isActive, remarks } = req.body;
@@ -446,6 +465,53 @@ class SettingsController {
       res.status(500).json({
         success: false,
         message: 'Error deleting department',
+        error: error.message
+      });
+    }
+  }
+
+  // ==================== GENERAL SETTINGS ====================
+
+  async getGeneralSettings(req, res) {
+    try {
+      // TODO: ดึง userId จาก session/token
+      // ตอนนี้ใช้ hardcode userId = 1002 (System Admin) ไปก่อน
+      const userId = req.user?.SU_ID || 1002;
+
+      const settings = await settingsService.getGeneralSettings(userId);
+
+      res.status(200).json({
+        success: true,
+        data: settings
+      });
+    } catch (error) {
+      console.error('Error in getGeneralSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting general settings',
+        error: error.message
+      });
+    }
+  }
+
+  async updateGeneralSettings(req, res) {
+    try {
+      // TODO: ดึง userId จาก session/token
+      const userId = req.user?.SU_ID || 1002;
+
+      const data = req.body;
+
+      await settingsService.updateGeneralSettings(userId, data);
+
+      res.status(200).json({
+        success: true,
+        message: 'General settings updated successfully'
+      });
+    } catch (error) {
+      console.error('Error in updateGeneralSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating general settings',
         error: error.message
       });
     }

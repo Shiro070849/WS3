@@ -65,6 +65,7 @@ app.get("/", (req, res) => {
 });
 
 // API Routes
+require("./routes/auth.routes")(app);
 require("./routes/wayin.routes")(app);
 require("./routes/wayout.routes")(app);
 require("./routes/settings.routes")(app);
