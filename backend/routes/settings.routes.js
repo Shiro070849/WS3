@@ -1,4 +1,5 @@
 const settingsController = require('../controllers/settings.controller');
+const upload = require('../middleware/upload');
 
 module.exports = (app) => {
   // ==================== COMPANIES ====================
@@ -51,4 +52,13 @@ module.exports = (app) => {
   app.get('/api/settings/general', settingsController.getGeneralSettings);
   // บันทึก General Settings
   app.put('/api/settings/general', settingsController.updateGeneralSettings);
+
+  // ==================== APPEARANCE SETTINGS ====================
+
+  // ดึงข้อมูล Appearance Settings
+  app.get('/api/settings/appearance', settingsController.getAppearanceSettings);
+  // บันทึก Appearance Settings
+  app.put('/api/settings/appearance', settingsController.updateAppearanceSettings);
+  // อัปโหลดรูปภาพ (Logo, Favicon)
+  app.post('/api/settings/upload-image', upload.single('image'), settingsController.uploadImage);
 };

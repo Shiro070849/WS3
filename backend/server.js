@@ -37,6 +37,9 @@ app.use(limiter);
 
 app.use(cors(corsOptions));
 
+// Static files - serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Body parser with error handling
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true }));

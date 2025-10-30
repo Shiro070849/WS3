@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- Page Header -->
     <div class="page-header">
-      <h1 class="page-title">ทะเบียนรถ</h1>
+      <h1 class="page-title">รายการ การเข้า-ออก</h1>
       <p class="page-subtitle">จัดการข้อมูลยานพาหนะเข้า-ออก</p>
     </div>
 
@@ -20,7 +20,7 @@
               v-model="filters.search"
               type="text"
               placeholder="ทะเบียนรถ หรือชื่อคนขับ"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
               @keyup.enter="fetchVehicles"
             />
           </div>
@@ -32,7 +32,7 @@
             </label>
             <select
               v-model="filters.status"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
               @change="fetchVehicles"
             >
               <option value="">ทั้งหมด</option>
@@ -46,13 +46,13 @@
           <div class="flex items-end gap-2">
             <button
               @click="fetchVehicles"
-              class="flex-1 px-4 py-2.5 text-base font-semibold bg-[#0090D3] text-white rounded-lg hover:bg-[#007AB8] active:scale-95 transition-all shadow-sm"
+              class="flex-1 px-3 py-2 text-sm font-semibold bg-[#0090D3] text-white rounded-lg hover:bg-[#007AB8] active:scale-95 transition-all shadow-sm"
             >
               ค้นหา
             </button>
             <button
               @click="openAddModal"
-              class="flex-1 px-4 py-2.5 text-base font-semibold bg-[#3AAA35] text-white rounded-lg hover:bg-[#339A2E] active:scale-95 transition-all shadow-sm"
+              class="flex-1 px-3 py-2 text-sm font-semibold bg-[#3AAA35] text-white rounded-lg hover:bg-[#339A2E] active:scale-95 transition-all shadow-sm"
             >
               + เพิ่มรถ
             </button>

@@ -10,7 +10,9 @@
       "Bash(curl:*)",
       "Bash(timeout 10 curl:*)",
       "Bash(git checkout:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(timeout:*)",
+      "Bash(node generate_hash.js:*)"
     ],
     "deny": [],
     "ask": []

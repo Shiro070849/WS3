@@ -44,7 +44,12 @@
           <GeneralSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
-        <!-- ==================== TAB 1: จัดการบริษัท ==================== -->
+        <!-- ==================== TAB 1: รูปแบบ ==================== -->
+        <template #appearance>
+          <AppearanceSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
+        </template>
+
+        <!-- ==================== TAB 2: จัดการบริษัท ==================== -->
         <template #companies>
           <BaseCard>
             <div class="flex justify-between items-center mb-6">
@@ -258,7 +263,9 @@ import BaseButton from '../components/base/BaseButton.vue';
 import BaseInput from '../components/base/BaseInput.vue';
 import BaseModal from '../components/base/BaseModal.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
+import AppearanceSettings from '../components/settings/AppearanceSettings.vue';
 import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../services/api';
+import { useTheme } from '@/composables/useTheme';
 
 // ==================== Company Selection ====================
 const accessibleCompanies = ref([]);
@@ -289,10 +296,17 @@ const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value;
 };
 
+const { loadTheme } = useTheme();
+
 const onCompanyChange = () => {
-  console.log('Selected company changed to:', selectedCompanyId.value);
+  console.log('🔄 Selected company changed to:', selectedCompanyId.value);
   isDropdownOpen.value = false; // Close dropdown after selection
-  // TODO: Reload all settings based on selected company
+
+  // Reload theme for the selected company
+  if (selectedCompanyId.value) {
+    console.log('🎨 Loading theme for company:', selectedCompanyId.value);
+    loadTheme(selectedCompanyId.value);
+  }
 };
 
 const getSelectedCompanyName = () => {
@@ -313,6 +327,7 @@ const activeTab = ref('general');
 
 const tabs = [
   { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
+  { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
   { key: 'companies', label: 'จัดการบริษัท', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
   { key: 'users', label: 'จัดการผู้ใช้งาน', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
   { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
@@ -592,8 +607,8 @@ onBeforeUnmount(() => {
 .company-selector-label-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
+  gap: 0.4rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #1a202c;
   white-space: nowrap;
@@ -605,8 +620,8 @@ onBeforeUnmount(() => {
 }
 
 .company-selector-label-wrapper .icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   stroke: #0090D3;
   flex-shrink: 0;
 }
@@ -618,24 +633,24 @@ onBeforeUnmount(() => {
   transition: 300ms;
   color: white;
   overflow: visible;
-  z-index: 1000;
+  z-index: 50;
 }
 
 .selected {
   background: #007AB8;
-  padding: 10px 15px;
+  padding: 8px 12px;
   margin-bottom: 3px;
-  border-radius: 8px;
+  border-radius: 6px;
   position: relative;
-  z-index: 1001;
-  font-size: 15px;
+  z-index: 51;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-width: 300px;
-  gap: 1rem;
+  min-width: 240px;
+  gap: 0.75rem;
   font-family: 'Prompt', sans-serif;
-  box-shadow: 0 2px 8px rgba(0, 122, 184, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 122, 184, 0.2);
   transition: all 0.3s ease;
 }
 
@@ -650,11 +665,11 @@ onBeforeUnmount(() => {
 .arrow {
   position: relative;
   right: 0px;
-  height: 10px;
+  height: 8px;
   transform: rotate(-90deg);
-  width: 25px;
+  width: 20px;
   fill: white;
-  z-index: 1002;
+  z-index: 52;
   transition: 300ms;
   flex-shrink: 0;
 }
@@ -662,8 +677,8 @@ onBeforeUnmount(() => {
 .options {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
-  padding: 5px;
+  border-radius: 6px;
+  padding: 4px;
   background-color: #ffffff;
   border: 2px solid #007AB8;
   position: absolute;
@@ -671,16 +686,16 @@ onBeforeUnmount(() => {
   left: 0;
   opacity: 0;
   transition: 300ms;
-  min-width: 300px;
-  max-height: 300px;
+  min-width: 240px;
+  max-height: 280px;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 122, 184, 0.2);
-  z-index: 1003;
+  box-shadow: 0 8px 20px rgba(0, 122, 184, 0.15);
+  z-index: 53;
 }
 
 .select.open > .options {
   opacity: 1;
-  top: 45px;
+  top: 38px;
 }
 
 .select.open > .selected .arrow {
@@ -688,12 +703,12 @@ onBeforeUnmount(() => {
 }
 
 .option {
-  border-radius: 5px;
-  padding: 10px 15px;
+  border-radius: 4px;
+  padding: 8px 12px;
   transition: 300ms;
   background-color: transparent;
   width: 100%;
-  font-size: 15px;
+  font-size: 0.875rem;
   cursor: pointer;
   font-family: 'Prompt', sans-serif;
   color: #1a202c;

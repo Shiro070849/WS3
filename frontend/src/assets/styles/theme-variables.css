@@ -1,0 +1,108 @@
+/**
+ * Theme CSS Variables
+ * จะถูก override โดย JavaScript เมื่อ load theme จาก database
+ */
+
+:root {
+  /* Colors - Default Theme */
+  --primary-color: #0090D3;
+  --secondary-color: #6B7280;
+  --accent-color: #10B981;
+  --background-color: #FFFFFF;
+  --text-color: #1A202C;
+
+  /* Typography */
+  --font-family: 'Prompt', sans-serif;
+  --base-font-size: 14px;
+
+  /* Layout */
+  --border-radius: 8px;
+  --header-height: 64px;
+
+  /* Spacing (Compact mode) */
+  --spacing-unit: 1rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+}
+
+/* Dark Mode */
+:root.dark {
+  --background-color: #1A202C;
+  --text-color: #F7FAFC;
+  --secondary-color: #4A5568;
+}
+
+/* Compact Mode */
+:root.compact {
+  --spacing-unit: 0.75rem;
+  --spacing-sm: 0.375rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1.125rem;
+  --spacing-xl: 1.5rem;
+  --base-font-size: 13px;
+}
+
+/* Apply theme colors to common elements */
+body {
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
+  color: var(--text-color);
+  background-color: var(--background-color);
+}
+
+/* Utility classes using CSS variables */
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.border-primary {
+  border-color: var(--primary-color) !important;
+}
+
+.bg-secondary {
+  background-color: var(--secondary-color) !important;
+}
+
+.text-secondary {
+  color: var(--secondary-color) !important;
+}
+
+.bg-accent {
+  background-color: var(--accent-color) !important;
+}
+
+.text-accent {
+  color: var(--accent-color) !important;
+}
+
+/* Button styles using variables */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-color);
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+/* Border radius */
+.rounded {
+  border-radius: var(--border-radius);
+}
+
+/* Transitions for smooth theme changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

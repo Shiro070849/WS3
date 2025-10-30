@@ -84,8 +84,8 @@
         </div>
 
         <div class="modal-body">
-          <p>คุณต้องการออกจากระบบใช่หรือไม่?</p>
-          <p class="modal-hint">คุณจะต้องเข้าสู่ระบบอีกครั้งเพื่อใช้งานต่อ</p>
+          <p class="modal-question">คุณต้องการออกจากระบบใช่หรือไม่?</p>
+          <p class="modal-hint">กรุณายืนยันการออกจากระบบอีกครั้ง</p>
         </div>
 
         <div class="modal-footer">
@@ -122,7 +122,7 @@ const menuItems = [
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>'
   },
   {
-    name: 'ทะเบียนรถ',
+    name: 'รายการ การเข้า-ออก',
     route: '/vehicle',
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/></svg>'
   },
@@ -241,19 +241,25 @@ const confirmLogout = () => {
 }
 
 .company-name {
-  font-size: 0.8rem; /* เพิ่มขนาดเพื่อให้อ่านง่าย */
-  font-weight: 700; /* เพิ่มความหนา */
+  font-size: 0.95rem; /* เพิ่มจาก 0.8rem -> 0.95rem */
+  font-weight: 700;
   color: white;
   margin: 0;
   line-height: 1.3;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .company-subtitle {
-  font-size: 0.6rem; /* เพิ่มขนาดเพื่อให้อ่านง่าย */
-  color: rgba(255, 255, 255, 0.9); /* เพิ่มความชัดเจน */
+  font-size: 0.7rem; /* เพิ่มจาก 0.6rem -> 0.7rem */
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   margin-top: 1.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ===== Profile ===== */
@@ -302,20 +308,26 @@ const confirmLogout = () => {
 }
 
 .profile-name {
-  font-size: 0.75rem; /* เพิ่มขนาดเพื่อให้อ่านง่าย */
-  font-weight: 700; /* เพิ่มความหนา */
+  font-size: 0.875rem; /* เพิ่มจาก 0.75rem -> 0.875rem */
+  font-weight: 700;
   color: white;
   margin: 0;
   line-height: 1.3;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-email {
-  font-size: 0.6rem; /* เพิ่มขนาดเพื่อให้อ่านง่าย */
-  color: rgba(255, 255, 255, 0.9); /* เพิ่มความชัดเจน */
+  font-size: 0.7rem; /* เพิ่มจาก 0.6rem -> 0.7rem */
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   margin-top: 1.4px;
   line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ===== Divider ===== */
@@ -422,10 +434,12 @@ const confirmLogout = () => {
 }
 
 .menu-text {
-  font-size: 0.75rem; /* เพิ่มขนาดเพื่อให้อ่านง่าย */
-  font-weight: 600; /* เพิ่มความหนา */
+  font-size: 0.875rem; /* เพิ่มจาก 0.75rem -> 0.875rem */
+  font-weight: 600;
   white-space: nowrap;
   letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ===== Logout ===== */
@@ -444,13 +458,13 @@ const confirmLogout = () => {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  padding: 0.55rem; /* เพิ่มนิดหน่อย */
+  padding: 0.55rem;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 5.6px;
   color: white;
-  font-size: 0.7rem; /* เพิ่มขนาดเพื่อให้อ่านง่าย */
-  font-weight: 600; /* เพิ่มความหนา */
+  font-size: 0.8rem; /* เพิ่มจาก 0.7rem -> 0.8rem */
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   font-family: 'Prompt', sans-serif;
@@ -491,7 +505,7 @@ const confirmLogout = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   backdrop-filter: blur(4px);
 }
 
@@ -532,18 +546,24 @@ const confirmLogout = () => {
 
 .modal-body {
   padding: 1.5rem;
+  text-align: center;
 }
 
-.modal-body p {
-  margin: 0 0 0.5rem 0;
-  color: #374151;
-  font-size: 0.875rem;
+.modal-question {
+  margin: 0 0 0.75rem 0;
+  color: #1F2937;
+  font-size: 1rem;
+  font-weight: 600;
   font-family: 'Prompt', sans-serif;
+  line-height: 1.5;
 }
 
 .modal-hint {
+  margin: 0;
   color: #6B7280;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  font-family: 'Prompt', sans-serif;
+  line-height: 1.4;
 }
 
 .modal-footer {

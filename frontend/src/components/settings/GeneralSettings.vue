@@ -79,7 +79,7 @@
             </label>
             <select
               v-model="formData.language"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
+              class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
             >
               <option value="th">ไทย (Thai)</option>
               <option value="en">อังกฤษ (English)</option>
@@ -92,7 +92,7 @@
             </label>
             <select
               v-model="formData.timezone"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
+              class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
             >
               <option value="Asia/Bangkok">Asia/Bangkok (GMT+7)</option>
               <option value="Asia/Tokyo">Asia/Tokyo (GMT+9)</option>
@@ -108,7 +108,7 @@
             </label>
             <select
               v-model="formData.date_format"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
+              class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
             >
               <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2025)</option>
               <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2025)</option>
@@ -122,7 +122,7 @@
             </label>
             <select
               v-model="formData.time_format"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
+              class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
             >
               <option value="HH:mm">24 ชั่วโมง (13:30)</option>
               <option value="hh:mm A">12 ชั่วโมง (01:30 PM)</option>
@@ -263,7 +263,9 @@ const handleReset = () => {
 };
 
 onMounted(() => {
-  fetchSettings();
+  if (props.companyId) {
+    fetchSettings();
+  }
 });
 </script>
 
@@ -281,5 +283,16 @@ onMounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ปรับขนาด select dropdown options ให้เป็น sm */
+select {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+select option {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
 }
 </style>

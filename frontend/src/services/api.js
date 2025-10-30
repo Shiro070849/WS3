@@ -96,6 +96,22 @@ export const systemSettingsAPI = {
   // General Settings
   getGeneral: (companyId) => apiClient.get(`/settings/general?companyId=${companyId}`),
   updateGeneral: (data, companyId) => apiClient.put(`/settings/general?companyId=${companyId}`, data),
+
+  // Appearance Settings
+  getAppearance: (companyId) => apiClient.get(`/settings/appearance?companyId=${companyId}`),
+  updateAppearance: (data, companyId) => apiClient.put(`/settings/appearance?companyId=${companyId}`, data),
+
+  // Upload Image (Logo, Favicon)
+  uploadImage: (file, companyId, type) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('type', type);
+    return apiClient.post(`/settings/upload-image?companyId=${companyId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export default apiClient;

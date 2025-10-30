@@ -532,6 +532,111 @@ class SettingsController {
       });
     }
   }
+
+  // ==================== APPEARANCE SETTINGS ====================
+
+  async getAppearanceSettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103; // Hardcoded to sysadmin (SA001) for now
+      const companyId = parseInt(req.query.companyId); // ดึง companyId จาก query string
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📥 GET /api/settings/appearance - userId: ${userId}, companyId: ${companyId}`);
+
+      const settings = await settingsService.getAppearanceSettings(userId, companyId);
+
+      res.status(200).json({
+        success: true,
+        data: settings
+      });
+    } catch (error) {
+      console.error('Error in getAppearanceSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting appearance settings',
+        error: error.message
+      });
+    }
+  }
+
+  async updateAppearanceSettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103; // Hardcoded to sysadmin (SA001) for now
+      const companyId = parseInt(req.query.companyId); // ดึง companyId จาก query string
+      const data = req.body;
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`💾 PUT /api/settings/appearance - userId: ${userId}, companyId: ${companyId}`);
+
+      await settingsService.updateAppearanceSettings(userId, companyId, data);
+
+      res.status(200).json({
+        success: true,
+        message: 'Appearance settings updated successfully'
+      });
+    } catch (error) {
+      console.error('Error in updateAppearanceSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating appearance settings',
+        error: error.message
+      });
+    }
+  }
+
+  // อัปโหลดรูปภาพ (Logo, Favicon)
+  async uploadImage(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาเลือกไฟล์'
+        });
+      }
+
+      const companyId = parseInt(req.query.companyId);
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      // สร้าง URL สำหรับเข้าถึงไฟล์
+      const fileUrl = `/uploads/images/${req.file.filename}`;
+
+      console.log(`📤 Image uploaded: ${fileUrl} for company ${companyId}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'อัปโหลดไฟล์สำเร็จ',
+        data: {
+          filename: req.file.filename,
+          url: fileUrl,
+          size: req.file.size
+        }
+      });
+    } catch (error) {
+      console.error('Error in uploadImage:', error);
+      res.status(500).json({
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการอัปโหลด',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = new SettingsController();

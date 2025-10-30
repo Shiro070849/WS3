@@ -17,8 +17,10 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import Sidebar from '@/components/SidebarMenu.vue'
+import { useTheme } from '@/composables/useTheme'
 
 export default {
   name: 'App',
@@ -27,10 +29,42 @@ export default {
   },
   setup() {
     const isCollapsed = ref(false)
+    const route = useRoute()
+    const { loadTheme } = useTheme()
 
     const handleSidebarToggle = (collapsed) => {
       isCollapsed.value = collapsed
     }
+
+    // Load theme on app mount
+    onMounted(() => {
+      console.log('🚀 App mounted - Loading theme...')
+
+      // Get companyId from localStorage (set during login)
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr)
+          const companyId = user.companyId || user.IC_ID || 1002 // Fallback to 1002
+          console.log('👤 User company ID:', companyId)
+          loadTheme(companyId)
+        } catch (error) {
+          console.error('❌ Error parsing user data:', error)
+          loadTheme(1002) // Fallback
+        }
+      } else {
+        console.warn('⚠️ No user in localStorage, using default company')
+        loadTheme(1002) // Fallback
+      }
+    })
+
+    // Watch for route changes (in case user switches company)
+    watch(() => route.query.companyId, (newCompanyId) => {
+      if (newCompanyId) {
+        console.log('🔄 Company changed via route:', newCompanyId)
+        loadTheme(parseInt(newCompanyId))
+      }
+    })
 
     return {
       isCollapsed,
@@ -41,6 +75,9 @@ export default {
 </script>
 
 <style>
+/* Import Theme Variables */
+@import '@/assets/styles/theme-variables.css';
+
 /* ===== Global Reset ===== */
 * {
   margin: 0;

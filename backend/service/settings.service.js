@@ -520,20 +520,35 @@ class SettingsService {
 
       console.log(`✅ Company found:`, company.IC_LocalName);
 
-      // 2. ดึง SystemSettings
+      // 2. ดึง SystemSettings (รองรับทั้ง Company-specific และ Global)
       const settingsQuery = `
-        SELECT SS_Key, SS_Value
+        SELECT SS_Key, SS_Value, IC_ID
         FROM [dbo].[SystemSettings]
         WHERE SS_Category = 'general'
+          AND (IC_ID = @IC_ID OR IC_ID IS NULL)
       `;
-      const settingsResult = await pool.request().query(settingsQuery);
+      const settingsResult = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .query(settingsQuery);
 
-      // แปลง array เป็น object
+      // แปลง array เป็น object โดยให้ Company-specific override Global
       const settings = {};
+      const companySettings = {};
+      const globalSettings = {};
+
       settingsResult.recordset.forEach(row => {
         const key = row.SS_Key.replace('general.', ''); // ลบ 'general.' prefix
-        settings[key] = row.SS_Value;
+        if (row.IC_ID === companyId) {
+          // Company-specific settings
+          companySettings[key] = row.SS_Value;
+        } else if (row.IC_ID === null) {
+          // Global settings
+          globalSettings[key] = row.SS_Value;
+        }
       });
+
+      // Merge: Company-specific override Global
+      Object.assign(settings, globalSettings, companySettings);
 
       // 3. รวมข้อมูล + ใช้ default ถ้าไม่มี
       const defaults = this.getDefaultGeneralSettings();
@@ -594,31 +609,161 @@ class SettingsService {
         const key = `${field}`; // ไม่ต้องใส่ prefix 'general.' เพราะมี SS_Category แล้ว
         const value = data[field] || '';
 
-        // MERGE (INSERT or UPDATE)
+        // MERGE (INSERT or UPDATE) สำหรับบริษัทเฉพาะ
         const mergeQuery = `
           MERGE [dbo].[SystemSettings] AS target
-          USING (SELECT @SS_Key AS SS_Key) AS source
-          ON target.SS_Key = source.SS_Key
+          USING (SELECT @SS_Key AS SS_Key, @IC_ID AS IC_ID) AS source
+          ON target.SS_Key = source.SS_Key AND target.IC_ID = source.IC_ID
           WHEN MATCHED THEN
             UPDATE SET
               SS_Value = @SS_Value,
               SS_UpdatedAt = GETDATE(),
               SS_UpdatedBy = @SS_UpdatedBy
           WHEN NOT MATCHED THEN
-            INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy)
-            VALUES (@SS_Key, @SS_Value, 'text', 'general', @SS_UpdatedBy);
+            INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy, IC_ID)
+            VALUES (@SS_Key, @SS_Value, 'text', 'general', @SS_UpdatedBy, @IC_ID);
         `;
 
         await pool.request()
           .input('SS_Key', sql.NVarChar, key)
           .input('SS_Value', sql.NVarChar, value)
           .input('SS_UpdatedBy', sql.Int, userId)
+          .input('IC_ID', sql.Int, companyId)
           .query(mergeQuery);
       }
 
       return { success: true };
     } catch (error) {
       console.error('Error updating general settings:', error);
+      throw error;
+    }
+  }
+
+  // ==================== APPEARANCE SETTINGS ====================
+
+  // Default Appearance Settings
+  getDefaultAppearanceSettings() {
+    return {
+      logo_url: '',
+      favicon_url: '',
+      primary_color: '#0090D3',
+      secondary_color: '#6B7280',
+      theme_mode: 'light',
+      font_family: 'Prompt',
+      accent_color: '#10B981',
+      background_color: '#FFFFFF',
+      text_color: '#1A202C',
+      border_radius: '8',
+      base_font_size: '14',
+      header_height: '64',
+      compact_mode: 'false'
+    };
+  }
+
+  // ดึง Appearance Settings
+  async getAppearanceSettings(userId, companyId) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`📥 getAppearanceSettings - userId: ${userId}, companyId: ${companyId}`);
+
+      // ดึง SystemSettings (รองรับทั้ง Company-specific และ Global)
+      const settingsQuery = `
+        SELECT SS_Key, SS_Value, IC_ID
+        FROM [dbo].[SystemSettings]
+        WHERE SS_Category = 'appearance'
+          AND (IC_ID = @IC_ID OR IC_ID IS NULL)
+      `;
+      const settingsResult = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .query(settingsQuery);
+
+      // แปลง array เป็น object โดยให้ Company-specific override Global
+      const settings = {};
+      const companySettings = {};
+      const globalSettings = {};
+
+      settingsResult.recordset.forEach(row => {
+        const key = row.SS_Key;
+        if (row.IC_ID === companyId) {
+          companySettings[key] = row.SS_Value;
+        } else if (row.IC_ID === null) {
+          globalSettings[key] = row.SS_Value;
+        }
+      });
+
+      // Merge: Company-specific override Global
+      Object.assign(settings, globalSettings, companySettings);
+
+      // Apply defaults
+      const defaults = this.getDefaultAppearanceSettings();
+      return {
+        logo_url: settings.logo_url || defaults.logo_url,
+        favicon_url: settings.favicon_url || defaults.favicon_url,
+        primary_color: settings.primary_color || defaults.primary_color,
+        secondary_color: settings.secondary_color || defaults.secondary_color,
+        theme_mode: settings.theme_mode || defaults.theme_mode,
+        font_family: settings.font_family || defaults.font_family,
+        accent_color: settings.accent_color || defaults.accent_color,
+        background_color: settings.background_color || defaults.background_color,
+        text_color: settings.text_color || defaults.text_color,
+        border_radius: settings.border_radius || defaults.border_radius,
+        base_font_size: settings.base_font_size || defaults.base_font_size,
+        header_height: settings.header_height || defaults.header_height,
+        compact_mode: settings.compact_mode || defaults.compact_mode
+      };
+    } catch (error) {
+      console.error('Error getting appearance settings:', error);
+      throw error;
+    }
+  }
+
+  // บันทึก Appearance Settings
+  async updateAppearanceSettings(userId, companyId, data) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`💾 updateAppearanceSettings - userId: ${userId}, companyId: ${companyId}`);
+
+      // Update/Insert SystemSettings (13 ฟิลด์)
+      const settingsFields = [
+        'logo_url', 'favicon_url', 'primary_color', 'secondary_color',
+        'theme_mode', 'font_family', 'accent_color', 'background_color',
+        'text_color', 'border_radius', 'base_font_size', 'header_height', 'compact_mode'
+      ];
+
+      for (const field of settingsFields) {
+        const key = field;
+        const value = data[field] !== undefined ? data[field] : '';
+
+        // MERGE (INSERT or UPDATE) สำหรับบริษัทเฉพาะ
+        const mergeQuery = `
+          MERGE [dbo].[SystemSettings] AS target
+          USING (SELECT @SS_Key AS SS_Key, @IC_ID AS IC_ID) AS source
+          ON target.SS_Key = source.SS_Key AND target.IC_ID = source.IC_ID
+          WHEN MATCHED THEN
+            UPDATE SET
+              SS_Value = @SS_Value,
+              SS_UpdatedAt = GETDATE(),
+              SS_UpdatedBy = @SS_UpdatedBy
+          WHEN NOT MATCHED THEN
+            INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy, IC_ID)
+            VALUES (@SS_Key, @SS_Value, 'text', 'appearance', @SS_UpdatedBy, @IC_ID);
+        `;
+
+        await pool.request()
+          .input('SS_Key', sql.NVarChar, key)
+          .input('SS_Value', sql.NVarChar, String(value))
+          .input('SS_UpdatedBy', sql.Int, userId)
+          .input('IC_ID', sql.Int, companyId)
+          .query(mergeQuery);
+      }
+
+      console.log(`✅ Appearance settings updated for IC_ID: ${companyId}`);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating appearance settings:', error);
       throw error;
     }
   }
