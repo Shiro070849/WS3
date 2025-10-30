@@ -94,8 +94,8 @@ export const systemSettingsAPI = {
   getAccessibleCompanies: () => apiClient.get('/settings/companies/accessible'),
 
   // General Settings
-  getGeneral: () => apiClient.get('/settings/general'),
-  updateGeneral: (data) => apiClient.put('/settings/general', data),
+  getGeneral: (companyId) => apiClient.get(`/settings/general?companyId=${companyId}`),
+  updateGeneral: (data, companyId) => apiClient.put(`/settings/general?companyId=${companyId}`, data),
 };
 
 export default apiClient;

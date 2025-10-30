@@ -162,11 +162,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import BaseCard from '../base/BaseCard.vue';
 import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import { systemSettingsAPI } from '@/services/api';
+
+// รับ companyId จาก parent component
+const props = defineProps({
+  companyId: {
+    type: Number,
+    required: true
+  }
+});
 
 const loading = ref(false);
 const successMessage = ref('');
@@ -189,23 +197,33 @@ const formData = ref({
 
 const originalData = ref({});
 
-// ดึงข้อมูล
+// ดึงข้อมูล (รับ companyId เป็น parameter)
 const fetchSettings = async () => {
   try {
     loading.value = true;
-    const response = await systemSettingsAPI.getGeneral();
+    console.log('📥 Fetching settings for company ID:', props.companyId);
+    const response = await systemSettingsAPI.getGeneral(props.companyId);
 
     if (response.data.success) {
       formData.value = { ...response.data.data };
       originalData.value = { ...response.data.data };
+      console.log('✅ Settings loaded:', formData.value);
     }
   } catch (error) {
-    console.error('Error fetching settings:', error);
+    console.error('❌ Error fetching settings:', error);
     errorMessage.value = 'ไม่สามารถโหลดข้อมูลได้';
   } finally {
     loading.value = false;
   }
 };
+
+// Watch companyId changes
+watch(() => props.companyId, (newId) => {
+  if (newId) {
+    console.log('🔄 Company changed to ID:', newId);
+    fetchSettings();
+  }
+});
 
 // บันทึกข้อมูล
 const handleSave = async () => {
@@ -214,11 +232,13 @@ const handleSave = async () => {
     successMessage.value = '';
     errorMessage.value = '';
 
-    const response = await systemSettingsAPI.updateGeneral(formData.value);
+    console.log('💾 Saving settings for company ID:', props.companyId);
+    const response = await systemSettingsAPI.updateGeneral(formData.value, props.companyId);
 
     if (response.data.success) {
       successMessage.value = 'บันทึกข้อมูลสำเร็จ';
       originalData.value = { ...formData.value };
+      console.log('✅ Settings saved successfully');
 
       // ซ่อนข้อความหลัง 3 วินาที
       setTimeout(() => {
@@ -228,7 +248,7 @@ const handleSave = async () => {
       // TODO: อัพเดท Sidebar/Navbar ด้วยข้อมูลใหม่
     }
   } catch (error) {
-    console.error('Error saving settings:', error);
+    console.error('❌ Error saving settings:', error);
     errorMessage.value = error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึก';
   } finally {
     loading.value = false;

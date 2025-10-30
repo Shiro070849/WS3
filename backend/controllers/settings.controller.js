@@ -49,7 +49,7 @@ class SettingsController {
 
   async getUserAccessibleCompanies(req, res) {
     try {
-      const userId = req.user?.SU_ID || 1002; // Hardcoded for now
+      const userId = req.user?.SU_ID || 1103; // Hardcoded to sysadmin (SA001) for now
       const companies = await settingsService.getUserAccessibleCompanies(userId);
       res.status(200).json({
         success: true,
@@ -474,11 +474,19 @@ class SettingsController {
 
   async getGeneralSettings(req, res) {
     try {
-      // TODO: ดึง userId จาก session/token
-      // ตอนนี้ใช้ hardcode userId = 1002 (System Admin) ไปก่อน
-      const userId = req.user?.SU_ID || 1002;
+      const userId = req.user?.SU_ID || 1103; // Hardcoded to sysadmin (SA001) for now
+      const companyId = parseInt(req.query.companyId); // ดึง companyId จาก query string
 
-      const settings = await settingsService.getGeneralSettings(userId);
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📥 GET /api/settings/general - userId: ${userId}, companyId: ${companyId}`);
+
+      const settings = await settingsService.getGeneralSettings(userId, companyId);
 
       res.status(200).json({
         success: true,
@@ -496,12 +504,20 @@ class SettingsController {
 
   async updateGeneralSettings(req, res) {
     try {
-      // TODO: ดึง userId จาก session/token
-      const userId = req.user?.SU_ID || 1002;
-
+      const userId = req.user?.SU_ID || 1103; // Hardcoded to sysadmin (SA001) for now
+      const companyId = parseInt(req.query.companyId); // ดึง companyId จาก query string
       const data = req.body;
 
-      await settingsService.updateGeneralSettings(userId, data);
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`💾 PUT /api/settings/general - userId: ${userId}, companyId: ${companyId}`);
+
+      await settingsService.updateGeneralSettings(userId, companyId, data);
 
       res.status(200).json({
         success: true,

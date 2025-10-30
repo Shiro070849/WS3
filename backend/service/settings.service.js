@@ -52,26 +52,26 @@ class SettingsService {
     }
   }
 
-  // ดึงรายการบริษัทที่ user มีสิทธิ์เข้าถึง
+  // ดึงรายการบริษัทที่ user มีสิทธิ์เข้าถึง (สำหรับ Admin ให้เห็นทุกบริษัท)
   async getUserAccessibleCompanies(userId) {
     try {
       const pool = await dbService.connect();
+
+      // TODO: ในอนาคตเช็คว่า user เป็น Admin หรือไม่
+      // ตอนนี้ให้แสดงทุกบริษัทสำหรับทุก user (Admin mode)
       const query = `
-        SELECT DISTINCT
-          IC.IC_ID,
-          IC.IC_Code,
-          IC.IC_LocalName,
-          IC.IC_EnglishName,
-          IC.IC_ShortLocalName,
-          IC.IC_ShortEnglishName
-        FROM [dbo].[InternalCompany] IC
-        INNER JOIN [dbo].[SystemUser] SU ON SU.IC_ID = IC.IC_ID
-        WHERE SU.SU_ID = @SU_ID AND IC.IC_IsActive = 1
-        ORDER BY IC.IC_Code ASC
+        SELECT
+          IC_ID,
+          IC_Code,
+          IC_LocalName,
+          IC_EnglishName,
+          IC_ShortLocalName,
+          IC_ShortEnglishName
+        FROM [dbo].[InternalCompany]
+        WHERE IC_IsActive = 1
+        ORDER BY IC_Code ASC
       `;
-      const result = await pool.request()
-        .input('SU_ID', sql.Int, userId)
-        .query(query);
+      const result = await pool.request().query(query);
       return result.recordset;
     } catch (error) {
       console.error('Error getting user accessible companies:', error);
@@ -491,11 +491,13 @@ class SettingsService {
   }
 
   // ดึง General Settings (Company + SystemSettings)
-  async getGeneralSettings(userId) {
+  async getGeneralSettings(userId, companyId) {
     try {
       const pool = await dbService.connect();
 
-      // 1. ดึงข้อมูล Company ของ User ที่ login
+      console.log(`🔍 getGeneralSettings - userId: ${userId}, companyId: ${companyId}`);
+
+      // 1. ดึงข้อมูล Company ตาม companyId ที่ส่งมา
       const companyQuery = `
         SELECT
           IC.IC_ID,
@@ -504,18 +506,19 @@ class SettingsService {
           IC.IC_LocalName,
           IC.IC_EnglishName
         FROM [dbo].[InternalCompany] IC
-        INNER JOIN [dbo].[SystemUser] SU ON SU.IC_ID = IC.IC_ID
-        WHERE SU.SU_ID = @SU_ID
+        WHERE IC.IC_ID = @IC_ID AND IC.IC_IsActive = 1
       `;
       const companyResult = await pool.request()
-        .input('SU_ID', sql.Int, userId)
+        .input('IC_ID', sql.Int, companyId)
         .query(companyQuery);
 
       const company = companyResult.recordset[0];
 
       if (!company) {
-        throw new Error('Company not found for this user');
+        throw new Error(`Company not found for ID: ${companyId}`);
       }
+
+      console.log(`✅ Company found:`, company.IC_LocalName);
 
       // 2. ดึง SystemSettings
       const settingsQuery = `
@@ -555,22 +558,13 @@ class SettingsService {
   }
 
   // บันทึก General Settings
-  async updateGeneralSettings(userId, data) {
+  async updateGeneralSettings(userId, companyId, data) {
     try {
       const pool = await dbService.connect();
 
-      // 1. ดึง IC_ID ของ user
-      const userQuery = `SELECT IC_ID FROM [dbo].[SystemUser] WHERE SU_ID = @SU_ID`;
-      const userResult = await pool.request()
-        .input('SU_ID', sql.Int, userId)
-        .query(userQuery);
+      console.log(`💾 updateGeneralSettings - userId: ${userId}, companyId: ${companyId}`);
 
-      const icId = userResult.recordset[0]?.IC_ID;
-      if (!icId) {
-        throw new Error('User company not found');
-      }
-
-      // 2. Update Company info (ชื่อระบบ + ชื่อบริษัท)
+      // 1. Update Company info (ชื่อระบบ + ชื่อบริษัท) ตาม companyId ที่ส่งมา
       const updateCompanyQuery = `
         UPDATE [dbo].[InternalCompany]
         SET
@@ -581,21 +575,23 @@ class SettingsService {
         WHERE IC_ID = @IC_ID
       `;
       await pool.request()
-        .input('IC_ID', sql.Int, icId)
+        .input('IC_ID', sql.Int, companyId)
         .input('IC_ShortLocalName', sql.NVarChar, data.system_name_th)
         .input('IC_ShortEnglishName', sql.NVarChar, data.system_name_en)
         .input('IC_LocalName', sql.NVarChar, data.company_name_th)
         .input('IC_EnglishName', sql.NVarChar, data.company_name_en)
         .query(updateCompanyQuery);
 
-      // 3. Update/Insert SystemSettings (8 ฟิลด์)
+      console.log(`✅ Company updated for IC_ID: ${companyId}`);
+
+      // 2. Update/Insert SystemSettings (8 ฟิลด์)
       const settingsFields = [
         'email', 'support_email', 'phone', 'website_url',
         'language', 'timezone', 'date_format', 'time_format'
       ];
 
       for (const field of settingsFields) {
-        const key = `general.${field}`;
+        const key = `${field}`; // ไม่ต้องใส่ prefix 'general.' เพราะมี SS_Category แล้ว
         const value = data[field] || '';
 
         // MERGE (INSERT or UPDATE)

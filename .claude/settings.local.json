@@ -9,7 +9,8 @@
       "Bash(tasklist:*)",
       "Bash(curl:*)",
       "Bash(timeout 10 curl:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

@@ -14,13 +14,13 @@
         <span>เลือกบริษัท:</span>
       </div>
 
-      <div class="select">
-        <div class="selected" :data-selected="getSelectedCompanyName()">
+      <div class="select" :class="{ open: isDropdownOpen }">
+        <div class="selected" :data-selected="getSelectedCompanyName()" @click="toggleDropdown">
           <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" class="arrow">
             <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path>
           </svg>
         </div>
-        <div class="options">
+        <div class="options" v-show="isDropdownOpen">
           <div v-for="company in accessibleCompanies" :key="company.IC_ID" :title="company.IC_LocalName">
             <input
               :id="`company-${company.IC_ID}`"
@@ -41,7 +41,7 @@
       <BaseTabs v-model="activeTab" :tabs="tabs">
         <!-- ==================== TAB 0: ทั่วไป ==================== -->
         <template #general>
-          <GeneralSettings />
+          <GeneralSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
         <!-- ==================== TAB 1: จัดการบริษัท ==================== -->
@@ -250,7 +250,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import BaseTabs from '../components/base/BaseTabs.vue';
 import BaseCard from '../components/base/BaseCard.vue';
 import BaseTable from '../components/base/BaseTable.vue';
@@ -263,30 +263,49 @@ import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../se
 // ==================== Company Selection ====================
 const accessibleCompanies = ref([]);
 const selectedCompanyId = ref(null);
+const isDropdownOpen = ref(false);
 
 const fetchAccessibleCompanies = async () => {
   try {
     const response = await systemSettingsAPI.getAccessibleCompanies();
+    console.log('✅ Accessible Companies Response:', response.data);
     accessibleCompanies.value = response.data.data;
 
     // Set default selected company to first one
     if (accessibleCompanies.value.length > 0) {
       selectedCompanyId.value = accessibleCompanies.value[0].IC_ID;
+      console.log('✅ Selected Company ID:', selectedCompanyId.value);
+      console.log('✅ Accessible Companies:', accessibleCompanies.value);
+    } else {
+      console.warn('⚠️ No accessible companies found!');
     }
   } catch (error) {
-    console.error('Error fetching accessible companies:', error);
+    console.error('❌ Error fetching accessible companies:', error);
     alert('ไม่สามารถโหลดรายการบริษัทได้');
   }
 };
 
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value;
+};
+
 const onCompanyChange = () => {
   console.log('Selected company changed to:', selectedCompanyId.value);
+  isDropdownOpen.value = false; // Close dropdown after selection
   // TODO: Reload all settings based on selected company
 };
 
 const getSelectedCompanyName = () => {
   const company = accessibleCompanies.value.find(c => c.IC_ID === selectedCompanyId.value);
   return company ? `${company.IC_LocalName} (${company.IC_Code})` : 'เลือกบริษัท';
+};
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event) => {
+  const dropdown = document.querySelector('.select');
+  if (dropdown && !dropdown.contains(event.target)) {
+    isDropdownOpen.value = false;
+  }
 };
 
 // ==================== Tab State ====================
@@ -532,6 +551,11 @@ onMounted(() => {
   fetchCompanies();
   fetchUsers();
   fetchDepartments();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -562,22 +586,29 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
+  padding: 1rem 0;
 }
 
 .company-selector-label-wrapper {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1a202c;
   white-space: nowrap;
 }
 
+.company-selector-label-wrapper span {
+  color: #1a202c;
+  font-family: 'Prompt', sans-serif;
+}
+
 .company-selector-label-wrapper .icon {
-  width: 20px;
-  height: 20px;
-  color: #0090D3;
+  width: 22px;
+  height: 22px;
+  stroke: #0090D3;
+  flex-shrink: 0;
 }
 
 .select {
@@ -586,22 +617,30 @@ onMounted(() => {
   position: relative;
   transition: 300ms;
   color: white;
-  overflow: hidden;
+  overflow: visible;
+  z-index: 1000;
 }
 
 .selected {
-  background-color: #2a2f3b;
+  background: #007AB8;
   padding: 10px 15px;
   margin-bottom: 3px;
   border-radius: 8px;
   position: relative;
-  z-index: 100000;
+  z-index: 1001;
   font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-width: 300px;
   gap: 1rem;
+  font-family: 'Prompt', sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 122, 184, 0.3);
+  transition: all 0.3s ease;
+}
+
+.selected:hover {
+  background: #006299;
 }
 
 .selected::before {
@@ -615,8 +654,9 @@ onMounted(() => {
   transform: rotate(-90deg);
   width: 25px;
   fill: white;
-  z-index: 100000;
+  z-index: 1002;
   transition: 300ms;
+  flex-shrink: 0;
 }
 
 .options {
@@ -624,23 +664,26 @@ onMounted(() => {
   flex-direction: column;
   border-radius: 8px;
   padding: 5px;
-  background-color: #2a2f3b;
+  background-color: #ffffff;
+  border: 2px solid #007AB8;
   position: absolute;
   top: -100px;
+  left: 0;
   opacity: 0;
   transition: 300ms;
   min-width: 300px;
   max-height: 300px;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 122, 184, 0.2);
+  z-index: 1003;
 }
 
-.select:hover > .options {
+.select.open > .options {
   opacity: 1;
   top: 45px;
 }
 
-.select:hover > .selected .arrow {
+.select.open > .selected .arrow {
   transform: rotate(0deg);
 }
 
@@ -648,14 +691,17 @@ onMounted(() => {
   border-radius: 5px;
   padding: 10px 15px;
   transition: 300ms;
-  background-color: #2a2f3b;
+  background-color: transparent;
   width: 100%;
   font-size: 15px;
   cursor: pointer;
+  font-family: 'Prompt', sans-serif;
+  color: #1a202c;
 }
 
 .option:hover {
-  background-color: #323741;
+  background-color: #E3F2FD;
+  color: #007AB8;
 }
 
 .options input[type="radio"] {
