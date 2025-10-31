@@ -110,7 +110,12 @@ const columns = [
 
 const fetchStats = async () => {
   try {
-    const response = await dashboardAPI.getStats();
+    // ดึง companyId จาก localStorage
+    const companyId = localStorage.getItem('companyId');
+    // Admin หลัก (IC_ID = 1): เห็นทุกบริษัท (ไม่ส่ง filter)
+    // Admin ย่อย (IC_ID ≠ 1): เห็นเฉพาะบริษัทตัวเอง (ส่ง companyId)
+    const filterCompanyId = (companyId && parseInt(companyId) === 1) ? null : companyId;
+    const response = await dashboardAPI.getStats(filterCompanyId);
     stats.value = response.data.data;
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -120,7 +125,12 @@ const fetchStats = async () => {
 const fetchActivities = async () => {
   loading.value = true;
   try {
-    const response = await dashboardAPI.getActivities(10);
+    // ดึง companyId จาก localStorage
+    const companyId = localStorage.getItem('companyId');
+    // Admin หลัก (IC_ID = 1): เห็นทุกบริษัท (ไม่ส่ง filter)
+    // Admin ย่อย (IC_ID ≠ 1): เห็นเฉพาะบริษัทตัวเอง (ส่ง companyId)
+    const filterCompanyId = (companyId && parseInt(companyId) === 1) ? null : companyId;
+    const response = await dashboardAPI.getActivities(10, filterCompanyId);
     activities.value = response.data.data;
   } catch (error) {
     console.error('Error fetching activities:', error);

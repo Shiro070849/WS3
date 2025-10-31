@@ -41,20 +41,25 @@ export default {
       console.log('🚀 App mounted - Loading theme...')
 
       // Get companyId from localStorage (set during login)
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr)
-          const companyId = user.companyId || user.IC_ID || 1002 // Fallback to 1002
-          console.log('👤 User company ID:', companyId)
-          loadTheme(companyId)
-        } catch (error) {
-          console.error('❌ Error parsing user data:', error)
-          loadTheme(1002) // Fallback
-        }
+      const companyId = localStorage.getItem('companyId')
+      if (companyId) {
+        console.log('👤 User company ID:', companyId)
+        loadTheme(parseInt(companyId))
       } else {
-        console.warn('⚠️ No user in localStorage, using default company')
-        loadTheme(1002) // Fallback
+        // Fallback: try to get from user object
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr)
+            const fallbackCompanyId = user.IC_ID || 1
+            console.log('👤 Fallback company ID from user object:', fallbackCompanyId)
+            loadTheme(fallbackCompanyId)
+          } catch (error) {
+            console.error('❌ Error parsing user data:', error)
+          }
+        } else {
+          console.warn('⚠️ No company ID found, theme will not load')
+        }
       }
     })
 
@@ -121,16 +126,16 @@ body {
 .main-content {
   flex: 1;
   min-height: 100vh;
-  padding: 1.4rem; /* ลดจาก 2rem -> 1.4rem (70%) */
+  padding: 2rem;
   background: #f0f4f8;
-  margin-left: 140px; /* ลดจาก 200px -> 140px (70%) */
+  margin-left: 220px; /* ตรงกับความกว้าง sidebar ใหม่ */
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
 }
 
 /* เมื่อ sidebar ถูกย่อ */
 .main-content.sidebar-collapsed {
-  margin-left: 42px; /* ลดจาก 60px -> 42px (70%) */
+  margin-left: 60px; /* ตรงกับความกว้าง sidebar แบบ collapsed */
 }
 
 /* ===== Scrollbar Styling ===== */

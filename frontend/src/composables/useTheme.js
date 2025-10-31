@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { systemSettingsAPI } from '@/services/api';
+import { systemSettingsAPI, getBackendBaseUrl } from '@/services/api';
 
 const currentTheme = ref(null);
 const isThemeLoaded = ref(false);
@@ -23,6 +23,11 @@ export function useTheme() {
     root.style.setProperty('--border-radius', (settings.border_radius || '8') + 'px');
     root.style.setProperty('--base-font-size', (settings.base_font_size || '14') + 'px');
     root.style.setProperty('--header-height', (settings.header_height || '64') + 'px');
+
+    // Apply Sidebar Colors (for company theme)
+    root.style.setProperty('--sidebar-bg-start', settings.primary_color || '#1a4d7e');
+    root.style.setProperty('--sidebar-bg-middle', adjustColorBrightness(settings.primary_color || '#1a4d7e', -10));
+    root.style.setProperty('--sidebar-bg-end', adjustColorBrightness(settings.primary_color || '#1a4d7e', -20));
 
     // Apply Theme Mode (Dark/Light)
     if (settings.theme_mode === 'dark') {
@@ -98,17 +103,31 @@ export function useTheme() {
   };
 
   /**
+   * Helper: แปลง relative path เป็น full URL
+   */
+  const getFullImageUrl = (url) => {
+    if (!url) return '';
+    // ถ้าเป็น full URL (http/https) ใช้ตรงๆ
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // ถ้าเป็น relative path ให้เติม backend base URL
+    return `${getBackendBaseUrl()}${url}`;
+  };
+
+  /**
    * Update logo images in the application
    */
   const updateLogo = (url) => {
     if (!url) return;
 
-    console.log('🖼️ Updating logo:', url);
+    const fullUrl = getFullImageUrl(url);
+    console.log('🖼️ Updating logo:', fullUrl);
 
     // Update all elements with class 'app-logo'
     const logoElements = document.querySelectorAll('.app-logo');
     logoElements.forEach(img => {
-      img.src = url;
+      img.src = fullUrl;
       img.onerror = () => {
         console.warn('⚠️ Failed to load logo, using fallback');
         img.src = '/logo.png'; // Fallback logo
@@ -122,7 +141,8 @@ export function useTheme() {
   const updateFavicon = (url) => {
     if (!url) return;
 
-    console.log('🔖 Updating favicon:', url);
+    const fullUrl = getFullImageUrl(url);
+    console.log('🔖 Updating favicon:', fullUrl);
 
     let link = document.querySelector("link[rel~='icon']");
     if (!link) {
@@ -130,11 +150,26 @@ export function useTheme() {
       link.rel = 'icon';
       document.head.appendChild(link);
     }
-    link.href = url;
+    link.href = fullUrl;
 
     link.onerror = () => {
       console.warn('⚠️ Failed to load favicon');
     };
+  };
+
+  /**
+   * Adjust color brightness
+   */
+  const adjustColorBrightness = (hex, percent) => {
+    if (!hex || !hex.startsWith('#')) return hex;
+
+    // Remove # and parse RGB
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.max(0, Math.min(255, ((num >> 16) & 0xff) + Math.round(2.55 * percent)));
+    const g = Math.max(0, Math.min(255, ((num >> 8) & 0xff) + Math.round(2.55 * percent)));
+    const b = Math.max(0, Math.min(255, (num & 0xff) + Math.round(2.55 * percent)));
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
   };
 
   /**

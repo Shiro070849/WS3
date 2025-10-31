@@ -424,11 +424,17 @@ const checkoutData = ref({
 const fetchVehicles = async () => {
   loading.value = true;
   try {
+    // ดึง companyId จาก localStorage
+    const companyId = localStorage.getItem('companyId');
+    // ถ้าเป็น Admin ใหญ่ (IC_ID = 1) ไม่ต้องส่ง companyId เพื่อเห็นข้อมูลทุกบริษัท
+    const filterCompanyId = (companyId && parseInt(companyId) === 1) ? undefined : companyId;
+
     const params = {
       search: filters.value.search || undefined,
       status: filters.value.status || undefined,
       page: pagination.value.page,
       limit: pagination.value.limit,
+      companyId: filterCompanyId, // ส่ง companyId ไปด้วย (null ถ้าเป็น Admin ใหญ่)
     };
 
     const response = await vehiclesAPI.getAll(params);
@@ -503,6 +509,9 @@ const saveVehicle = async () => {
   }
 
   try {
+    // ดึง companyId จาก localStorage (ถ้ายังไม่มีใน formData)
+    const companyId = formData.value.companyId || localStorage.getItem('companyId');
+
     const data = {
       licensePlate: formData.value.licensePlate,
       licenseProvince: formData.value.licenseProvince,
@@ -512,12 +521,12 @@ const saveVehicle = async () => {
       address: formData.value.address,
       follower: formData.value.follower,
       remarks: formData.value.remarks,
-      companyId: formData.value.companyId,
+      companyId: companyId ? parseInt(companyId) : null, // ใช้ companyId ของ user
       departmentId: formData.value.departmentId,
       visitTypeId: formData.value.visitTypeId,
       fromCompany: formData.value.fromCompany,
       contactName: formData.value.contactName,
-      systemUserId: 1,
+      systemUserId: parseInt(localStorage.getItem('userId')) || 1,
     };
 
     if (modalMode.value === 'add') {

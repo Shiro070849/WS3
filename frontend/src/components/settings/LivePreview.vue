@@ -29,7 +29,7 @@
               :style="{ height: `${parseInt(settings.header_height) - 16}px` }"
             >
               <img
-                :src="settings.logo_url"
+                :src="logoUrl"
                 alt="Logo"
                 class="h-full object-contain"
               />
@@ -157,6 +157,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { getBackendBaseUrl } from '@/services/api';
 
 const props = defineProps({
   settings: {
@@ -164,6 +165,19 @@ const props = defineProps({
     required: true
   }
 });
+
+// Helper function: สร้าง Full URL สำหรับรูปภาพ (ใช้ environment variable)
+const getImageUrl = (url) => {
+  if (!url) return '';
+  // ถ้า URL เป็น full URL (http/https) ให้ใช้ตรงๆ
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // ถ้าเป็น relative path ให้เติม backend base URL จาก .env
+  return `${getBackendBaseUrl()}${url}`;
+};
+
+const logoUrl = computed(() => getImageUrl(props.settings.logo_url));
 
 const themeLabel = computed(() => {
   switch (props.settings.theme_mode) {

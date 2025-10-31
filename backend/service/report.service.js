@@ -48,8 +48,8 @@ class ReportService {
         query += ` AND CAST(WI.WI_RecordedOn AS DATE) <= '${filters.endDate}'`;
       }
 
-      if (filters.companyId) {
-        query += ` AND WI.IC_ID = ${filters.companyId}`;
+      if (filters.companyId && filters.companyId !== 'undefined') {
+        query += ` AND WI.IC_ID = ${parseInt(filters.companyId)}`;
       }
 
       if (filters.status === 'in') {
@@ -307,6 +307,11 @@ class ReportService {
 
       if (filters.endDate) {
         query += ` AND CAST(WI.WI_RecordedOn AS DATE) <= '${filters.endDate}'`;
+      }
+
+      // เพิ่ม company filter
+      if (filters.companyId && filters.companyId !== 'undefined') {
+        query += ` AND WI.IC_ID = ${parseInt(filters.companyId)}`;
       }
 
       const result = await pool.request().query(query);

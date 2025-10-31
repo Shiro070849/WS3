@@ -57,21 +57,64 @@ class SettingsService {
     try {
       const pool = await dbService.connect();
 
-      // TODO: ในอนาคตเช็คว่า user เป็น Admin หรือไม่
-      // ตอนนี้ให้แสดงทุกบริษัทสำหรับทุก user (Admin mode)
-      const query = `
-        SELECT
-          IC_ID,
-          IC_Code,
-          IC_LocalName,
-          IC_EnglishName,
-          IC_ShortLocalName,
-          IC_ShortEnglishName
-        FROM [dbo].[InternalCompany]
-        WHERE IC_IsActive = 1
-        ORDER BY IC_Code ASC
+      // ดึง IC_ID ของ user ก่อน
+      const userQuery = `
+        SELECT IC_ID
+        FROM [dbo].[SystemUser]
+        WHERE SU_ID = @UserId
       `;
-      const result = await pool.request().query(query);
+      const userResult = await pool.request()
+        .input('UserId', sql.Int, userId)
+        .query(userQuery);
+
+      if (userResult.recordset.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const userCompanyId = userResult.recordset[0].IC_ID;
+      console.log(`📌 User ${userId} belongs to company IC_ID: ${userCompanyId}`);
+
+      // ถ้าเป็น Admin ใหญ่ (IC_ID = 1) ให้เห็นทุกบริษัท
+      // ถ้าเป็น Admin ย่อย ให้เห็นเฉพาะบริษัทตัวเอง
+      let query;
+      let result;
+
+      if (userCompanyId === 1) {
+        // Admin ใหญ่: เห็นทุกบริษัท
+        query = `
+          SELECT
+            IC_ID,
+            IC_Code,
+            IC_LocalName,
+            IC_EnglishName,
+            IC_ShortLocalName,
+            IC_ShortEnglishName
+          FROM [dbo].[InternalCompany]
+          WHERE IC_IsActive = 1
+          ORDER BY IC_Code ASC
+        `;
+        result = await pool.request().query(query);
+        console.log(`✅ Admin ใหญ่: คืนทุกบริษัท (${result.recordset.length} บริษัท)`);
+      } else {
+        // Admin ย่อย: เห็นเฉพาะบริษัทตัวเอง
+        query = `
+          SELECT
+            IC_ID,
+            IC_Code,
+            IC_LocalName,
+            IC_EnglishName,
+            IC_ShortLocalName,
+            IC_ShortEnglishName
+          FROM [dbo].[InternalCompany]
+          WHERE IC_ID = @CompanyId AND IC_IsActive = 1
+          ORDER BY IC_Code ASC
+        `;
+        result = await pool.request()
+          .input('CompanyId', sql.Int, userCompanyId)
+          .query(query);
+        console.log(`✅ Admin ย่อย: คืนเฉพาะบริษัท IC_ID = ${userCompanyId}`);
+      }
+
       return result.recordset;
     } catch (error) {
       console.error('Error getting user accessible companies:', error);
@@ -665,9 +708,27 @@ class SettingsService {
     try {
       const pool = await dbService.connect();
 
-      console.log(`📥 getAppearanceSettings - userId: ${userId}, companyId: ${companyId}`);
+      console.log(`[GET] Fetching appearance settings - userId: ${userId}, companyId: ${companyId}`);
 
-      // ดึง SystemSettings (รองรับทั้ง Company-specific และ Global)
+      // 1. ตรวจสอบว่ามีข้อมูลหรือยัง
+      const checkQuery = `
+        SELECT COUNT(*) as count
+        FROM [dbo].[SystemSettings]
+        WHERE IC_ID = @IC_ID AND SS_Category = 'appearance'
+      `;
+      const checkResult = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .query(checkQuery);
+
+      const hasData = checkResult.recordset[0].count > 0;
+
+      // 2. ถ้าไม่มีข้อมูล -> สร้างข้อมูล Default ให้ทันที
+      if (!hasData) {
+        console.log(`[AUTO-CREATE] Creating default appearance settings for IC_ID: ${companyId}`);
+        await this.createDefaultAppearanceSettings(userId, companyId);
+      }
+
+      // 3. ดึง SystemSettings (รองรับทั้ง Company-specific และ Global)
       const settingsQuery = `
         SELECT SS_Key, SS_Value, IC_ID
         FROM [dbo].[SystemSettings]
@@ -718,12 +779,28 @@ class SettingsService {
     }
   }
 
+  // สร้างข้อมูล Appearance Settings เริ่มต้นสำหรับบริษัท
+  async createDefaultAppearanceSettings(userId, companyId) {
+    try {
+      const defaults = this.getDefaultAppearanceSettings();
+      console.log(`[AUTO-CREATE] Inserting default values for IC_ID: ${companyId}`);
+
+      await this.updateAppearanceSettings(userId, companyId, defaults);
+
+      console.log(`[SUCCESS] Default appearance settings created for IC_ID: ${companyId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Error creating default appearance settings:', error);
+      throw error;
+    }
+  }
+
   // บันทึก Appearance Settings
   async updateAppearanceSettings(userId, companyId, data) {
     try {
       const pool = await dbService.connect();
 
-      console.log(`💾 updateAppearanceSettings - userId: ${userId}, companyId: ${companyId}`);
+      console.log(`[PUT] Updating appearance settings - userId: ${userId}, companyId: ${companyId}`);
 
       // Update/Insert SystemSettings (13 ฟิลด์)
       const settingsFields = [
@@ -732,34 +809,45 @@ class SettingsService {
         'text_color', 'border_radius', 'base_font_size', 'header_height', 'compact_mode'
       ];
 
-      for (const field of settingsFields) {
-        const key = field;
-        const value = data[field] !== undefined ? data[field] : '';
+      // สร้าง VALUES สำหรับ MERGE แบบ Batch
+      const valuesClauses = settingsFields.map((field, index) => {
+        const value = data[field] !== undefined ? String(data[field]) : '';
+        return `(@Key${index}, @Value${index})`;
+      }).join(',\n        ');
 
-        // MERGE (INSERT or UPDATE) สำหรับบริษัทเฉพาะ
-        const mergeQuery = `
-          MERGE [dbo].[SystemSettings] AS target
-          USING (SELECT @SS_Key AS SS_Key, @IC_ID AS IC_ID) AS source
-          ON target.SS_Key = source.SS_Key AND target.IC_ID = source.IC_ID
-          WHEN MATCHED THEN
-            UPDATE SET
-              SS_Value = @SS_Value,
-              SS_UpdatedAt = GETDATE(),
-              SS_UpdatedBy = @SS_UpdatedBy
-          WHEN NOT MATCHED THEN
-            INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy, IC_ID)
-            VALUES (@SS_Key, @SS_Value, 'text', 'appearance', @SS_UpdatedBy, @IC_ID);
-        `;
+      // MERGE Query แบบ Batch (1 Query สำหรับ 13 ฟิลด์)
+      const mergeQuery = `
+        MERGE [dbo].[SystemSettings] AS target
+        USING (
+          VALUES
+            ${valuesClauses}
+        ) AS source (SS_Key, SS_Value)
+        ON target.SS_Key = source.SS_Key AND target.IC_ID = @IC_ID
+        WHEN MATCHED THEN
+          UPDATE SET
+            SS_Value = source.SS_Value,
+            SS_UpdatedAt = GETDATE(),
+            SS_UpdatedBy = @SS_UpdatedBy
+        WHEN NOT MATCHED THEN
+          INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy, IC_ID)
+          VALUES (source.SS_Key, source.SS_Value, 'text', 'appearance', @SS_UpdatedBy, @IC_ID);
+      `;
 
-        await pool.request()
-          .input('SS_Key', sql.NVarChar, key)
-          .input('SS_Value', sql.NVarChar, String(value))
-          .input('SS_UpdatedBy', sql.Int, userId)
-          .input('IC_ID', sql.Int, companyId)
-          .query(mergeQuery);
-      }
+      // สร้าง Request พร้อม Parameters
+      const request = pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .input('SS_UpdatedBy', sql.Int, userId);
 
-      console.log(`✅ Appearance settings updated for IC_ID: ${companyId}`);
+      // เพิ่ม Parameters สำหรับแต่ละฟิลด์
+      settingsFields.forEach((field, index) => {
+        const value = data[field] !== undefined ? String(data[field]) : '';
+        request.input(`Key${index}`, sql.NVarChar, field);
+        request.input(`Value${index}`, sql.NVarChar, value);
+      });
+
+      await request.query(mergeQuery);
+
+      console.log(`[SUCCESS] Appearance settings updated for IC_ID: ${companyId}`);
 
       return { success: true };
     } catch (error) {

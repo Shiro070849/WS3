@@ -1,5 +1,5 @@
 <template>
-  <aside class="sidebar" :class="{ collapsed: isCollapsed }">
+  <aside class="sidebar" :class="{ collapsed: isCollapsed, 'main-admin': isMainAdmin }">
     <!-- Header Section -->
     <div class="sidebar-header">
       <button @click="toggleSidebar" class="toggle-btn">
@@ -10,6 +10,10 @@
 
       <transition name="fade">
         <div v-if="!isCollapsed" class="company-info">
+          <!-- Logo Card (สีขาวเพื่อให้ logo เด่น) -->
+          <div v-if="logoUrl" class="logo-card">
+            <img class="app-logo company-logo" :src="logoUrl" alt="Company Logo" />
+          </div>
           <h1 class="company-name">{{ companyName }}</h1>
           <p class="company-subtitle">Cold Storage</p>
         </div>
@@ -98,8 +102,9 @@
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue'
+import { ref, computed, defineEmits, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
@@ -113,6 +118,26 @@ const showLogoutModal = ref(false)
 const companyName = ref(localStorage.getItem('companyName') || 'Smart Security')
 const userName = ref(localStorage.getItem('userName') || 'Admin User')
 const userEmail = ref(localStorage.getItem('userEmail') || '')
+
+// Check if Main Admin (IC_ID = 1)
+const isMainAdmin = computed(() => {
+  const companyId = localStorage.getItem('companyId')
+  return companyId && parseInt(companyId) === 1
+})
+
+// Theme
+const { currentTheme, loadTheme } = useTheme()
+const logoUrl = computed(() => {
+  if (!currentTheme.value?.logo_url) return ''
+
+  // ถ้าเป็น URL เต็ม ใช้เลย
+  if (currentTheme.value.logo_url.startsWith('http')) {
+    return currentTheme.value.logo_url
+  }
+
+  // ถ้าเป็น path ใน backend ให้ต่อกับ API base URL
+  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}${currentTheme.value.logo_url}`
+})
 
 // Menu Items
 const menuItems = [
@@ -161,6 +186,14 @@ const confirmLogout = () => {
   showLogoutModal.value = false
   router.push('/login')
 }
+
+// Load theme on mount
+onMounted(async () => {
+  const companyId = localStorage.getItem('companyId')
+  if (companyId) {
+    await loadTheme(parseInt(companyId))
+  }
+})
 </script>
 
 <style scoped>
@@ -170,45 +203,54 @@ const confirmLogout = () => {
   left: 0;
   top: 0;
   height: 100vh;
-  width: 140px; /* ลดจาก 200px -> 140px (70%) */
-  background: linear-gradient(180deg, #123972 0%, #1a4a7d 50%, #0d3a6d 100%);
+  width: 220px;
+  /* Dynamic theme colors from database */
+  background: linear-gradient(180deg,
+    var(--sidebar-bg-start, #ffffff) 0%,
+    var(--sidebar-bg-middle, #ffffff) 50%,
+    var(--sidebar-bg-end, #ffffff) 100%);
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
   z-index: 100;
   overflow: hidden;
   font-family: 'Prompt', sans-serif;
 }
 
 .sidebar.collapsed {
-  width: 42px; /* ลดจาก 60px -> 42px (70%) */
+  width: 60px;
 }
+
+/* ===== Main Admin Theme - ใช้สีจาก database เหมือน Admin ย่อย ===== */
+/* ลบ override ทั้งหมดออก ให้ Admin หลักใช้สีเดียวกับ Admin ย่อย */
+/* ตอนนี้ทั้ง Admin หลักและ Admin ย่อย จะดึงสีจาก database (IC_ID = 1 และ IC_ID อื่นๆ) */
 
 /* ===== Header ===== */
 .sidebar-header {
-  padding: 0.7rem; /* ลดจาก 1rem -> 0.7rem (70%) */
+  padding: 0.8rem 1rem;
   display: flex;
-  align-items: center;
-  gap: 0.5rem; /* ลดจาก 0.75rem -> 0.5rem */
+  align-items: flex-start;
+  gap: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  min-height: 45px; /* ลดจาก 65px -> 45px (70%) */
+  min-height: unset;
 }
 
 .toggle-btn {
-  width: 22px; /* ลดจาก 32px -> 22px (70%) */
-  height: 22px;
+  width: 28px;
+  height: 28px;
   background: rgba(255, 255, 255, 0.1);
   border: none;
-  border-radius: 4px; /* ลดจาก 6px -> 4px */
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px; /* ลดจาก 4px -> 3px */
+  gap: 3px;
   transition: all 0.3s;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .toggle-btn:hover {
@@ -216,10 +258,10 @@ const confirmLogout = () => {
 }
 
 .hamburger-line {
-  width: 11px; /* ลดจาก 16px -> 11px (70%) */
-  height: 1.4px; /* ลดจาก 2px -> 1.4px */
+  width: 14px;
+  height: 2px;
   background: white;
-  border-radius: 1.4px;
+  border-radius: 2px;
   transition: all 0.3s;
 }
 
@@ -238,10 +280,70 @@ const confirmLogout = () => {
 .company-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+/* Logo Card - Subtle integrated design */
+.logo-card {
+  background: linear-gradient(145deg,
+    rgba(255, 255, 255, 0.479) 0%,
+    rgba(255, 255, 255, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.678);
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  transition: all 0.25s ease;
+  min-height: 52px;
+  max-height: 58px;
+  position: relative;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.logo-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg,
+    rgb(255, 255, 255) 0%,
+    transparent 100%);
+  border-radius: 10px 10px 0 0;
+  pointer-events: none;
+}
+
+.logo-card:hover {
+  background: linear-gradient(145deg,
+    rgba(255, 255, 255, 0.76) 0%,
+    rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgb(255, 255, 255);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.company-logo {
+  max-width: 100%;
+  max-height: 40px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .company-name {
-  font-size: 0.95rem; /* เพิ่มจาก 0.8rem -> 0.95rem */
+  font-size: 0.95rem;
   font-weight: 700;
   color: white;
   margin: 0;
@@ -250,33 +352,36 @@ const confirmLogout = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
+  width: 100%;
 }
 
 .company-subtitle {
-  font-size: 0.7rem; /* เพิ่มจาก 0.6rem -> 0.7rem */
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.85);
   margin: 0;
-  margin-top: 1.4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
+  width: 100%;
 }
 
 /* ===== Profile ===== */
 .profile-section {
-  padding: 0.5rem 0.7rem; /* ลดจาก 0.75rem 1rem */
+  padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* ลดจาก 0.75rem */
+  gap: 0.75rem;
   background: rgba(255, 255, 255, 0.08);
-  margin: 0.7rem; /* ลดจาก 1rem */
-  border-radius: 5.6px; /* ลดจาก 8px */
+  margin: 1rem;
+  border-radius: 8px;
   transition: all 0.3s;
 }
 
 .sidebar.collapsed .profile-section {
-  margin: 0.35rem; /* ลดจาก 0.5rem */
-  padding: 0.35rem;
+  margin: 0.5rem;
+  padding: 0.5rem;
   justify-content: center;
 }
 
@@ -285,8 +390,8 @@ const confirmLogout = () => {
 }
 
 .profile-avatar {
-  width: 28px; /* เพิ่มขนาด */
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, #0090D3 0%, #00B1EF 100%);
   display: flex;
@@ -298,8 +403,8 @@ const confirmLogout = () => {
 }
 
 .profile-avatar svg {
-  width: 16px; /* เพิ่มขนาด icon */
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .profile-info {
@@ -308,7 +413,7 @@ const confirmLogout = () => {
 }
 
 .profile-name {
-  font-size: 0.875rem; /* เพิ่มจาก 0.75rem -> 0.875rem */
+  font-size: 0.95rem;
   font-weight: 700;
   color: white;
   margin: 0;
@@ -320,10 +425,10 @@ const confirmLogout = () => {
 }
 
 .profile-email {
-  font-size: 0.7rem; /* เพิ่มจาก 0.6rem -> 0.7rem */
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.9);
   margin: 0;
-  margin-top: 1.4px;
+  margin-top: 2px;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -334,18 +439,18 @@ const confirmLogout = () => {
 .divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.15);
-  margin: 0 0.7rem; /* ลดจาก 1rem */
+  margin: 0 1rem;
 }
 
 /* ===== Menu ===== */
 .menu-section {
   flex: 1;
-  padding: 0.7rem 0.5rem; /* ลดจาก 1rem 0.75rem */
+  padding: 1rem 0.75rem;
   overflow-y: auto;
 }
 
 .sidebar.collapsed .menu-section {
-  padding: 0.35rem 0.35rem; /* ลดจาก 0.5rem */
+  padding: 0.5rem 0.5rem;
 }
 
 .menu-section::-webkit-scrollbar {
@@ -364,10 +469,10 @@ const confirmLogout = () => {
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* ลดจาก 0.75rem */
-  padding: 0.5rem; /* ลดจาก 0.75rem */
-  margin-bottom: 0.175rem; /* ลดจาก 0.25rem */
-  border-radius: 5.6px; /* ลดจาก 8px */
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.25rem;
+  border-radius: 8px;
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: all 0.2s;
@@ -376,7 +481,7 @@ const confirmLogout = () => {
 }
 
 .sidebar.collapsed .menu-item {
-  padding: 0.5rem 0.35rem; /* ลด */
+  padding: 0.75rem 0.5rem;
   justify-content: center;
   gap: 0;
 }
@@ -410,8 +515,8 @@ const confirmLogout = () => {
 }
 
 .menu-icon {
-  width: 16px; /* เพิ่มขนาด */
-  height: 16px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -419,22 +524,22 @@ const confirmLogout = () => {
 }
 
 .menu-icon svg {
-  width: 14px; /* เพิ่มขนาด */
-  height: 14px;
-}
-
-.sidebar.collapsed .menu-icon {
-  width: 18px; /* เพิ่มขนาด */
+  width: 18px;
   height: 18px;
 }
 
+.sidebar.collapsed .menu-icon {
+  width: 22px;
+  height: 22px;
+}
+
 .sidebar.collapsed .menu-icon svg {
-  width: 16px; /* เพิ่มขนาด */
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .menu-text {
-  font-size: 0.875rem; /* เพิ่มจาก 0.75rem -> 0.875rem */
+  font-size: 0.95rem;
   font-weight: 600;
   white-space: nowrap;
   letter-spacing: 0.01em;
@@ -444,12 +549,12 @@ const confirmLogout = () => {
 
 /* ===== Logout ===== */
 .logout-section {
-  padding: 0.7rem; /* ลดจาก 1rem */
+  padding: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .sidebar.collapsed .logout-section {
-  padding: 0.5rem 0.35rem; /* ลด */
+  padding: 0.75rem 0.5rem;
 }
 
 .logout-btn {
@@ -457,13 +562,13 @@ const confirmLogout = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 0.55rem;
+  gap: 0.5rem;
+  padding: 0.75rem;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 5.6px;
+  border-radius: 8px;
   color: white;
-  font-size: 0.8rem; /* เพิ่มจาก 0.7rem -> 0.8rem */
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -473,8 +578,8 @@ const confirmLogout = () => {
 }
 
 .logout-btn svg {
-  width: 13px; /* เพิ่มขนาด */
-  height: 13px;
+  width: 16px;
+  height: 16px;
 }
 
 .logout-btn:hover {

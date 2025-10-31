@@ -12,7 +12,10 @@
       "Bash(git checkout:*)",
       "Bash(dir:*)",
       "Bash(timeout:*)",
-      "Bash(node generate_hash.js:*)"
+      "Bash(node generate_hash.js:*)",
+      "Bash(node -e:*)",
+      "Bash(echo:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

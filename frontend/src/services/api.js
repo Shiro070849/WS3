@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8088/api';
+// ใช้ VUE_APP_API_URL จาก .env (ห้าม hardcode localhost!)
+const BACKEND_BASE_URL = process.env.VUE_APP_API_URL;
+if (!BACKEND_BASE_URL) {
+  console.error('❌ Error: VUE_APP_API_URL is not defined in .env file!');
+  throw new Error('VUE_APP_API_URL environment variable is required');
+}
+const API_BASE_URL = `${BACKEND_BASE_URL}/api`;
+
+console.log('🔧 Backend Base URL:', BACKEND_BASE_URL);
+console.log('🔧 API Base URL:', API_BASE_URL);
+
+// Export BACKEND_BASE_URL สำหรับใช้ใน component อื่นๆ (สำหรับ static files เช่น images)
+export const getBackendBaseUrl = () => BACKEND_BASE_URL;
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -14,7 +26,12 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    // ซ่อน Network Error ที่ไม่สำคัญ (API ที่ยังไม่ได้ implement)
+    if (error.code === 'ERR_NETWORK') {
+      console.warn('⚠️ Network Error (API not available):', error.config?.url);
+    } else {
+      console.error('API Error:', error.response?.data || error.message);
+    }
     return Promise.reject(error);
   }
 );
@@ -55,8 +72,15 @@ export const departmentsAPI = {
 
 // ==================== DASHBOARD API ====================
 export const dashboardAPI = {
-  getStats: () => apiClient.get('/dashboard/stats'),
-  getActivities: (limit = 10) => apiClient.get(`/dashboard/activities?limit=${limit}`),
+  getStats: (companyId) => {
+    const params = companyId ? `?companyId=${companyId}` : '';
+    return apiClient.get(`/dashboard/stats${params}`);
+  },
+  getActivities: (limit = 10, companyId) => {
+    const params = new URLSearchParams({ limit });
+    if (companyId) params.append('companyId', companyId);
+    return apiClient.get(`/dashboard/activities?${params}`);
+  },
   getTopCompanies: (limit = 5) => apiClient.get(`/dashboard/companies?limit=${limit}`),
 };
 
@@ -91,7 +115,10 @@ export const statisticsAPI = {
 // ==================== SYSTEM SETTINGS API ====================
 export const systemSettingsAPI = {
   // Companies
-  getAccessibleCompanies: () => apiClient.get('/settings/companies/accessible'),
+  getAccessibleCompanies: (userId) => {
+    const params = userId ? `?userId=${userId}` : '';
+    return apiClient.get(`/settings/companies/accessible${params}`);
+  },
 
   // General Settings
   getGeneral: (companyId) => apiClient.get(`/settings/general?companyId=${companyId}`),

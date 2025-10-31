@@ -28,7 +28,7 @@
                   />
                   <p class="text-sm text-gray-500 mt-1">รองรับ: .png, .jpg, .jpeg, .svg, .webp (สูงสุด 5MB)</p>
                   <div v-if="formData.logo_url" class="mt-2">
-                    <img :src="formData.logo_url" alt="Logo Preview" class="h-16 object-contain border rounded p-2">
+                    <img :src="logoPreviewUrl" alt="Logo Preview" class="h-16 object-contain border rounded p-2">
                   </div>
                 </div>
 
@@ -53,7 +53,7 @@
                   />
                   <p class="text-sm text-gray-500 mt-1">รองรับ: .png, .jpg, .jpeg, .svg, .webp (สูงสุด 5MB)</p>
                   <div v-if="formData.favicon_url" class="mt-2">
-                    <img :src="formData.favicon_url" alt="Favicon Preview" class="h-8 w-8 object-contain border rounded p-1">
+                    <img :src="faviconPreviewUrl" alt="Favicon Preview" class="h-8 w-8 object-contain border rounded p-1">
                   </div>
                 </div>
 
@@ -298,7 +298,7 @@ import BaseCard from '../base/BaseCard.vue';
 import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import LivePreview from './LivePreview.vue';
-import { systemSettingsAPI } from '@/services/api';
+import { systemSettingsAPI, getBackendBaseUrl } from '@/services/api';
 import { useTheme } from '@/composables/useTheme';
 
 const props = defineProps({
@@ -342,6 +342,21 @@ const compactModeChecked = computed({
     formData.value.compact_mode = val ? 'true' : 'false';
   }
 });
+
+// Helper function: สร้าง Full URL สำหรับรูปภาพ (ใช้ environment variable)
+const getImageUrl = (url) => {
+  if (!url) return '';
+  // ถ้า URL เป็น full URL (http/https) ให้ใช้ตรงๆ
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // ถ้าเป็น relative path ให้เติม backend base URL จาก .env
+  return `${getBackendBaseUrl()}${url}`;
+};
+
+// Computed properties สำหรับแสดงรูป
+const logoPreviewUrl = computed(() => getImageUrl(formData.value.logo_url));
+const faviconPreviewUrl = computed(() => getImageUrl(formData.value.favicon_url));
 
 // ดึงข้อมูล
 const fetchSettings = async () => {
@@ -502,7 +517,8 @@ const handleLogoUpload = async (event) => {
     const response = await systemSettingsAPI.uploadImage(file, props.companyId, 'logo');
 
     if (response.data.success) {
-      formData.value.logo_url = `http://localhost:8088${response.data.data.url}`;
+      // Store relative path only (backend will serve from /uploads)
+      formData.value.logo_url = response.data.data.url;
       successMessage.value = 'อัปโหลดโลโก้สำเร็จ';
       console.log('✅ Logo uploaded:', formData.value.logo_url);
       setTimeout(() => {
@@ -562,7 +578,8 @@ const handleFaviconUpload = async (event) => {
     const response = await systemSettingsAPI.uploadImage(file, props.companyId, 'favicon');
 
     if (response.data.success) {
-      formData.value.favicon_url = `http://localhost:8088${response.data.data.url}`;
+      // Store relative path only (backend will serve from /uploads)
+      formData.value.favicon_url = response.data.data.url;
       successMessage.value = 'อัปโหลด Favicon สำเร็จ';
       console.log('✅ Favicon uploaded:', formData.value.favicon_url);
       setTimeout(() => {

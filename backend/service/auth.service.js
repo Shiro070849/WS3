@@ -7,7 +7,7 @@ class AuthService {
       const pool = await dbService.connect();
 
       const query = `
-        SELECT SU_ID, SU_Code, SU_Name1, SU_Name2, SU_Email, SU_Username, SU_Password, SU_Active
+        SELECT SU_ID, SU_Code, SU_Name1, SU_Name2, SU_Email, SU_Username, SU_Password, SU_Active, IC_ID
         FROM [dbo].[SystemUser]
         WHERE SU_Username = @Username AND SU_Active = 1
       `;
@@ -40,6 +40,13 @@ class AuthService {
         `);
 
       const { SU_Password, ...userWithoutPassword } = user;
+
+      // Fallback: ถ้า user ไม่มี IC_ID ให้เป็นบริษัทหลัก (IC_ID = 1)
+      if (!userWithoutPassword.IC_ID) {
+        console.warn(`⚠️ User ${userWithoutPassword.SU_Username} has no IC_ID, setting default to 1`);
+        userWithoutPassword.IC_ID = 1;
+      }
+
       return userWithoutPassword;
     } catch (error) {
       throw error;

@@ -131,8 +131,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authAPI } from '../services/api'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
+const { loadTheme } = useTheme()
+
 const username = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -164,7 +167,13 @@ const handleLogin = async () => {
       localStorage.setItem('isLoggedIn', 'true')
       localStorage.setItem('userName', userData.SU_Name1 || username.value)
       localStorage.setItem('userEmail', userData.SU_Email || '')
+      localStorage.setItem('userId', userData.SU_ID)
+      localStorage.setItem('companyId', userData.IC_ID)
       localStorage.setItem('companyName', 'Smart Security')
+
+      // 🎨 Load Theme ทันทีหลัง Login
+      console.log('🎨 Loading theme for company:', userData.IC_ID)
+      await loadTheme(userData.IC_ID)
 
       successMessage.value = 'Login successful! Redirecting...'
 

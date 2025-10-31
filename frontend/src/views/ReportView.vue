@@ -257,7 +257,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { reportsAPI } from '../services/api';
+import { reportsAPI, getBackendBaseUrl } from '../services/api';
 
 // ==================== STATE ====================
 const loading = ref(false);
@@ -323,8 +323,8 @@ const exportExcel = async () => {
       ...(filters.value.status && { status: filters.value.status }),
     });
 
-    // สร้าง URL สำหรับ download
-    const url = `http://localhost:8088/api/reports/export/excel?${params.toString()}`;
+    // สร้าง URL สำหรับ download (ใช้ environment variable)
+    const url = `${getBackendBaseUrl()}/api/reports/export/excel?${params.toString()}`;
 
     // สร้าง link element และ click เพื่อ download
     const link = document.createElement('a');
@@ -350,8 +350,8 @@ const exportPDF = async () => {
       ...(filters.value.status && { status: filters.value.status }),
     });
 
-    // สร้าง URL สำหรับ download
-    const url = `http://localhost:8088/api/reports/export/pdf?${params.toString()}`;
+    // สร้าง URL สำหรับ download (ใช้ environment variable)
+    const url = `${getBackendBaseUrl()}/api/reports/export/pdf?${params.toString()}`;
 
     // สร้าง link element และ click เพื่อ download
     const link = document.createElement('a');
@@ -390,6 +390,12 @@ onMounted(() => {
 
   filters.value.endDate = today.toISOString().split('T')[0];
   filters.value.startDate = lastWeek.toISOString().split('T')[0];
+
+  // Auto-fill companyId จาก localStorage (สำหรับ multi-company)
+  const companyId = localStorage.getItem('companyId');
+  if (companyId) {
+    filters.value.companyId = companyId;
+  }
 
   fetchReport();
 });

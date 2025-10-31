@@ -102,6 +102,7 @@ exports.getStatistics = async (req, res) => {
     const filters = {
       startDate: req.query.startDate,
       endDate: req.query.endDate,
+      companyId: req.query.companyId, // เพิ่ม companyId filter
     };
 
     const stats = await ReportService.getStatistics(filters);

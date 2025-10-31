@@ -50,7 +50,7 @@ class VehicleService {
       // Filter by company
       if (filters.companyId) {
         whereConditions.push('WI.IC_ID = @CompanyId');
-        request.input('CompanyId', sql.Int, filters.companyId);
+        request.input('CompanyId', sql.Int, parseInt(filters.companyId));
       }
 
       const whereClause = whereConditions.length > 0
@@ -123,7 +123,7 @@ class VehicleService {
         countRequest.input('DateTo', sql.DateTime, new Date(filters.dateTo));
       }
       if (filters.companyId) {
-        countRequest.input('CompanyId', sql.Int, filters.companyId);
+        countRequest.input('CompanyId', sql.Int, parseInt(filters.companyId));
       }
 
       const countResult = await countRequest.query(countQuery);

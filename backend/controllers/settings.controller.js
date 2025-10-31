@@ -49,7 +49,16 @@ class SettingsController {
 
   async getUserAccessibleCompanies(req, res) {
     try {
-      const userId = req.user?.SU_ID || 1103; // Hardcoded to sysadmin (SA001) for now
+      // ดึง userId จาก query parameter (frontend ส่งมา)
+      const userId = req.query.userId || req.user?.SU_ID;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'userId is required'
+        });
+      }
+
       const companies = await settingsService.getUserAccessibleCompanies(userId);
       res.status(200).json({
         success: true,
