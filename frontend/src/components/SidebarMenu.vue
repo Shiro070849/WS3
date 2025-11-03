@@ -74,7 +74,7 @@
 
   <!-- Logout Modal -->
   <transition name="modal">
-    <div v-if="showLogoutModal" class="modal-overlay" @click.self="showLogoutModal = false">
+    <div v-if="showLogoutModal" class="modal-overlay" :class="{ 'main-admin-modal': isMainAdmin }" @click.self="showLogoutModal = false">
       <div class="modal-content">
         <div class="modal-header">
           <div class="modal-icon">
@@ -222,9 +222,13 @@ onMounted(async () => {
   width: 60px;
 }
 
-/* ===== Main Admin Theme - ใช้สีจาก database เหมือน Admin ย่อย ===== */
-/* ลบ override ทั้งหมดออก ให้ Admin หลักใช้สีเดียวกับ Admin ย่อย */
-/* ตอนนี้ทั้ง Admin หลักและ Admin ย่อย จะดึงสีจาก database (IC_ID = 1 และ IC_ID อื่นๆ) */
+/* ===== Main Admin Theme Override ===== */
+.sidebar.main-admin {
+  background: linear-gradient(180deg,
+    #1565C0 0%,
+    #0D47A1 50%,
+    #0A3D91 100%) !important;
+}
 
 /* ===== Header ===== */
 .sidebar-header {
@@ -393,13 +397,19 @@ onMounted(async () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0090D3 0%, #00B1EF 100%);
+  background: linear-gradient(135deg, var(--primary-color, #0090D3) 0%, var(--primary-color-light, #00B1EF) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   flex-shrink: 0;
   box-shadow: 0 2px 6px rgba(0, 144, 211, 0.3);
+}
+
+/* Override for Main Admin only */
+.sidebar.main-admin .profile-avatar {
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%) !important;
+  box-shadow: 0 3px 8px rgba(25, 118, 210, 0.4) !important;
 }
 
 .profile-avatar svg {
@@ -497,9 +507,15 @@ onMounted(async () => {
 }
 
 .menu-item.active {
-  background: linear-gradient(135deg, #0090D3 0%, #00B1EF 100%);
+  background: linear-gradient(135deg, var(--primary-color, #0090D3) 0%, var(--primary-color-light, #00B1EF) 100%);
   color: white;
   box-shadow: 0 2px 8px rgba(0, 144, 211, 0.3);
+}
+
+/* Override for Main Admin only */
+.sidebar.main-admin .menu-item.active {
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%) !important;
+  box-shadow: 0 3px 10px rgba(25, 118, 210, 0.4) !important;
 }
 
 .menu-item.active::before {
@@ -624,11 +640,16 @@ onMounted(async () => {
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #047685 0%, #0090D3 100%);
+  background: linear-gradient(135deg, var(--primary-color, #0090D3) 0%, var(--primary-color-light, #00B1EF) 100%);
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+/* Override for Main Admin only */
+.modal-overlay.main-admin-modal .modal-header {
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%) !important;
 }
 
 .modal-icon {

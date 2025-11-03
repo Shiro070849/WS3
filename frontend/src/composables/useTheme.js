@@ -15,6 +15,7 @@ export function useTheme() {
 
     // Apply CSS Variables
     root.style.setProperty('--primary-color', settings.primary_color || '#0090D3');
+    root.style.setProperty('--primary-color-light', adjustColorBrightness(settings.primary_color || '#0090D3', 15));
     root.style.setProperty('--secondary-color', settings.secondary_color || '#6B7280');
     root.style.setProperty('--accent-color', settings.accent_color || '#10B981');
     root.style.setProperty('--background-color', settings.background_color || '#FFFFFF');
