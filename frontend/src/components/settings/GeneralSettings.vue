@@ -201,16 +201,16 @@ const originalData = ref({});
 const fetchSettings = async () => {
   try {
     loading.value = true;
-    console.log('📥 Fetching settings for company ID:', props.companyId);
+    console.log('[FETCH] Fetching settings for company ID:', props.companyId);
     const response = await systemSettingsAPI.getGeneral(props.companyId);
 
     if (response.data.success) {
       formData.value = { ...response.data.data };
       originalData.value = { ...response.data.data };
-      console.log('✅ Settings loaded:', formData.value);
+      console.log('[SUCCESS] Settings loaded:', formData.value);
     }
   } catch (error) {
-    console.error('❌ Error fetching settings:', error);
+    console.error('[ERROR] Error fetching settings:', error);
     errorMessage.value = 'ไม่สามารถโหลดข้อมูลได้';
   } finally {
     loading.value = false;
@@ -220,7 +220,7 @@ const fetchSettings = async () => {
 // Watch companyId changes
 watch(() => props.companyId, (newId) => {
   if (newId) {
-    console.log('🔄 Company changed to ID:', newId);
+    console.log('[UPDATE] Company changed to ID:', newId);
     fetchSettings();
   }
 });
@@ -232,13 +232,13 @@ const handleSave = async () => {
     successMessage.value = '';
     errorMessage.value = '';
 
-    console.log('💾 Saving settings for company ID:', props.companyId);
+    console.log('[INFO] Saving settings for company ID:', props.companyId);
     const response = await systemSettingsAPI.updateGeneral(formData.value, props.companyId);
 
     if (response.data.success) {
       successMessage.value = 'บันทึกข้อมูลสำเร็จ';
       originalData.value = { ...formData.value };
-      console.log('✅ Settings saved successfully');
+      console.log('[SUCCESS] Settings saved successfully');
 
       // ซ่อนข้อความหลัง 3 วินาที
       setTimeout(() => {
@@ -248,7 +248,7 @@ const handleSave = async () => {
       // TODO: อัพเดท Sidebar/Navbar ด้วยข้อมูลใหม่
     }
   } catch (error) {
-    console.error('❌ Error saving settings:', error);
+    console.error('[ERROR] Error saving settings:', error);
     errorMessage.value = error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึก';
   } finally {
     loading.value = false;

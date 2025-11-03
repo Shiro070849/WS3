@@ -48,7 +48,7 @@
 
           <!-- Title -->
           <h1 class="text-xs font-medium text-gray-300 mb-1.5 tracking-widest uppercase">Welcome to</h1>
-          <h2 class="text-2xl font-bold text-white mb-0.5">RUXCHAI</h2>
+          <h2 class="text-2xl font-bold text-white mb-0.5">RUXCHAI GROUP</h2>
           <h3 class="text-lg font-semibold text-[#8bcbe9] mb-4">WAREHOUSE</h3>
         </div>
         <!-- Alert Messages -->

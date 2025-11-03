@@ -61,4 +61,27 @@ module.exports = (app) => {
   app.put('/api/settings/appearance', settingsController.updateAppearanceSettings);
   // อัปโหลดรูปภาพ (Logo, Favicon)
   app.post('/api/settings/upload-image', upload.single('image'), settingsController.uploadImage);
+
+  // ==================== SECURITY SETTINGS ====================
+
+  // ดึงข้อมูล Security Settings
+  app.get('/api/settings/security', settingsController.getSecuritySettings);
+  // บันทึก Security Settings
+  app.put('/api/settings/security', settingsController.updateSecuritySettings);
+
+  // ==================== EMAIL SETTINGS ====================
+
+  // ดึงข้อมูล Email Settings
+  app.get('/api/settings/email', settingsController.getEmailSettings);
+  // บันทึก Email Settings
+  app.put('/api/settings/email', settingsController.updateEmailSettings);
+  // ทดสอบการส่งอีเมล
+  app.post('/api/settings/email/test', settingsController.testEmail);
+
+  // ==================== NOTIFICATION SETTINGS ====================
+
+  // ดึงข้อมูล Notification Settings
+  app.get('/api/settings/notifications', settingsController.getNotificationSettings);
+  // บันทึก Notification Settings
+  app.put('/api/settings/notifications', settingsController.updateNotificationSettings);
 };

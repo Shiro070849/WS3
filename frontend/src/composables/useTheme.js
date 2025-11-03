@@ -11,7 +11,7 @@ export function useTheme() {
   const applyTheme = (settings) => {
     const root = document.documentElement;
 
-    console.log('🎨 Applying theme:', settings);
+    console.log('[THEME] Applying theme:', settings);
 
     // Apply CSS Variables
     root.style.setProperty('--primary-color', settings.primary_color || '#0090D3');
@@ -60,7 +60,7 @@ export function useTheme() {
     currentTheme.value = settings;
     isThemeLoaded.value = true;
 
-    console.log('✅ Theme applied successfully');
+    console.log('[SUCCESS] Theme applied successfully');
   };
 
   /**
@@ -68,13 +68,13 @@ export function useTheme() {
    */
   const loadTheme = async (companyId) => {
     if (!companyId) {
-      console.warn('⚠️ No companyId provided, using default theme');
+      console.warn('[INFO] No companyId provided, using default theme');
       applyTheme(getDefaultTheme());
       return;
     }
 
     try {
-      console.log(`📥 Loading theme for company ID: ${companyId}`);
+      console.log(`[FETCH] Loading theme for company ID: ${companyId}`);
       const response = await systemSettingsAPI.getAppearance(companyId);
 
       if (response.data.success) {
@@ -85,19 +85,19 @@ export function useTheme() {
         localStorage.setItem(`theme_${companyId}`, JSON.stringify(settings));
         localStorage.setItem(`theme_${companyId}_timestamp`, Date.now().toString());
       } else {
-        console.error('❌ Failed to load theme:', response.data);
+        console.error('[ERROR] Failed to load theme:', response.data);
         applyTheme(getDefaultTheme());
       }
     } catch (error) {
-      console.error('❌ Error loading theme:', error);
+      console.error('[ERROR] Error loading theme:', error);
 
       // Try to load from localStorage cache
       const cached = localStorage.getItem(`theme_${companyId}`);
       if (cached) {
-        console.log('📦 Loading theme from cache');
+        console.log('[DATA] Loading theme from cache');
         applyTheme(JSON.parse(cached));
       } else {
-        console.log('🎨 Using default theme');
+        console.log('[THEME] Using default theme');
         applyTheme(getDefaultTheme());
       }
     }
@@ -123,14 +123,14 @@ export function useTheme() {
     if (!url) return;
 
     const fullUrl = getFullImageUrl(url);
-    console.log('🖼️ Updating logo:', fullUrl);
+    console.log('[INFO] Updating logo:', fullUrl);
 
     // Update all elements with class 'app-logo'
     const logoElements = document.querySelectorAll('.app-logo');
     logoElements.forEach(img => {
       img.src = fullUrl;
       img.onerror = () => {
-        console.warn('⚠️ Failed to load logo, using fallback');
+        console.warn('[INFO] Failed to load logo, using fallback');
         img.src = '/logo.png'; // Fallback logo
       };
     });
@@ -143,7 +143,7 @@ export function useTheme() {
     if (!url) return;
 
     const fullUrl = getFullImageUrl(url);
-    console.log('🔖 Updating favicon:', fullUrl);
+    console.log('[INFO] Updating favicon:', fullUrl);
 
     let link = document.querySelector("link[rel~='icon']");
     if (!link) {
@@ -154,7 +154,7 @@ export function useTheme() {
     link.href = fullUrl;
 
     link.onerror = () => {
-      console.warn('⚠️ Failed to load favicon');
+      console.warn('[INFO] Failed to load favicon');
     };
   };
 
@@ -199,7 +199,7 @@ export function useTheme() {
     if (companyId) {
       localStorage.removeItem(`theme_${companyId}`);
       localStorage.removeItem(`theme_${companyId}_timestamp`);
-      console.log('🗑️ Theme cache cleared for company:', companyId);
+      console.log('[INFO] Theme cache cleared for company:', companyId);
     }
   };
 

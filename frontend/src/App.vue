@@ -38,12 +38,12 @@ export default {
 
     // Load theme on app mount
     onMounted(() => {
-      console.log('🚀 App mounted - Loading theme...')
+      console.log('[INIT] App mounted - Loading theme...')
 
       // Get companyId from localStorage (set during login)
       const companyId = localStorage.getItem('companyId')
       if (companyId) {
-        console.log('👤 User company ID:', companyId)
+        console.log('[USER] User company ID:', companyId)
         loadTheme(parseInt(companyId))
       } else {
         // Fallback: try to get from user object
@@ -52,13 +52,13 @@ export default {
           try {
             const user = JSON.parse(userStr)
             const fallbackCompanyId = user.IC_ID || 1
-            console.log('👤 Fallback company ID from user object:', fallbackCompanyId)
+            console.log('[USER] Fallback company ID from user object:', fallbackCompanyId)
             loadTheme(fallbackCompanyId)
           } catch (error) {
-            console.error('❌ Error parsing user data:', error)
+            console.error('[ERROR] Error parsing user data:', error)
           }
         } else {
-          console.warn('⚠️ No company ID found, theme will not load')
+          console.warn('[INFO] No company ID found, theme will not load')
         }
       }
     })
@@ -66,7 +66,7 @@ export default {
     // Watch for route changes (in case user switches company)
     watch(() => route.query.companyId, (newCompanyId) => {
       if (newCompanyId) {
-        console.log('🔄 Company changed via route:', newCompanyId)
+        console.log('[UPDATE] Company changed via route:', newCompanyId)
         loadTheme(parseInt(newCompanyId))
       }
     })

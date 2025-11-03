@@ -49,7 +49,22 @@
           <AppearanceSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
-        <!-- ==================== TAB 2: จัดการบริษัท ==================== -->
+        <!-- ==================== TAB 2: ความปลอดภัย ==================== -->
+        <template #security>
+          <SecuritySettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
+        </template>
+
+        <!-- ==================== TAB 3: อีเมล ==================== -->
+        <template #email>
+          <EmailSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
+        </template>
+
+        <!-- ==================== TAB 4: การแจ้งเตือน ==================== -->
+        <template #notifications>
+          <NotificationSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
+        </template>
+
+        <!-- ==================== TAB 5: จัดการบริษัท ==================== -->
         <template #companies>
           <BaseCard>
             <div class="flex justify-between items-center mb-6">
@@ -264,6 +279,9 @@ import BaseInput from '../components/base/BaseInput.vue';
 import BaseModal from '../components/base/BaseModal.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import AppearanceSettings from '../components/settings/AppearanceSettings.vue';
+import SecuritySettings from '../components/settings/SecuritySettings.vue';
+import EmailSettings from '../components/settings/EmailSettings.vue';
+import NotificationSettings from '../components/settings/NotificationSettings.vue';
 import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../services/api';
 import { useTheme } from '@/composables/useTheme';
 
@@ -276,22 +294,22 @@ const fetchAccessibleCompanies = async () => {
   try {
     // ดึง userId จาก localStorage
     const userId = localStorage.getItem('userId');
-    console.log(' Fetching companies for userId:', userId);
+    console.log('[FETCH] Fetching companies for userId:', userId);
 
     const response = await systemSettingsAPI.getAccessibleCompanies(userId);
-    console.log(' Accessible Companies Response:', response.data);
+    console.log('[DATA] Accessible Companies Response:', response.data);
     accessibleCompanies.value = response.data.data;
 
     // Set default selected company to first one
     if (accessibleCompanies.value.length > 0) {
       selectedCompanyId.value = accessibleCompanies.value[0].IC_ID;
-      console.log(' Selected Company ID:', selectedCompanyId.value);
-      console.log(' Accessible Companies:', accessibleCompanies.value);
+      console.log('[INFO] Selected Company ID:', selectedCompanyId.value);
+      console.log('[DATA] Accessible Companies:', accessibleCompanies.value);
     } else {
-      console.warn(' No accessible companies found!');
+      console.warn('[INFO] No accessible companies found!');
     }
   } catch (error) {
-    console.error(' Error fetching accessible companies:', error);
+    console.error('[ERROR] Error fetching accessible companies:', error);
     alert('ไม่สามารถโหลดรายการบริษัทได้');
   }
 };
@@ -301,7 +319,7 @@ const toggleDropdown = () => {
 };
 
 const onCompanyChange = () => {
-  console.log('🔄 Selected company changed to:', selectedCompanyId.value);
+  console.log('[UPDATE] Selected company changed to:', selectedCompanyId.value);
   isDropdownOpen.value = false; // Close dropdown after selection
 
   // หมายเหตุ: ไม่เรียก loadTheme() ที่นี่ เพราะ logo/theme ควรแสดงตามบริษัทของ user ที่ login
@@ -331,7 +349,7 @@ const isMainAdmin = ref(false);
 const checkIsMainAdmin = () => {
   const companyId = localStorage.getItem('companyId');
   isMainAdmin.value = companyId && parseInt(companyId) === 1;
-  console.log('👤 Is Main Admin:', isMainAdmin.value, '(Company ID:', companyId, ')');
+  console.log('[USER] Is Main Admin:', isMainAdmin.value, '(Company ID:', companyId, ')');
 };
 
 const tabs = computed(() => {
@@ -340,6 +358,9 @@ const tabs = computed(() => {
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
+      { key: 'security', label: 'ความปลอดภัย', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
+      { key: 'email', label: 'อีเมล', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
+      { key: 'notifications', label: 'การแจ้งเตือน', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
       { key: 'companies', label: 'จัดการบริษัท', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
       { key: 'users', label: 'จัดการผู้ใช้งาน', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
       { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },

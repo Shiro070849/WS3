@@ -3,13 +3,13 @@ import axios from 'axios';
 // ใช้ VUE_APP_API_URL จาก .env (ห้าม hardcode localhost!)
 const BACKEND_BASE_URL = process.env.VUE_APP_API_URL;
 if (!BACKEND_BASE_URL) {
-  console.error('❌ Error: VUE_APP_API_URL is not defined in .env file!');
+  console.error('Error: VUE_APP_API_URL is not defined in .env file!');
   throw new Error('VUE_APP_API_URL environment variable is required');
 }
 const API_BASE_URL = `${BACKEND_BASE_URL}/api`;
 
-console.log('🔧 Backend Base URL:', BACKEND_BASE_URL);
-console.log('🔧 API Base URL:', API_BASE_URL);
+console.log('[API] Backend Base URL:', BACKEND_BASE_URL);
+console.log('[API] API Base URL:', API_BASE_URL);
 
 // Export BACKEND_BASE_URL สำหรับใช้ใน component อื่นๆ (สำหรับ static files เช่น images)
 export const getBackendBaseUrl = () => BACKEND_BASE_URL;
@@ -127,6 +127,19 @@ export const systemSettingsAPI = {
   // Appearance Settings
   getAppearance: (companyId) => apiClient.get(`/settings/appearance?companyId=${companyId}`),
   updateAppearance: (data, companyId) => apiClient.put(`/settings/appearance?companyId=${companyId}`, data),
+
+  // Security Settings
+  getSecurity: (companyId) => apiClient.get(`/settings/security?companyId=${companyId}`),
+  updateSecurity: (data, companyId) => apiClient.put(`/settings/security?companyId=${companyId}`, data),
+
+  // Email Settings
+  getEmail: (companyId) => apiClient.get(`/settings/email?companyId=${companyId}`),
+  updateEmail: (data, companyId) => apiClient.put(`/settings/email?companyId=${companyId}`, data),
+  testEmail: (data) => apiClient.post('/settings/email/test', data),
+
+  // Notification Settings
+  getNotifications: (companyId) => apiClient.get(`/settings/notifications?companyId=${companyId}`),
+  updateNotifications: (data, companyId) => apiClient.put(`/settings/notifications?companyId=${companyId}`, data),
 
   // Upload Image (Logo, Favicon)
   uploadImage: (file, companyId, type) => {

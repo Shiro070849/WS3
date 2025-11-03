@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const dbService = require('./db.service');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 class SettingsService {
   // ==================== COMPANIES ====================
@@ -852,6 +853,371 @@ class SettingsService {
       return { success: true };
     } catch (error) {
       console.error('Error updating appearance settings:', error);
+      throw error;
+    }
+  }
+
+  // ==================== SECURITY SETTINGS ====================
+
+  getDefaultSecuritySettings() {
+    return {
+      sessionTimeout: '1440',
+      minPasswordLength: '8',
+      requireSpecialChar: 'false',
+      requireNumber: 'false',
+      requireUppercase: 'false',
+      passwordExpiry: 'false',
+      passwordExpiryDays: '90',
+      inactivityTimeout: '15',
+      twoFactorAuth: 'false',
+      maxLoginAttempts: '5'
+    };
+  }
+
+  async getSecuritySettings(userId, companyId) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`[GET] Fetching security settings - userId: ${userId}, companyId: ${companyId}`);
+
+      const settingsQuery = `
+        SELECT SS_Key, SS_Value, IC_ID
+        FROM [dbo].[SystemSettings]
+        WHERE SS_Category = 'security'
+          AND (IC_ID = @IC_ID OR IC_ID IS NULL)
+      `;
+      const settingsResult = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .query(settingsQuery);
+
+      const settings = {};
+      const companySettings = {};
+      const globalSettings = {};
+
+      settingsResult.recordset.forEach(row => {
+        const key = row.SS_Key;
+        if (row.IC_ID === companyId) {
+          companySettings[key] = row.SS_Value;
+        } else if (row.IC_ID === null) {
+          globalSettings[key] = row.SS_Value;
+        }
+      });
+
+      Object.assign(settings, globalSettings, companySettings);
+
+      const defaults = this.getDefaultSecuritySettings();
+      const finalSettings = { ...defaults, ...settings };
+
+      console.log(`[SUCCESS] Security settings fetched for IC_ID: ${companyId}`);
+
+      return finalSettings;
+    } catch (error) {
+      console.error('Error getting security settings:', error);
+      throw error;
+    }
+  }
+
+  async updateSecuritySettings(userId, companyId, data) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`[PUT] Updating security settings - userId: ${userId}, companyId: ${companyId}`);
+
+      const settingsFields = [
+        'sessionTimeout', 'minPasswordLength', 'requireSpecialChar', 'requireNumber',
+        'requireUppercase', 'passwordExpiry', 'passwordExpiryDays', 'inactivityTimeout',
+        'twoFactorAuth', 'maxLoginAttempts'
+      ];
+
+      for (const field of settingsFields) {
+        const key = field;
+        const value = data[field] !== undefined ? String(data[field]) : '';
+
+        const mergeQuery = `
+          MERGE [dbo].[SystemSettings] AS target
+          USING (SELECT @SS_Key AS SS_Key, @IC_ID AS IC_ID) AS source
+          ON target.SS_Key = source.SS_Key AND target.IC_ID = source.IC_ID
+          WHEN MATCHED THEN
+            UPDATE SET
+              SS_Value = @SS_Value,
+              SS_UpdatedAt = GETDATE(),
+              SS_UpdatedBy = @SS_UpdatedBy
+          WHEN NOT MATCHED THEN
+            INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy, IC_ID)
+            VALUES (@SS_Key, @SS_Value, 'text', 'security', @SS_UpdatedBy, @IC_ID);
+        `;
+
+        await pool.request()
+          .input('SS_Key', sql.NVarChar, key)
+          .input('SS_Value', sql.NVarChar, value)
+          .input('SS_UpdatedBy', sql.Int, userId)
+          .input('IC_ID', sql.Int, companyId)
+          .query(mergeQuery);
+      }
+
+      console.log(`[SUCCESS] Security settings updated for IC_ID: ${companyId}`);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating security settings:', error);
+      throw error;
+    }
+  }
+
+  // ==================== EMAIL SETTINGS ====================
+
+  getDefaultEmailSettings() {
+    return {
+      smtpHost: '',
+      smtpPort: '587',
+      smtpSecure: 'false',
+      smtpUsername: '',
+      smtpPassword: '',
+      fromEmail: '',
+      fromName: ''
+    };
+  }
+
+  async getEmailSettings(userId, companyId) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`[GET] Fetching email settings - userId: ${userId}, companyId: ${companyId}`);
+
+      const settingsQuery = `
+        SELECT SS_Key, SS_Value, IC_ID
+        FROM [dbo].[SystemSettings]
+        WHERE SS_Category = 'email'
+          AND (IC_ID = @IC_ID OR IC_ID IS NULL)
+      `;
+      const settingsResult = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .query(settingsQuery);
+
+      const settings = {};
+      const companySettings = {};
+      const globalSettings = {};
+
+      settingsResult.recordset.forEach(row => {
+        const key = row.SS_Key;
+        let value = row.SS_Value;
+
+        // Don't send encrypted password to frontend for security reasons
+        if (key === 'smtpPassword' && value) {
+          value = ''; // Return empty string instead of decrypted password
+        }
+
+        if (row.IC_ID === companyId) {
+          companySettings[key] = value;
+        } else if (row.IC_ID === null) {
+          globalSettings[key] = value;
+        }
+      });
+
+      Object.assign(settings, globalSettings, companySettings);
+
+      const defaults = this.getDefaultEmailSettings();
+      const finalSettings = { ...defaults, ...settings };
+
+      console.log(`[SUCCESS] Email settings fetched for IC_ID: ${companyId}`);
+
+      return finalSettings;
+    } catch (error) {
+      console.error('Error getting email settings:', error);
+      throw error;
+    }
+  }
+
+  async updateEmailSettings(userId, companyId, data) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`[PUT] Updating email settings - userId: ${userId}, companyId: ${companyId}`);
+
+      const settingsFields = [
+        'smtpHost', 'smtpPort', 'smtpSecure', 'smtpUsername',
+        'smtpPassword', 'fromEmail', 'fromName'
+      ];
+
+      for (const field of settingsFields) {
+        const key = field;
+        let value = data[field] !== undefined ? String(data[field]) : '';
+
+        // Encrypt password before saving
+        if (key === 'smtpPassword' && value) {
+          try {
+            value = encrypt(value);
+          } catch (error) {
+            console.error('Error encrypting password:', error);
+            throw new Error('Failed to encrypt password');
+          }
+        }
+
+        const mergeQuery = `
+          MERGE [dbo].[SystemSettings] AS target
+          USING (SELECT @SS_Key AS SS_Key, @IC_ID AS IC_ID) AS source
+          ON target.SS_Key = source.SS_Key AND target.IC_ID = source.IC_ID
+          WHEN MATCHED THEN
+            UPDATE SET
+              SS_Value = @SS_Value,
+              SS_UpdatedAt = GETDATE(),
+              SS_UpdatedBy = @SS_UpdatedBy
+          WHEN NOT MATCHED THEN
+            INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy, IC_ID)
+            VALUES (@SS_Key, @SS_Value, 'text', 'email', @SS_UpdatedBy, @IC_ID);
+        `;
+
+        await pool.request()
+          .input('SS_Key', sql.NVarChar, key)
+          .input('SS_Value', sql.NVarChar, value)
+          .input('SS_UpdatedBy', sql.Int, userId)
+          .input('IC_ID', sql.Int, companyId)
+          .query(mergeQuery);
+      }
+
+      console.log(`[SUCCESS] Email settings updated for IC_ID: ${companyId}`);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating email settings:', error);
+      throw error;
+    }
+  }
+
+  async testEmailConnection(companyId, testEmail) {
+    try {
+      const EmailSender = require('../utils/emailSender');
+
+      console.log(`[TEST] Testing email connection for IC_ID: ${companyId}`);
+
+      // Get SMTP config from database
+      const result = await this.getEmailSettings(0, companyId);
+      if (!result.success) {
+        throw new Error('Failed to get email settings');
+      }
+
+      const smtpConfig = result.data;
+
+      // Validate config
+      if (!smtpConfig.smtpHost || !smtpConfig.smtpUsername || !smtpConfig.smtpPassword) {
+        throw new Error('Email configuration is incomplete. Please configure SMTP settings first.');
+      }
+
+      console.log(`[TEST] Sending test email to: ${testEmail}`);
+
+      // Send test email using EmailSender utility
+      const sendResult = await EmailSender.sendTestEmail(smtpConfig, testEmail);
+
+      console.log(`[SUCCESS] Test email sent successfully`);
+
+      return sendResult;
+    } catch (error) {
+      console.error('[ERROR] Test email failed:', error);
+      throw new Error(`Failed to send test email: ${error.message}`);
+    }
+  }
+
+  // ==================== NOTIFICATION SETTINGS ====================
+
+  getDefaultNotificationSettings() {
+    return {
+      emailNotification: 'true',
+      browserNotification: 'true',
+      smsNotification: 'false',
+      notificationDelay: '30',
+      notifyCheckIn: 'true',
+      notifyCheckOut: 'true',
+      notifyNewUser: 'true',
+      notifySystemError: 'true',
+      notifyDailyReport: 'false'
+    };
+  }
+
+  async getNotificationSettings(userId, companyId) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`[GET] Fetching notification settings - userId: ${userId}, companyId: ${companyId}`);
+
+      const settingsQuery = `
+        SELECT SS_Key, SS_Value, IC_ID
+        FROM [dbo].[SystemSettings]
+        WHERE SS_Category = 'notification'
+          AND (IC_ID = @IC_ID OR IC_ID IS NULL)
+      `;
+      const settingsResult = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .query(settingsQuery);
+
+      const settings = {};
+      const companySettings = {};
+      const globalSettings = {};
+
+      settingsResult.recordset.forEach(row => {
+        const key = row.SS_Key;
+        if (row.IC_ID === companyId) {
+          companySettings[key] = row.SS_Value;
+        } else if (row.IC_ID === null) {
+          globalSettings[key] = row.SS_Value;
+        }
+      });
+
+      Object.assign(settings, globalSettings, companySettings);
+
+      const defaults = this.getDefaultNotificationSettings();
+      const finalSettings = { ...defaults, ...settings };
+
+      console.log(`[SUCCESS] Notification settings fetched for IC_ID: ${companyId}`);
+
+      return finalSettings;
+    } catch (error) {
+      console.error('Error getting notification settings:', error);
+      throw error;
+    }
+  }
+
+  async updateNotificationSettings(userId, companyId, data) {
+    try {
+      const pool = await dbService.connect();
+
+      console.log(`[PUT] Updating notification settings - userId: ${userId}, companyId: ${companyId}`);
+
+      const settingsFields = [
+        'emailNotification', 'browserNotification', 'smsNotification', 'notificationDelay',
+        'notifyCheckIn', 'notifyCheckOut', 'notifyNewUser', 'notifySystemError', 'notifyDailyReport'
+      ];
+
+      for (const field of settingsFields) {
+        const key = field;
+        const value = data[field] !== undefined ? String(data[field]) : '';
+
+        const mergeQuery = `
+          MERGE [dbo].[SystemSettings] AS target
+          USING (SELECT @SS_Key AS SS_Key, @IC_ID AS IC_ID) AS source
+          ON target.SS_Key = source.SS_Key AND target.IC_ID = source.IC_ID
+          WHEN MATCHED THEN
+            UPDATE SET
+              SS_Value = @SS_Value,
+              SS_UpdatedAt = GETDATE(),
+              SS_UpdatedBy = @SS_UpdatedBy
+          WHEN NOT MATCHED THEN
+            INSERT (SS_Key, SS_Value, SS_Type, SS_Category, SS_UpdatedBy, IC_ID)
+            VALUES (@SS_Key, @SS_Value, 'text', 'notification', @SS_UpdatedBy, @IC_ID);
+        `;
+
+        await pool.request()
+          .input('SS_Key', sql.NVarChar, key)
+          .input('SS_Value', sql.NVarChar, value)
+          .input('SS_UpdatedBy', sql.Int, userId)
+          .input('IC_ID', sql.Int, companyId)
+          .query(mergeQuery);
+      }
+
+      console.log(`[SUCCESS] Notification settings updated for IC_ID: ${companyId}`);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
       throw error;
     }
   }

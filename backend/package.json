@@ -18,7 +18,7 @@
     "html-pdf": "^3.0.1",
     "mssql": "^11.0.1",
     "multer": "^2.0.1",
-    "nodemailer": "^7.0.3",
+    "nodemailer": "^7.0.10",
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.25.0",
     "xlsx": "^0.18.5"

@@ -362,16 +362,16 @@ const faviconPreviewUrl = computed(() => getImageUrl(formData.value.favicon_url)
 const fetchSettings = async () => {
   try {
     loading.value = true;
-    console.log('📥 Fetching appearance settings for company ID:', props.companyId);
+    console.log('[FETCH] Fetching appearance settings for company ID:', props.companyId);
     const response = await systemSettingsAPI.getAppearance(props.companyId);
 
     if (response.data.success) {
       formData.value = { ...response.data.data };
       originalData.value = { ...response.data.data };
-      console.log('✅ Appearance settings loaded:', formData.value);
+      console.log('[SUCCESS] Appearance settings loaded:', formData.value);
     }
   } catch (error) {
-    console.error('❌ Error fetching appearance settings:', error);
+    console.error('[ERROR] Error fetching appearance settings:', error);
     errorMessage.value = 'ไม่สามารถโหลดข้อมูลได้';
   } finally {
     loading.value = false;
@@ -381,7 +381,7 @@ const fetchSettings = async () => {
 // Watch companyId changes
 watch(() => props.companyId, (newId) => {
   if (newId) {
-    console.log('🔄 Company changed to ID:', newId);
+    console.log('[UPDATE] Company changed to ID:', newId);
     fetchSettings();
   }
 });
@@ -449,18 +449,18 @@ const handleSave = async () => {
     successMessage.value = '';
     errorMessage.value = '';
 
-    console.log('💾 Saving appearance settings for company ID:', props.companyId);
-    console.log('📦 Form data:', formData.value);
+    console.log('[INFO] Saving appearance settings for company ID:', props.companyId);
+    console.log('[DATA] Form data:', formData.value);
 
     const response = await systemSettingsAPI.updateAppearance(formData.value, props.companyId);
 
     if (response.data.success) {
       successMessage.value = 'บันทึกข้อมูลสำเร็จ และ Apply Theme แล้ว';
       originalData.value = { ...formData.value };
-      console.log('✅ Appearance settings saved successfully');
+      console.log('[SUCCESS] Appearance settings saved successfully');
 
       // Apply theme immediately after save
-      console.log('🎨 Applying theme to entire application...');
+      console.log('[THEME] Applying theme to entire application...');
       await reloadTheme(props.companyId);
 
       // ซ่อนข้อความหลัง 3 วินาที
@@ -469,7 +469,7 @@ const handleSave = async () => {
       }, 3000);
     }
   } catch (error) {
-    console.error('❌ Error saving appearance settings:', error);
+    console.error('[ERROR] Error saving appearance settings:', error);
     errorMessage.value = error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึก';
     setTimeout(() => {
       errorMessage.value = '';
@@ -513,20 +513,20 @@ const handleLogoUpload = async (event) => {
     loading.value = true;
     successMessage.value = '';
     errorMessage.value = '';
-    console.log('📤 Uploading logo...');
+    console.log('[FETCH] Uploading logo...');
     const response = await systemSettingsAPI.uploadImage(file, props.companyId, 'logo');
 
     if (response.data.success) {
       // Store relative path only (backend will serve from /uploads)
       formData.value.logo_url = response.data.data.url;
       successMessage.value = 'อัปโหลดโลโก้สำเร็จ';
-      console.log('✅ Logo uploaded:', formData.value.logo_url);
+      console.log('[SUCCESS] Logo uploaded:', formData.value.logo_url);
       setTimeout(() => {
         successMessage.value = '';
       }, 3000);
     }
   } catch (error) {
-    console.error('❌ Error uploading logo:', error);
+    console.error('[ERROR] Error uploading logo:', error);
     errorMessage.value = error.response?.data?.message || 'ไม่สามารถอัปโหลดโลโก้ได้';
     setTimeout(() => {
       errorMessage.value = '';
@@ -574,20 +574,20 @@ const handleFaviconUpload = async (event) => {
     loading.value = true;
     successMessage.value = '';
     errorMessage.value = '';
-    console.log('📤 Uploading favicon...');
+    console.log('[FETCH] Uploading favicon...');
     const response = await systemSettingsAPI.uploadImage(file, props.companyId, 'favicon');
 
     if (response.data.success) {
       // Store relative path only (backend will serve from /uploads)
       formData.value.favicon_url = response.data.data.url;
       successMessage.value = 'อัปโหลด Favicon สำเร็จ';
-      console.log('✅ Favicon uploaded:', formData.value.favicon_url);
+      console.log('[SUCCESS] Favicon uploaded:', formData.value.favicon_url);
       setTimeout(() => {
         successMessage.value = '';
       }, 3000);
     }
   } catch (error) {
-    console.error('❌ Error uploading favicon:', error);
+    console.error('[ERROR] Error uploading favicon:', error);
     errorMessage.value = error.response?.data?.message || 'ไม่สามารถอัปโหลด Favicon ได้';
     setTimeout(() => {
       errorMessage.value = '';
@@ -606,7 +606,7 @@ const handleReset = () => {
   formData.value = { ...originalData.value };
   successMessage.value = '';
   errorMessage.value = '';
-  console.log('🔄 Form reset to original values');
+  console.log('[UPDATE] Form reset to original values');
 };
 
 onMounted(() => {

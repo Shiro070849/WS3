@@ -646,6 +646,219 @@ class SettingsController {
       });
     }
   }
+
+  // ==================== SECURITY SETTINGS ====================
+
+  async getSecuritySettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103;
+      const companyId = parseInt(req.query.companyId);
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📥 GET /api/settings/security - userId: ${userId}, companyId: ${companyId}`);
+
+      const settings = await settingsService.getSecuritySettings(userId, companyId);
+
+      res.status(200).json({
+        success: true,
+        data: settings
+      });
+    } catch (error) {
+      console.error('Error in getSecuritySettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting security settings',
+        error: error.message
+      });
+    }
+  }
+
+  async updateSecuritySettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103;
+      const companyId = parseInt(req.query.companyId);
+      const data = req.body;
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📤 PUT /api/settings/security - userId: ${userId}, companyId: ${companyId}`);
+
+      await settingsService.updateSecuritySettings(userId, companyId, data);
+
+      res.status(200).json({
+        success: true,
+        message: 'Security settings updated successfully'
+      });
+    } catch (error) {
+      console.error('Error in updateSecuritySettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating security settings',
+        error: error.message
+      });
+    }
+  }
+
+  // ==================== EMAIL SETTINGS ====================
+
+  async getEmailSettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103;
+      const companyId = parseInt(req.query.companyId);
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📥 GET /api/settings/email - userId: ${userId}, companyId: ${companyId}`);
+
+      const settings = await settingsService.getEmailSettings(userId, companyId);
+
+      res.status(200).json({
+        success: true,
+        data: settings
+      });
+    } catch (error) {
+      console.error('Error in getEmailSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting email settings',
+        error: error.message
+      });
+    }
+  }
+
+  async updateEmailSettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103;
+      const companyId = parseInt(req.query.companyId);
+      const data = req.body;
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📤 PUT /api/settings/email - userId: ${userId}, companyId: ${companyId}`);
+
+      await settingsService.updateEmailSettings(userId, companyId, data);
+
+      res.status(200).json({
+        success: true,
+        message: 'Email settings updated successfully'
+      });
+    } catch (error) {
+      console.error('Error in updateEmailSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating email settings',
+        error: error.message
+      });
+    }
+  }
+
+  async testEmail(req, res) {
+    try {
+      const { companyId, testEmail } = req.body;
+
+      console.log(`[TEST EMAIL] POST /api/settings/email/test`);
+      console.log(`[TEST EMAIL] Company ID: ${companyId}, Test Email: ${testEmail}`);
+
+      const result = await settingsService.testEmailConnection(companyId, testEmail);
+
+      res.status(200).json({
+        success: true,
+        message: `ส่งอีเมลทดสอบไปที่ ${testEmail} สำเร็จ กรุณาตรวจสอบกล่องจดหมาย`,
+        data: result
+      });
+    } catch (error) {
+      console.error('[ERROR] testEmail:', error);
+      res.status(500).json({
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการส่งอีเมลทดสอบ',
+        error: error.message
+      });
+    }
+  }
+
+  // ==================== NOTIFICATION SETTINGS ====================
+
+  async getNotificationSettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103;
+      const companyId = parseInt(req.query.companyId);
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📥 GET /api/settings/notifications - userId: ${userId}, companyId: ${companyId}`);
+
+      const settings = await settingsService.getNotificationSettings(userId, companyId);
+
+      res.status(200).json({
+        success: true,
+        data: settings
+      });
+    } catch (error) {
+      console.error('Error in getNotificationSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting notification settings',
+        error: error.message
+      });
+    }
+  }
+
+  async updateNotificationSettings(req, res) {
+    try {
+      const userId = req.user?.SU_ID || 1103;
+      const companyId = parseInt(req.query.companyId);
+      const data = req.body;
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📤 PUT /api/settings/notifications - userId: ${userId}, companyId: ${companyId}`);
+
+      await settingsService.updateNotificationSettings(userId, companyId, data);
+
+      res.status(200).json({
+        success: true,
+        message: 'Notification settings updated successfully'
+      });
+    } catch (error) {
+      console.error('Error in updateNotificationSettings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating notification settings',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = new SettingsController();
