@@ -119,10 +119,10 @@ const companyName = ref(localStorage.getItem('companyName') || 'Smart Security')
 const userName = ref(localStorage.getItem('userName') || 'Admin User')
 const userEmail = ref(localStorage.getItem('userEmail') || '')
 
-// Check if Main Admin (IC_ID = 1)
+// Check if Super Admin (IC_ID = NULL)
 const isMainAdmin = computed(() => {
   const companyId = localStorage.getItem('companyId')
-  return companyId && parseInt(companyId) === 1
+  return !companyId || companyId === 'null' || companyId === 'undefined'
 })
 
 // Theme

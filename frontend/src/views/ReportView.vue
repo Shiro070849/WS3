@@ -1,51 +1,53 @@
 <template>
-  <div class="page-container">
-    <!-- Page Header -->
-    <div class="page-header">
+  <div class="w-full max-w-full animate-fadeIn">
+    <!-- Page Header - Tailwind Only -->
+    <div class="mb-10 relative">
       <h1 class="page-title">รายงาน</h1>
-      <p class="page-subtitle">รายงานสรุปข้อมูลการเข้า-ออกของยานพาหนะ</p>
+      <p class="text-lg text-slate-500 m-0 font-prompt font-medium">
+        รายงานสรุปข้อมูลการเข้า-ออกของยานพาหนะ
+      </p>
     </div>
 
-    <!-- Main Content -->
-    <div class="page-content">
-      <!-- Filter Card -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 mb-4">
-        <h3 class="text-base font-bold text-gray-900 mb-4" style="font-family: 'Prompt', sans-serif;">
+    <!-- Main Content - Tailwind Layout -->
+    <div class="w-full">
+      <!-- Filter Card - Tailwind Only -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-5 font-prompt">
           ตัวกรอง
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <!-- วันที่เริ่มต้น -->
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
               วันที่เริ่มต้น
             </label>
             <input
               v-model="filters.startDate"
               type="date"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
             />
           </div>
 
           <!-- วันที่สิ้นสุด -->
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
               วันที่สิ้นสุด
             </label>
             <input
               v-model="filters.endDate"
               type="date"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
             />
           </div>
 
           <!-- บริษัท -->
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
               บริษัท
             </label>
             <select
               v-model="filters.companyId"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
             >
               <option value="">ทั้งหมด</option>
               <option value="1">บริษัท รักชัยห้องเย็น จำกัด</option>
@@ -55,12 +57,12 @@
 
           <!-- สถานะ -->
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
               สถานะ
             </label>
             <select
               v-model="filters.status"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
             >
               <option value="">ทั้งหมด</option>
               <option value="in">เข้า</option>
@@ -69,31 +71,31 @@
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="flex gap-3 mt-5">
+        <!-- Action Buttons - Tailwind Only -->
+        <div class="flex gap-3 mt-6">
           <button
             @click="fetchReport"
-            class="px-4 py-2 text-sm font-semibold bg-[#0090D3] text-white rounded-lg hover:bg-[#007AB8] active:scale-95 transition-all shadow-sm"
+            class="px-5 py-2.5 text-base font-semibold bg-[#0090D3] text-white rounded-lg hover:bg-[#007AB8] active:scale-95 transition-all shadow-sm font-prompt"
           >
-            <svg class="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
             ค้นหา
           </button>
           <button
             @click="exportExcel"
-            class="px-4 py-2 text-sm font-semibold bg-[#3AAA35] text-white rounded-lg hover:bg-[#339A2E] active:scale-95 transition-all shadow-sm"
+            class="px-5 py-2.5 text-base font-semibold bg-[#3AAA35] text-white rounded-lg hover:bg-[#339A2E] active:scale-95 transition-all shadow-sm font-prompt"
           >
-            <svg class="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
             ส่งออก Excel
           </button>
           <button
             @click="exportPDF"
-            class="px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all shadow-sm"
+            class="px-5 py-2.5 text-base font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all shadow-sm font-prompt"
           >
-            <svg class="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
             </svg>
             ส่งออก PDF
@@ -101,72 +103,72 @@
         </div>
       </div>
 
-      <!-- Summary Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+      <!-- Summary Stats - Tailwind Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 transition-all duration-300 hover:-translate-y-1">
           <div class="flex items-center">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
               </svg>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600" style="font-family: 'Prompt', sans-serif;">ทั้งหมด</p>
-              <p class="text-2xl font-bold text-gray-900" style="font-family: 'Prompt', sans-serif;">{{ summary.total }}</p>
+            <div class="ml-5">
+              <p class="text-base font-medium text-gray-600 font-prompt">ทั้งหมด</p>
+              <p class="text-3xl font-bold text-gray-900 font-prompt">{{ summary.total }}</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 transition-all duration-300 hover:-translate-y-1">
           <div class="flex items-center">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
               </svg>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600" style="font-family: 'Prompt', sans-serif;">รถเข้า</p>
-              <p class="text-2xl font-bold text-gray-900" style="font-family: 'Prompt', sans-serif;">{{ summary.in }}</p>
+            <div class="ml-5">
+              <p class="text-base font-medium text-gray-600 font-prompt">รถเข้า</p>
+              <p class="text-3xl font-bold text-gray-900 font-prompt">{{ summary.in }}</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 transition-all duration-300 hover:-translate-y-1">
           <div class="flex items-center">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600" style="font-family: 'Prompt', sans-serif;">รถออก</p>
-              <p class="text-2xl font-bold text-gray-900" style="font-family: 'Prompt', sans-serif;">{{ summary.out }}</p>
+            <div class="ml-5">
+              <p class="text-base font-medium text-gray-600 font-prompt">รถออก</p>
+              <p class="text-3xl font-bold text-gray-900 font-prompt">{{ summary.out }}</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 transition-all duration-300 hover:-translate-y-1">
           <div class="flex items-center">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600" style="font-family: 'Prompt', sans-serif;">ค้างอยู่</p>
-              <p class="text-2xl font-bold text-gray-900" style="font-family: 'Prompt', sans-serif;">{{ summary.pending }}</p>
+            <div class="ml-5">
+              <p class="text-base font-medium text-gray-600 font-prompt">ค้างอยู่</p>
+              <p class="text-3xl font-bold text-gray-900 font-prompt">{{ summary.pending }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Report Table -->
+      <!-- Report Table - Tailwind Only -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         <!-- Table Header -->
-        <div class="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-          <h2 class="text-base font-bold text-gray-900">
+        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <h2 class="text-lg font-bold text-gray-900 font-prompt">
             รายการข้อมูล
-            <span class="ml-2 text-sm font-normal text-gray-500">
+            <span class="ml-2 text-base font-normal text-gray-500">
               ({{ reports.length }} รายการ)
             </span>
           </h2>
@@ -177,71 +179,71 @@
           <table class="w-full">
             <thead class="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">#</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">ทะเบียนรถ</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">ประเภทรถ</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">คนขับ</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">บริษัท</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">เวลาเข้า</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">เวลาออก</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">ระยะเวลา</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">สถานะ</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">#</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">ทะเบียนรถ</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">ประเภทรถ</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">คนขับ</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">บริษัท</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">เวลาเข้า</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">เวลาออก</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">ระยะเวลา</th>
+                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">สถานะ</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="loading">
-                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                <td colspan="9" class="px-6 py-10 text-center text-gray-500">
                   <div class="flex justify-center items-center">
-                    <svg class="animate-spin h-5 w-5 mr-2 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg class="animate-spin h-6 w-6 mr-3 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span class="text-sm">กำลังโหลดข้อมูล...</span>
+                    <span class="text-base font-prompt">กำลังโหลดข้อมูล...</span>
                   </div>
                 </td>
               </tr>
               <tr v-else-if="reports.length === 0">
-                <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">
+                <td colspan="9" class="px-6 py-10 text-center text-base text-gray-500 font-prompt">
                   ไม่พบข้อมูล
                 </td>
               </tr>
               <tr v-else v-for="(report, index) in reports" :key="report.id" class="hover:bg-blue-50/30 transition-colors border-b border-gray-200">
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
                   {{ index + 1 }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <div class="text-sm font-bold text-gray-900">
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <div class="text-base font-bold text-gray-900 font-prompt">
                     {{ report.licensePlate }}
                   </div>
-                  <div class="text-sm text-gray-500">
+                  <div class="text-sm text-gray-500 font-prompt">
                     {{ report.province }}
                   </div>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
                   {{ report.vehicleType }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
                   {{ report.driver }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
                   {{ report.company }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
                   {{ report.timeIn }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
                   {{ report.timeOut || '-' }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
                   {{ report.duration || '-' }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap">
+                <td class="px-6 py-5 whitespace-nowrap">
                   <span
                     :class="{
-                      'bg-green-100 text-green-700 border border-green-200': report.status === 'เข้า',
-                      'bg-orange-100 text-orange-700 border border-orange-200': report.status === 'ออก'
+                      'bg-green-100 text-green-700 border-green-200': report.status === 'เข้า',
+                      'bg-orange-100 text-orange-700 border-orange-200': report.status === 'ออก'
                     }"
-                    class="px-2.5 py-1 inline-flex text-sm font-bold rounded-full"
+                    class="px-3 py-1.5 inline-flex text-sm font-semibold rounded-full border-2 font-prompt"
                   >
                     {{ report.status }}
                   </span>
@@ -393,7 +395,9 @@ onMounted(() => {
 
   // Auto-fill companyId จาก localStorage (สำหรับ multi-company)
   const companyId = localStorage.getItem('companyId');
-  if (companyId) {
+  // Super Admin (IC_ID = NULL) ไม่ต้อง filter ตามบริษัท
+  const isSuperAdmin = !companyId || companyId === 'null' || companyId === 'undefined';
+  if (!isSuperAdmin) {
     filters.value.companyId = companyId;
   }
 
@@ -402,12 +406,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-container {
-  width: 100%;
-  max-width: 100%;
-  animation: fadeIn 0.5s ease-in;
-}
+/* ============================================
+   CSS เหลือแค่ส่วนที่ Tailwind ทำไม่ได้
+   ============================================ */
 
+/* 1. Animation - Tailwind ไม่มี */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -419,10 +422,11 @@ onMounted(() => {
   }
 }
 
-.page-header {
-  margin-bottom: 2.5rem;
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in;
 }
 
+/* 2. Gradient Text - Tailwind ทำได้แต่ยาว */
 .page-title {
   font-size: 2.25rem;
   font-weight: 800;
@@ -433,37 +437,6 @@ onMounted(() => {
   margin: 0 0 0.75rem 0;
   font-family: 'Prompt', sans-serif;
   letter-spacing: -0.02em;
-}
-
-.page-subtitle {
-  font-size: 1.05rem;
-  color: #64748b;
-  margin: 0;
-  font-family: 'Prompt', sans-serif;
-  font-weight: 500;
-}
-
-.page-content {
-  width: 100%;
-}
-
-/* Modern Cards */
-.bg-white {
-  background: white;
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.1),
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  transition: all 0.3s ease;
-}
-
-.bg-white:hover {
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.15),
-    0 10px 15px -3px rgba(0, 0, 0, 0.08),
-    0 4px 6px -4px rgba(0, 0, 0, 0.08);
-  border-color: rgba(191, 219, 254, 0.6);
 }
 
 /* Responsive */

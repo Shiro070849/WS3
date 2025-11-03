@@ -41,11 +41,9 @@ class AuthService {
 
       const { SU_Password, ...userWithoutPassword } = user;
 
-      // Fallback: ถ้า user ไม่มี IC_ID ให้เป็นบริษัทหลัก (IC_ID = 1)
-      if (!userWithoutPassword.IC_ID) {
-        console.warn(`⚠️ User ${userWithoutPassword.SU_Username} has no IC_ID, setting default to 1`);
-        userWithoutPassword.IC_ID = 1;
-      }
+      // IC_ID = NULL หมายถึง Super Admin (ไม่ต้อง fallback)
+      // ส่ง IC_ID กลับไปตามที่เป็นในฐานข้อมูล (รวมถึง NULL)
+      console.log(`✅ User ${userWithoutPassword.SU_Username} logged in with IC_ID: ${userWithoutPassword.IC_ID === null ? 'NULL (Super Admin)' : userWithoutPassword.IC_ID}`);
 
       return userWithoutPassword;
     } catch (error) {

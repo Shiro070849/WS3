@@ -222,13 +222,21 @@ class SettingsController {
 
   async createUser(req, res) {
     try {
-      const { code, name1, name2, email, username, password, active, pinCode, remarks } = req.body;
+      const { code, name1, name2, email, username, password, active, pinCode, remarks, companyId } = req.body;
 
       // Validate required fields
       if (!code || !name1 || !username || !password) {
         return res.status(400).json({
           success: false,
           message: 'Code, Name, Username, and Password are required'
+        });
+      }
+
+      // Validate companyId
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Company ID is required'
         });
       }
 
@@ -241,7 +249,8 @@ class SettingsController {
         password,
         active,
         pinCode,
-        remarks
+        remarks,
+        companyId
       });
 
       res.status(201).json({
@@ -262,7 +271,7 @@ class SettingsController {
   async updateUser(req, res) {
     try {
       const id = req.params.id;
-      const { code, name1, name2, email, username, active, pinCode, remarks } = req.body;
+      const { code, name1, name2, email, username, active, pinCode, remarks, companyId } = req.body;
 
       // Validate required fields
       if (!code || !name1 || !username) {
@@ -280,7 +289,8 @@ class SettingsController {
         username,
         active,
         pinCode,
-        remarks
+        remarks,
+        companyId
       });
 
       res.status(200).json({

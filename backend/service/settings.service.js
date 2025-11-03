@@ -75,13 +75,13 @@ class SettingsService {
       const userCompanyId = userResult.recordset[0].IC_ID;
       console.log(`📌 User ${userId} belongs to company IC_ID: ${userCompanyId}`);
 
-      // ถ้าเป็น Admin ใหญ่ (IC_ID = 1) ให้เห็นทุกบริษัท
+      // ถ้าเป็น Super Admin (IC_ID = NULL) ให้เห็นทุกบริษัท
       // ถ้าเป็น Admin ย่อย ให้เห็นเฉพาะบริษัทตัวเอง
       let query;
       let result;
 
-      if (userCompanyId === 1) {
-        // Admin ใหญ่: เห็นทุกบริษัท
+      if (userCompanyId === null || userCompanyId === undefined) {
+        // Super Admin (IC_ID = NULL): เห็นทุกบริษัท
         query = `
           SELECT
             IC_ID,
@@ -95,7 +95,7 @@ class SettingsService {
           ORDER BY IC_Code ASC
         `;
         result = await pool.request().query(query);
-        console.log(`✅ Admin ใหญ่: คืนทุกบริษัท (${result.recordset.length} บริษัท)`);
+        console.log(`✅ Super Admin (IC_ID = NULL): คืนทุกบริษัท (${result.recordset.length} บริษัท)`);
       } else {
         // Admin ย่อย: เห็นเฉพาะบริษัทตัวเอง
         query = `
@@ -208,24 +208,27 @@ class SettingsService {
 
   // ==================== USERS ====================
 
-  // ดึงรายการ User ทั้งหมด
+  // ดึงรายการ User ทั้งหมด (พร้อมชื่อบริษัท)
   async getAllUsers() {
     try {
       const pool = await dbService.connect();
       const query = `
         SELECT
-          SU_ID,
-          SU_Code,
-          SU_Name1,
-          SU_Name2,
-          SU_Email,
-          SU_Username,
-          SU_Active,
-          SU_LogOn,
-          SU_PinCode,
-          SU_Remarks
-        FROM [dbo].[SystemUser]
-        ORDER BY SU_Code ASC
+          SU.SU_ID,
+          SU.SU_Code,
+          SU.SU_Name1,
+          SU.SU_Name2,
+          SU.SU_Email,
+          SU.SU_Username,
+          SU.SU_Active,
+          SU.SU_LogOn,
+          SU.SU_PinCode,
+          SU.SU_Remarks,
+          SU.IC_ID,
+          IC.IC_LocalName AS CompanyName
+        FROM [dbo].[SystemUser] SU
+        LEFT JOIN [dbo].[InternalCompany] IC ON SU.IC_ID = IC.IC_ID
+        ORDER BY SU.SU_Code ASC
       `;
       const result = await pool.request().query(query);
       return result.recordset;
@@ -278,7 +281,8 @@ class SettingsService {
           SU_Password,
           SU_Active,
           SU_PinCode,
-          SU_Remarks
+          SU_Remarks,
+          IC_ID
         )
         VALUES (
           @SU_Code,
@@ -289,7 +293,8 @@ class SettingsService {
           @SU_Password,
           @SU_Active,
           @SU_PinCode,
-          @SU_Remarks
+          @SU_Remarks,
+          @IC_ID
         );
         SELECT SCOPE_IDENTITY() AS SU_ID;
       `;
@@ -303,6 +308,7 @@ class SettingsService {
         .input('SU_Active', sql.Bit, data.active !== undefined ? data.active : 1)
         .input('SU_PinCode', sql.NVarChar, data.pinCode || null)
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
+        .input('IC_ID', sql.Int, data.companyId)
         .query(query);
       return result.recordset[0];
     } catch (error) {
@@ -325,7 +331,8 @@ class SettingsService {
           SU_Username = @SU_Username,
           SU_Active = @SU_Active,
           SU_PinCode = @SU_PinCode,
-          SU_Remarks = @SU_Remarks
+          SU_Remarks = @SU_Remarks,
+          IC_ID = @IC_ID
         WHERE SU_ID = @SU_ID
       `;
       await pool.request()
@@ -338,6 +345,7 @@ class SettingsService {
         .input('SU_Active', sql.Bit, data.active)
         .input('SU_PinCode', sql.NVarChar, data.pinCode || null)
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
+        .input('IC_ID', sql.Int, data.companyId)
         .query(query);
       return { success: true };
     } catch (error) {

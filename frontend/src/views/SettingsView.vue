@@ -1,17 +1,20 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
+  <!-- Main Container - Tailwind Only -->
+  <div class="w-full max-w-full animate-fadeIn">
+
+    <!-- Page Header - Tailwind -->
+    <div class="mb-6">
       <h1 class="page-title">ตั้งค่า</h1>
-      <p class="page-subtitle">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
+      <p class="text-lg text-slate-500 m-0 font-medium font-prompt">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
     </div>
 
-    <!-- Company Selector (แสดงเมื่อมี Admin มีสิทธิ์เข้าถึงบริษัท) -->
-    <div v-if="accessibleCompanies.length > 0" class="company-selector-container">
-      <div class="company-selector-label-wrapper">
-        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <!-- Company Selector - Tailwind + Custom Dropdown CSS -->
+    <div v-if="accessibleCompanies.length > 0" class="mb-8 flex items-center gap-4 py-4">
+      <div class="flex items-center gap-2 text-sm font-semibold text-gray-800 whitespace-nowrap">
+        <svg class="w-[18px] h-[18px] stroke-[#0090D3] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
-        <span>เลือกบริษัท:</span>
+        <span class="text-gray-800">เลือกบริษัท:</span>
       </div>
 
       <div class="select" :class="{ open: isDropdownOpen }">
@@ -37,40 +40,42 @@
       </div>
     </div>
 
-    <div class="page-content">
+    <!-- Tabs Content - Tailwind -->
+    <div class="w-full">
       <BaseTabs v-model="activeTab" :tabs="tabs">
-        <!-- ==================== TAB 0: ทั่วไป ==================== -->
+
+        <!-- TAB: ทั่วไป -->
         <template #general>
           <GeneralSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
-        <!-- ==================== TAB 1: รูปแบบ ==================== -->
+        <!-- TAB: รูปแบบ -->
         <template #appearance>
           <AppearanceSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
-        <!-- ==================== TAB 2: ความปลอดภัย ==================== -->
+        <!-- TAB: ความปลอดภัย -->
         <template #security>
           <SecuritySettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
-        <!-- ==================== TAB 3: อีเมล ==================== -->
+        <!-- TAB: อีเมล -->
         <template #email>
           <EmailSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
-        <!-- ==================== TAB 4: การแจ้งเตือน ==================== -->
+        <!-- TAB: การแจ้งเตือน -->
         <template #notifications>
           <NotificationSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
-        <!-- ==================== TAB 5: จัดการบริษัท ==================== -->
+        <!-- TAB: จัดการบริษัท -->
         <template #companies>
           <BaseCard>
             <div class="flex justify-between items-center mb-6">
               <div>
                 <h2 class="text-xl font-semibold text-[#1a202c]">รายการบริษัท</h2>
-                <p class="text-sm text-gray-500 mt-1">จัดการข้อมูลบริษัทในระบบ</p>
+                <p class="text-base text-gray-500 mt-1">จัดการข้อมูลบริษัทในระบบ</p>
               </div>
               <BaseButton @click="openCompanyModal" variant="primary">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -82,19 +87,19 @@
 
             <BaseTable :columns="companyColumns" :data="companies" :loading="companyLoading">
               <template #cell-IC_IsActive="{ value }">
-                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-2 py-1 rounded-full text-xs font-medium">
+                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
                   {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
                 </span>
               </template>
 
               <template #actions="{ row }">
                 <div class="flex gap-2 justify-end">
-                  <button @click="editCompany(row)" class="text-[#0090D3] hover:text-[#007AB8]" title="แก้ไข">
+                  <button @click="editCompany(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  <button @click="deleteCompany(row)" class="text-red-600 hover:text-red-800" title="ลบ">
+                  <button @click="deleteCompany(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -105,13 +110,13 @@
           </BaseCard>
         </template>
 
-        <!-- ==================== TAB 2: จัดการผู้ใช้งาน ==================== -->
+        <!-- TAB: จัดการผู้ใช้งาน -->
         <template #users>
           <BaseCard>
             <div class="flex justify-between items-center mb-6">
               <div>
                 <h2 class="text-xl font-semibold text-[#1a202c]">รายการผู้ใช้งาน</h2>
-                <p class="text-sm text-gray-500 mt-1">จัดการข้อมูลผู้ใช้งานในระบบ</p>
+                <p class="text-base text-gray-500 mt-1">จัดการข้อมูลผู้ใช้งานในระบบ</p>
               </div>
               <BaseButton @click="openUserModal" variant="primary">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -123,19 +128,19 @@
 
             <BaseTable :columns="userColumns" :data="users" :loading="userLoading">
               <template #cell-SU_Active="{ value }">
-                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-2 py-1 rounded-full text-xs font-medium">
+                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
                   {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
                 </span>
               </template>
 
               <template #actions="{ row }">
                 <div class="flex gap-2 justify-end">
-                  <button @click="editUser(row)" class="text-[#0090D3] hover:text-[#007AB8]" title="แก้ไข">
+                  <button @click="editUser(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  <button @click="deleteUser(row)" class="text-red-600 hover:text-red-800" title="ลบ">
+                  <button @click="deleteUser(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -146,13 +151,13 @@
           </BaseCard>
         </template>
 
-        <!-- ==================== TAB 3: จัดการแผนก ==================== -->
+        <!-- TAB: จัดการแผนก -->
         <template #departments>
           <BaseCard>
             <div class="flex justify-between items-center mb-6">
               <div>
                 <h2 class="text-xl font-semibold text-[#1a202c]">รายการแผนก</h2>
-                <p class="text-sm text-gray-500 mt-1">จัดการข้อมูลแผนกในระบบ</p>
+                <p class="text-base text-gray-500 mt-1">จัดการข้อมูลแผนกในระบบ</p>
               </div>
               <BaseButton @click="openDepartmentModal" variant="primary">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -164,19 +169,19 @@
 
             <BaseTable :columns="departmentColumns" :data="departments" :loading="departmentLoading">
               <template #cell-ID_IsActive="{ value }">
-                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-2 py-1 rounded-full text-xs font-medium">
+                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
                   {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
                 </span>
               </template>
 
               <template #actions="{ row }">
                 <div class="flex gap-2 justify-end">
-                  <button @click="editDepartment(row)" class="text-[#0090D3] hover:text-[#007AB8]" title="แก้ไข">
+                  <button @click="editDepartment(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  <button @click="deleteDepartment(row)" class="text-red-600 hover:text-red-800" title="ลบ">
+                  <button @click="deleteDepartment(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -189,7 +194,7 @@
       </BaseTabs>
     </div>
 
-    <!-- ==================== MODAL: บริษัท ==================== -->
+    <!-- MODAL: บริษัท -->
     <BaseModal :show="companyModal.show" :title="companyModal.title" @close="closeCompanyModal" size="lg">
       <div class="space-y-4">
         <BaseInput v-model="companyForm.code" label="รหัสบริษัท" placeholder="เช่น RC, MRG" required />
@@ -214,9 +219,26 @@
       </template>
     </BaseModal>
 
-    <!-- ==================== MODAL: ผู้ใช้งาน ==================== -->
+    <!-- MODAL: ผู้ใช้งาน -->
     <BaseModal :show="userModal.show" :title="userModal.title" @close="closeUserModal" size="lg">
       <div class="space-y-4">
+        <!-- เลือกบริษัท (สำหรับ Super Admin เท่านั้น) -->
+        <div v-if="isMainAdmin">
+          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            บริษัท <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="userForm.companyId"
+            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            required
+          >
+            <option value="">เลือกบริษัท</option>
+            <option v-for="company in companies" :key="company.IC_ID" :value="company.IC_ID">
+              {{ company.IC_LocalName }} ({{ company.IC_Code }})
+            </option>
+          </select>
+        </div>
+
         <BaseInput v-model="userForm.code" label="รหัสพนักงาน" placeholder="เช่น 100001" required />
         <BaseInput v-model="userForm.name1" label="ชื่อ (ไทย)" placeholder="เช่น นายสมชาย ใจดี" required />
         <BaseInput v-model="userForm.name2" label="ชื่อ (อังกฤษ)" placeholder="เช่น Mr. Somchai Jaidee" />
@@ -242,7 +264,7 @@
       </template>
     </BaseModal>
 
-    <!-- ==================== MODAL: แผนก ==================== -->
+    <!-- MODAL: แผนก -->
     <BaseModal :show="departmentModal.show" :title="departmentModal.title" @close="closeDepartmentModal" size="lg">
       <div class="space-y-4">
         <BaseInput v-model="departmentForm.code" label="รหัสแผนก" placeholder="เช่น IT, HR, CS" required />
@@ -292,7 +314,6 @@ const isDropdownOpen = ref(false);
 
 const fetchAccessibleCompanies = async () => {
   try {
-    // ดึง userId จาก localStorage
     const userId = localStorage.getItem('userId');
     console.log('[FETCH] Fetching companies for userId:', userId);
 
@@ -300,7 +321,6 @@ const fetchAccessibleCompanies = async () => {
     console.log('[DATA] Accessible Companies Response:', response.data);
     accessibleCompanies.value = response.data.data;
 
-    // Set default selected company to first one
     if (accessibleCompanies.value.length > 0) {
       selectedCompanyId.value = accessibleCompanies.value[0].IC_ID;
       console.log('[INFO] Selected Company ID:', selectedCompanyId.value);
@@ -320,10 +340,7 @@ const toggleDropdown = () => {
 
 const onCompanyChange = () => {
   console.log('[UPDATE] Selected company changed to:', selectedCompanyId.value);
-  isDropdownOpen.value = false; // Close dropdown after selection
-
-  // หมายเหตุ: ไม่เรียก loadTheme() ที่นี่ เพราะ logo/theme ควรแสดงตามบริษัทของ user ที่ login
-  // Dropdown นี้ใช้แค่เลือกว่าจะแก้ไข Settings ของบริษัทไหน ไม่ใช่เปลี่ยน theme
+  isDropdownOpen.value = false;
 };
 
 const getSelectedCompanyName = () => {
@@ -331,7 +348,6 @@ const getSelectedCompanyName = () => {
   return company ? `${company.IC_LocalName} (${company.IC_Code})` : 'เลือกบริษัท';
 };
 
-// Close dropdown when clicking outside
 const handleClickOutside = (event) => {
   const dropdown = document.querySelector('.select');
   if (dropdown && !dropdown.contains(event.target)) {
@@ -341,20 +357,17 @@ const handleClickOutside = (event) => {
 
 // ==================== Tab State ====================
 const activeTab = ref('general');
-
-// กำหนด tabs ตาม role ของ user
 const isMainAdmin = ref(false);
 
-// ตรวจสอบว่าเป็น Admin ใหญ่หรือไม่ (IC_ID = 1)
 const checkIsMainAdmin = () => {
   const companyId = localStorage.getItem('companyId');
-  isMainAdmin.value = companyId && parseInt(companyId) === 1;
-  console.log('[USER] Is Main Admin:', isMainAdmin.value, '(Company ID:', companyId, ')');
+  // Super Admin: companyId = null, 'null', undefined, หรือ ''
+  isMainAdmin.value = !companyId || companyId === 'null' || companyId === 'undefined';
+  console.log('[USER] Is Super Admin:', isMainAdmin.value, '(Company ID:', companyId, ')');
 };
 
 const tabs = computed(() => {
   if (isMainAdmin.value) {
-    // Admin หลัก - มีแท็บจัดการเต็มรูปแบบ
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
@@ -366,7 +379,6 @@ const tabs = computed(() => {
       { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
     ];
   } else {
-    // Admin ย่อย - มีแท็บพื้นฐาน (ทั่วไป + รูปแบบ)
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
@@ -454,16 +466,28 @@ const users = ref([]);
 const userLoading = ref(false);
 const userSaving = ref(false);
 const userModal = ref({ show: false, isEdit: false, title: '', id: null });
-const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '' });
+const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: null });
 
-const userColumns = [
-  { key: 'SU_Code', label: 'รหัส' },
-  { key: 'SU_Name1', label: 'ชื่อ (ไทย)' },
-  { key: 'SU_Username', label: 'Username' },
-  { key: 'SU_Email', label: 'Email' },
-  { key: 'SU_Active', label: 'สถานะ' },
-  { key: 'SU_Remarks', label: 'หมายเหตุ' },
-];
+const userColumns = computed(() => {
+  if (isMainAdmin.value) {
+    return [
+      { key: 'SU_Code', label: 'รหัส' },
+      { key: 'SU_Name1', label: 'ชื่อ (ไทย)' },
+      { key: 'CompanyName', label: 'บริษัท' },
+      { key: 'SU_Username', label: 'Username' },
+      { key: 'SU_Email', label: 'Email' },
+      { key: 'SU_Active', label: 'สถานะ' },
+    ];
+  } else {
+    return [
+      { key: 'SU_Code', label: 'รหัส' },
+      { key: 'SU_Name1', label: 'ชื่อ (ไทย)' },
+      { key: 'SU_Username', label: 'Username' },
+      { key: 'SU_Email', label: 'Email' },
+      { key: 'SU_Active', label: 'สถานะ' },
+    ];
+  }
+});
 
 const fetchUsers = async () => {
   userLoading.value = true;
@@ -480,12 +504,24 @@ const fetchUsers = async () => {
 
 const openUserModal = () => {
   userModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งานใหม่', id: null };
-  userForm.value = { code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '' };
+  // ถ้าไม่ใช่ Super Admin ให้ใช้ company ของตัวเอง
+  const defaultCompanyId = isMainAdmin.value ? null : selectedCompanyId.value;
+  userForm.value = { code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: defaultCompanyId };
 };
 
 const editUser = (row) => {
   userModal.value = { show: true, isEdit: true, title: 'แก้ไขผู้ใช้งาน', id: row.SU_ID };
-  userForm.value = { code: row.SU_Code, name1: row.SU_Name1, name2: row.SU_Name2, username: row.SU_Username, password: '', email: row.SU_Email || '', active: row.SU_Active, remarks: row.SU_Remarks || '' };
+  userForm.value = {
+    code: row.SU_Code,
+    name1: row.SU_Name1,
+    name2: row.SU_Name2,
+    username: row.SU_Username,
+    password: '',
+    email: row.SU_Email || '',
+    active: row.SU_Active,
+    remarks: row.SU_Remarks || '',
+    companyId: row.IC_ID || null
+  };
 };
 
 const closeUserModal = () => {
@@ -493,9 +529,25 @@ const closeUserModal = () => {
 };
 
 const saveUser = async () => {
+  // Validation: ถ้าเป็น Super Admin ต้องเลือกบริษัท
+  if (isMainAdmin.value && !userForm.value.companyId) {
+    alert('กรุณาเลือกบริษัท');
+    return;
+  }
+
   userSaving.value = true;
   try {
-    const payload = { code: userForm.value.code, name1: userForm.value.name1, name2: userForm.value.name2, username: userForm.value.username, email: userForm.value.email, active: userForm.value.active, remarks: userForm.value.remarks };
+    const payload = {
+      code: userForm.value.code,
+      name1: userForm.value.name1,
+      name2: userForm.value.name2,
+      username: userForm.value.username,
+      email: userForm.value.email,
+      active: userForm.value.active,
+      remarks: userForm.value.remarks,
+      companyId: userForm.value.companyId // ส่ง IC_ID ไปด้วย
+    };
+
     if (userModal.value.isEdit) {
       await usersAPI.update(userModal.value.id, payload);
       alert('บันทึกข้อมูลสำเร็จ');
@@ -603,7 +655,7 @@ const deleteDepartment = async (row) => {
 
 // ==================== Load Data on Mount ====================
 onMounted(() => {
-  checkIsMainAdmin(); // ตรวจสอบว่าเป็น Admin ใหญ่หรือไม่
+  checkIsMainAdmin();
   fetchAccessibleCompanies();
   fetchCompanies();
   fetchUsers();
@@ -617,12 +669,11 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.page-container {
-  width: 100%;
-  max-width: 100%;
-  animation: fadeIn 0.5s ease-in;
-}
+/* ============================================
+   CSS เหลือแค่ส่วนที่ Tailwind ทำไม่ได้
+   ============================================ */
 
+/* 1. Animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -634,40 +685,24 @@ onBeforeUnmount(() => {
   }
 }
 
-.page-header {
-  margin-bottom: 1.5rem;
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in;
 }
 
-.company-selector-container {
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 0;
-}
-
-.company-selector-label-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1a202c;
-  white-space: nowrap;
-}
-
-.company-selector-label-wrapper span {
-  color: #1a202c;
+/* 2. Gradient Title */
+.page-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0B4F6C 0%, #0090D3 50%, #20B2AA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 0.75rem 0;
   font-family: 'Prompt', sans-serif;
+  letter-spacing: -0.02em;
 }
 
-.company-selector-label-wrapper .icon {
-  width: 18px;
-  height: 18px;
-  stroke: #0090D3;
-  flex-shrink: 0;
-}
-
+/* 3. Custom Dropdown (Complex component) */
 .select {
   width: fit-content;
   cursor: pointer;
@@ -776,30 +811,6 @@ onBeforeUnmount(() => {
 
 .options input[type="radio"]:checked + label {
   display: none;
-}
-
-.page-title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #0B4F6C 0%, #0090D3 50%, #20B2AA 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0 0 0.75rem 0;
-  font-family: 'Prompt', sans-serif;
-  letter-spacing: -0.02em;
-}
-
-.page-subtitle {
-  font-size: 1.05rem;
-  color: #64748b;
-  margin: 0;
-  font-family: 'Prompt', sans-serif;
-  font-weight: 500;
-}
-
-.page-content {
-  width: 100%;
 }
 
 /* Responsive */

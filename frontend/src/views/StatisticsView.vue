@@ -1,18 +1,22 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <div class="flex justify-between items-center">
+  <div class="w-full max-w-full animate-fadeIn">
+    <!-- Page Header - Tailwind Only -->
+    <div class="mb-8">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 class="page-title">สถิติ</h1>
-          <p class="page-subtitle">สถิติและการวิเคราะห์ข้อมูลคลังสินค้า</p>
+          <p class="text-lg text-slate-500 m-0 font-prompt font-medium">
+            สถิติและการวิเคราะห์ข้อมูลคลังสินค้า
+          </p>
         </div>
-        <div class="filter-buttons">
+        <!-- Period Filter Buttons - Tailwind Only -->
+        <div class="flex gap-1.5 bg-white p-1 rounded-xl shadow-sm">
           <button
             v-for="period in periods"
             :key="period.value"
             @click="selectedPeriod = period.value"
-            :class="selectedPeriod === period.value ? 'active' : ''"
-            class="period-btn"
+            :class="selectedPeriod === period.value ? 'period-btn-active' : 'period-btn'"
+            class="px-4 py-2 rounded-lg text-sm font-semibold font-prompt transition-all"
           >
             {{ period.label }}
           </button>
@@ -20,17 +24,18 @@
       </div>
     </div>
 
-    <div class="page-content">
-      <!-- Overview Stats Cards -->
-      <div class="stats-grid">
-        <div class="stat-card-modern" v-for="stat in overviewStats" :key="stat.label">
-          <div class="stat-icon-wrapper" :style="{ background: stat.gradient }">
+    <!-- Main Content - Tailwind Layout -->
+    <div class="w-full">
+      <!-- Overview Stats Cards - Tailwind Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        <div v-for="stat in overviewStats" :key="stat.label" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" :style="{ background: stat.gradient }">
             <div class="stat-icon" v-html="stat.icon"></div>
           </div>
-          <div class="stat-info">
-            <p class="stat-label">{{ stat.label }}</p>
-            <p class="stat-value">{{ stat.value }}</p>
-            <div class="stat-change" :class="stat.trend === 'up' ? 'positive' : 'negative'">
+          <div class="flex-1">
+            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">{{ stat.label }}</p>
+            <p class="text-2xl font-extrabold text-gray-900 mb-1.5 font-prompt leading-none">{{ stat.value }}</p>
+            <div class="flex items-center gap-1 text-sm font-semibold font-prompt" :class="stat.trend === 'up' ? 'text-green-600' : 'text-red-500'">
               <svg v-if="stat.trend === 'up'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
               </svg>
@@ -43,85 +48,85 @@
         </div>
       </div>
 
-      <!-- Charts Section -->
-      <div class="charts-grid">
+      <!-- Charts Section - Tailwind Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
         <!-- Traffic Trend Chart -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3 class="chart-title">แนวโน้มการเข้า-ออกรถ</h3>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">แนวโน้มการเข้า-ออกรถ</h3>
           </div>
-          <div class="chart-container">
+          <div class="h-64 w-full p-2">
             <Line v-if="trafficChartData" :data="trafficChartData" :options="trafficChartOptions" />
           </div>
         </div>
 
         <!-- Vehicle Types Chart -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3 class="chart-title">ประเภทรถที่เข้าใช้บริการ</h3>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">ประเภทรถที่เข้าใช้บริการ</h3>
           </div>
-          <div class="chart-container">
+          <div class="h-64 w-full p-2">
             <Bar v-if="vehicleChartData" :data="vehicleChartData" :options="vehicleChartOptions" />
           </div>
         </div>
 
         <!-- Peak Hours Chart -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3 class="chart-title">ช่วงเวลาเร่งด่วน</h3>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">ช่วงเวลาเร่งด่วน</h3>
             <span class="chart-badge">24 ชั่วโมง</span>
           </div>
-          <div class="chart-container">
+          <div class="h-64 w-full p-2">
             <Bar v-if="peakHoursChartData" :data="peakHoursChartData" :options="peakHoursChartOptions" />
           </div>
         </div>
 
         <!-- Top Companies -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3 class="chart-title">บริษัทที่ใช้บริการบ่อยที่สุด</h3>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">บริษัทที่ใช้บริการบ่อยที่สุด</h3>
           </div>
-          <div class="chart-container">
+          <div class="h-64 w-full p-2">
             <Bar v-if="companiesChartData" :data="companiesChartData" :options="companiesChartOptions" />
           </div>
         </div>
       </div>
 
-      <!-- Additional Stats -->
-      <div class="additional-stats">
-        <div class="stat-box">
-          <div class="stat-box-icon" style="background: linear-gradient(135deg, #0090D3, #0B4F6C);">
+      <!-- Additional Stats - Tailwind Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          <div class="stat-box-icon-blue">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
-          <div class="stat-box-content">
-            <p class="stat-box-label">เวลาเฉลี่ยที่อยู่ในคลัง</p>
-            <p class="stat-box-value">{{ additionalStats.averageTime }}</p>
+          <div class="flex-1">
+            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">เวลาเฉลี่ยที่อยู่ในคลัง</p>
+            <p class="text-2xl font-extrabold text-gray-900 m-0 font-prompt leading-none">{{ additionalStats.averageTime }}</p>
           </div>
         </div>
 
-        <div class="stat-box">
-          <div class="stat-box-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          <div class="stat-box-icon-green">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
           </div>
-          <div class="stat-box-content">
-            <p class="stat-box-label">ประสิทธิภาพการทำงาน</p>
-            <p class="stat-box-value">{{ additionalStats.efficiency }}</p>
+          <div class="flex-1">
+            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">ประสิทธิภาพการทำงาน</p>
+            <p class="text-2xl font-extrabold text-gray-900 m-0 font-prompt leading-none">{{ additionalStats.efficiency }}</p>
           </div>
         </div>
 
-        <div class="stat-box">
-          <div class="stat-box-icon" style="background: linear-gradient(135deg, #0EA5E9, #0284C7);">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          <div class="stat-box-icon-sky">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
           </div>
-          <div class="stat-box-content">
-            <p class="stat-box-label">จำนวนบริษัททั้งหมด</p>
-            <p class="stat-box-value">{{ additionalStats.totalCompanies }}</p>
+          <div class="flex-1">
+            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">จำนวนบริษัททั้งหมด</p>
+            <p class="text-2xl font-extrabold text-gray-900 m-0 font-prompt leading-none">{{ additionalStats.totalCompanies }}</p>
           </div>
         </div>
       </div>
@@ -614,12 +619,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-container {
-  width: 100%;
-  max-width: 100%;
-  animation: fadeIn 0.5s ease-in;
-}
+/* ============================================
+   CSS เหลือแค่ส่วนที่ Tailwind ทำไม่ได้
+   ============================================ */
 
+/* 1. Animation - Tailwind ไม่มี */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -631,362 +635,93 @@ onMounted(() => {
   }
 }
 
-.page-header {
-  margin-bottom: 1.875rem;
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in;
 }
 
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-center {
-  align-items: center;
-}
-
+/* 2. Gradient Text - Tailwind ทำได้แต่ยาว */
 .page-title {
-  font-size: 1.7rem;
+  font-size: 2.25rem;
   font-weight: 800;
   background: linear-gradient(135deg, #0B4F6C 0%, #0090D3 50%, #20B2AA 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.75rem 0;
   font-family: 'Prompt', sans-serif;
   letter-spacing: -0.02em;
 }
 
-.page-subtitle {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin: 0;
-  font-family: 'Prompt', sans-serif;
-  font-weight: 500;
-}
-
-/* Period Filter Buttons */
-.filter-buttons {
-  display: flex;
-  gap: 0.375rem;
-  background: white;
-  padding: 0.25rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
+/* 3. Period Button Styles */
 .period-btn {
-  padding: 0.5rem 0.95rem;
-  border: none;
-  border-radius: 6px;
+  border: 0;
   background: transparent;
   color: #64748b;
-  font-family: 'Prompt', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .period-btn:hover {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3B82F6;
+  background: #eff6ff;
+  color: #2563eb;
 }
 
-.period-btn.active {
+.period-btn-active {
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, #0090D3, #0B4F6C);
   color: white;
-  box-shadow: 0 4px 12px rgba(0, 144, 211, 0.3);
 }
 
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 1.125rem;
-  margin-bottom: 1.5rem;
-}
-
-.stat-card-modern {
-  background: white;
-  padding: 1.3rem;
-  border-radius: 15px;
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.1),
-    0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  display: flex;
-  align-items: center;
-  gap: 0.95rem;
-  transition: all 0.3s ease;
-}
-
-.stat-card-modern:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.15),
-    0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon-wrapper {
-  width: 54px;
-  height: 54px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.66rem;
-  color: #64748b;
-  margin: 0 0 0.375rem 0;
-  font-family: 'Prompt', sans-serif;
-  font-weight: 500;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 0.375rem 0;
-  font-family: 'Prompt', sans-serif;
-  line-height: 1;
-}
-
-.stat-change {
-  display: flex;
-  align-items: center;
-  gap: 0.28rem;
-  font-size: 0.66rem;
-  font-weight: 600;
-  font-family: 'Prompt', sans-serif;
-}
-
-.stat-change.positive {
-  color: #10b981;
-}
-
-.stat-change.negative {
-  color: #ef4444;
-}
-
-.stat-change svg {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* Charts Grid */
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(410px, 1fr));
-  gap: 1.125rem;
-  margin-bottom: 1.5rem;
-}
-
-.chart-card {
-  background: white;
-  padding: 1.3rem;
-  border-radius: 15px;
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.1),
-    0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  transition: all 0.3s ease;
-}
-
-.chart-card:hover {
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.15),
-    0 12px 20px -5px rgba(0, 0, 0, 0.08);
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.125rem;
-}
-
-.chart-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
-  font-family: 'Prompt', sans-serif;
-}
-
-.chart-legend {
-  display: flex;
-  gap: 1rem;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #64748b;
-  font-family: 'Prompt', sans-serif;
-  font-weight: 500;
-}
-
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
+/* 4. Chart Badge Gradient */
 .chart-badge {
-  padding: 0.28rem 0.66rem;
-  background: linear-gradient(135deg, #0090D3, #0B4F6C);
-  color: white;
-  font-size: 0.56rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
   font-weight: 600;
   border-radius: 9999px;
   font-family: 'Prompt', sans-serif;
+  background: linear-gradient(135deg, #0090D3, #0B4F6C);
+  color: white;
 }
 
-.chart-container {
-  height: 260px;
-  width: 100%;
-  padding: 0.75rem 0.375rem;
-}
-
-/* Additional Stats */
-.additional-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));
-  gap: 1.125rem;
-}
-
-.stat-box {
-  background: white;
-  padding: 1.3rem;
-  border-radius: 15px;
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.1),
-    0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  display: flex;
-  align-items: center;
-  gap: 0.95rem;
-  transition: all 0.3s ease;
-}
-
-.stat-box:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.15),
-    0 12px 20px -5px rgba(0, 0, 0, 0.08);
-}
-
-.stat-box-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+/* 5. Additional Stats Icon Gradients */
+.stat-box-icon-blue {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #0090D3, #0B4F6C);
 }
 
-.stat-box-content {
-  flex: 1;
+.stat-box-icon-green {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #10b981, #059669);
 }
 
-.stat-box-label {
-  font-size: 0.66rem;
-  color: #64748b;
-  margin: 0 0 0.375rem 0;
-  font-family: 'Prompt', sans-serif;
-  font-weight: 500;
-}
-
-.stat-box-value {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0;
-  font-family: 'Prompt', sans-serif;
-  line-height: 1;
+.stat-box-icon-sky {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #0EA5E9, #0284C7);
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-container {
-    height: 350px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  }
-
-  .additional-stats {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 768px) {
   .page-title {
     font-size: 1.75rem;
-  }
-
-  .filter-buttons {
-    flex-wrap: wrap;
-  }
-
-  .period-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .page-header .flex {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .chart-container {
-    height: 300px;
-  }
-
-  .stat-card-modern {
-    padding: 1.25rem;
-  }
-
-  .stat-icon-wrapper {
-    width: 56px;
-    height: 56px;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-  }
-
-  .chart-card {
-    padding: 1.25rem;
   }
 }
 </style>
