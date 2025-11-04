@@ -135,6 +135,11 @@
 
               <template #actions="{ row }">
                 <div class="flex gap-2 justify-end">
+                  <button @click="openPasswordModal(row)" class="text-amber-600 hover:text-amber-800 transition-colors" title="เปลี่ยนรหัสผ่าน">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                  </button>
                   <button @click="editUser(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -284,6 +289,85 @@
           <BaseButton variant="secondary" @click="closeDepartmentModal">ยกเลิก</BaseButton>
           <BaseButton variant="primary" @click="saveDepartment" :loading="departmentSaving">
             {{ departmentModal.isEdit ? 'บันทึก' : 'สร้าง' }}
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- MODAL: เปลี่ยนรหัสผ่าน -->
+    <BaseModal :show="passwordModal.show" :title="passwordModal.title" @close="closePasswordModal" size="md">
+      <!-- แสดงข้อมูล User -->
+      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-center gap-3 mb-2">
+          <svg class="w-12 h-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <div>
+            <p class="text-lg font-semibold text-gray-800">{{ passwordForm.name }}</p>
+            <p class="text-sm text-gray-600">{{ passwordForm.username }}</p>
+            <p class="text-xs text-gray-500">{{ passwordForm.companyName }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning Message -->
+      <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <p class="text-sm text-amber-800">ผู้ใช้งานจะต้อง Login ใหม่ด้วยรหัสผ่านที่เปลี่ยนแล้ว</p>
+      </div>
+
+      <!-- Password Fields -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            รหัสผ่านใหม่ <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input
+              v-model="passwordForm.newPassword"
+              :type="showPassword ? 'text' : 'password'"
+              class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt pr-12"
+              placeholder="รหัสผ่านใหม่ (8+ ตัว, A-Z, a-z, 0-9)"
+              required
+            />
+            <button
+              type="button"
+              @click="showPassword = !showPassword"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              <svg v-if="!showPassword" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <svg v-else class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">ต้องมีอย่างน้อย 8 ตัวอักษร, ตัวพิมพ์ใหญ่ (A-Z), ตัวพิมพ์เล็ก (a-z), และตัวเลข (0-9)</p>
+        </div>
+
+        <div>
+          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            ยืนยันรหัสผ่าน <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="passwordForm.confirmPassword"
+            :type="showPassword ? 'text' : 'password'"
+            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            placeholder="ยืนยันรหัสผ่านใหม่"
+            required
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="closePasswordModal">ยกเลิก</BaseButton>
+          <BaseButton variant="primary" @click="changePassword" :loading="passwordChanging">
+            เปลี่ยนรหัสผ่าน
           </BaseButton>
         </div>
       </template>
@@ -575,6 +659,96 @@ const deleteUser = async (row) => {
   } catch (error) {
     console.error('Error:', error);
     alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+// ==================== เปลี่ยนรหัสผ่าน (Password Change) ====================
+const passwordModal = ref({ show: false, title: 'เปลี่ยนรหัสผ่าน', id: null });
+const passwordForm = ref({ name: '', username: '', companyName: '', newPassword: '', confirmPassword: '' });
+const passwordChanging = ref(false);
+const showPassword = ref(false);
+
+const openPasswordModal = (row) => {
+  passwordModal.value = { show: true, title: 'เปลี่ยนรหัสผ่าน', id: row.SU_ID };
+  passwordForm.value = {
+    name: row.SU_Name1,
+    username: row.SU_Username,
+    companyName: row.CompanyName || 'N/A',
+    newPassword: '',
+    confirmPassword: ''
+  };
+  showPassword.value = false;
+  console.log('🔑 Opening password modal for user:', row.SU_Username);
+};
+
+const closePasswordModal = () => {
+  passwordModal.value.show = false;
+  passwordForm.value = { name: '', username: '', companyName: '', newPassword: '', confirmPassword: '' };
+};
+
+const changePassword = async () => {
+  // Validation 1: ตรวจสอบว่ากรอกครบหรือไม่
+  if (!passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
+    alert('กรุณากรอกรหัสผ่านให้ครบถ้วน');
+    return;
+  }
+
+  // Validation 2: ตรวจสอบว่ารหัสผ่านตรงกันหรือไม่
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    alert('รหัสผ่านไม่ตรงกัน กรุณากรอกใหม่');
+    return;
+  }
+
+  // Validation 3: ความยาว (8-50 ตัวอักษร)
+  if (passwordForm.value.newPassword.length < 8) {
+    alert('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
+    return;
+  }
+  if (passwordForm.value.newPassword.length > 50) {
+    alert('รหัสผ่านต้องไม่เกิน 50 ตัวอักษร');
+    return;
+  }
+
+  // Validation 4: ตรวจสอบรูปแบบ (A-Z, a-z, 0-9)
+  const hasUpperCase = /[A-Z]/.test(passwordForm.value.newPassword);
+  const hasLowerCase = /[a-z]/.test(passwordForm.value.newPassword);
+  const hasNumber = /[0-9]/.test(passwordForm.value.newPassword);
+
+  if (!hasUpperCase) {
+    alert('รหัสผ่านต้องมีตัวพิมพ์ใหญ่ (A-Z) อย่างน้อย 1 ตัว');
+    return;
+  }
+  if (!hasLowerCase) {
+    alert('รหัสผ่านต้องมีตัวพิมพ์เล็ก (a-z) อย่างน้อย 1 ตัว');
+    return;
+  }
+  if (!hasNumber) {
+    alert('รหัสผ่านต้องมีตัวเลข (0-9) อย่างน้อย 1 ตัว');
+    return;
+  }
+
+  // Confirm กับ User
+  if (!confirm(`ยืนยันการเปลี่ยนรหัสผ่านสำหรับ "${passwordForm.value.username}" ใช่หรือไม่?`)) {
+    return;
+  }
+
+  passwordChanging.value = true;
+  try {
+    console.log(`🔐 Changing password for user ID: ${passwordModal.value.id}`);
+
+    await usersAPI.resetPassword(passwordModal.value.id, {
+      password: passwordForm.value.newPassword
+    });
+
+    alert(`เปลี่ยนรหัสผ่านสำเร็จ!\n\nผู้ใช้งาน: ${passwordForm.value.username}\nจะต้อง Login ใหม่ด้วยรหัสผ่านใหม่`);
+    closePasswordModal();
+    fetchUsers();
+  } catch (error) {
+    console.error('Error changing password:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'เกิดข้อผิดพลาด';
+    alert(`เกิดข้อผิดพลาด: ${errorMessage}`);
+  } finally {
+    passwordChanging.value = false;
   }
 };
 

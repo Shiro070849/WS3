@@ -56,8 +56,7 @@ export const usersAPI = {
   getById: (id) => apiClient.get(`/settings/users/${id}`),
   create: (data) => apiClient.post('/settings/users', data),
   update: (id, data) => apiClient.put(`/settings/users/${id}`, data),
-  resetPassword: (id, newPassword) =>
-    apiClient.put(`/settings/users/${id}/reset-password`, { newPassword }),
+  resetPassword: (id, data) => apiClient.put(`/settings/users/${id}/reset-password`, data),
   delete: (id) => apiClient.delete(`/settings/users/${id}`),
 };
 

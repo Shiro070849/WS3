@@ -354,19 +354,74 @@ class SettingsService {
     }
   }
 
-  // รีเซ็ตรหัสผ่าน
-  async resetPassword(id, newPassword) {
+  // รีเซ็ตรหัสผ่าน (พร้อม validation และ audit log)
+  async resetPassword(id, newPassword, adminId, adminIP) {
     try {
       const pool = await dbService.connect();
-      const query = `
+
+      // 1. ตรวจสอบว่า user มีอยู่จริงหรือไม่
+      const userQuery = `
+        SELECT SU_ID, SU_Username, SU_Name1, IC_ID
+        FROM [dbo].[SystemUser]
+        WHERE SU_ID = @SU_ID
+      `;
+      const userResult = await pool.request()
+        .input('SU_ID', sql.Int, id)
+        .query(userQuery);
+
+      if (userResult.recordset.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const user = userResult.recordset[0];
+      console.log(`🔐 Resetting password for user: ${user.SU_Username} (SU_ID: ${id})`);
+
+      // 2. Validate password (8+ chars, A-Z, a-z, 0-9)
+      if (!newPassword || newPassword.length < 8) {
+        throw new Error('Password must be at least 8 characters');
+      }
+      if (!/[A-Z]/.test(newPassword)) {
+        throw new Error('Password must contain at least one uppercase letter (A-Z)');
+      }
+      if (!/[a-z]/.test(newPassword)) {
+        throw new Error('Password must contain at least one lowercase letter (a-z)');
+      }
+      if (!/[0-9]/.test(newPassword)) {
+        throw new Error('Password must contain at least one number (0-9)');
+      }
+      if (newPassword.length > 50) {
+        throw new Error('Password cannot exceed 50 characters');
+      }
+
+      // 3. Update password
+      const updateQuery = `
         UPDATE [dbo].[SystemUser]
         SET SU_Password = @SU_Password
         WHERE SU_ID = @SU_ID
       `;
       await pool.request()
         .input('SU_ID', sql.Int, id)
-        .input('SU_Password', sql.NVarChar, newPassword)
-        .query(query);
+        .input('SU_Password', sql.NVarChar(50), newPassword)
+        .query(updateQuery);
+
+      console.log(`✅ Password updated for SU_ID: ${id}`);
+
+      // 4. Log to ConnectionHistory (Audit Log)
+      const logQuery = `
+        INSERT INTO [dbo].[ConnectionHistory] (
+          SU_ID, CH_RecordedOn, CH_IPAddress, CH_EventType
+        ) VALUES (
+          @SU_ID, GETDATE(), @CH_IPAddress, @CH_EventType
+        )
+      `;
+      await pool.request()
+        .input('SU_ID', sql.Int, id)
+        .input('CH_IPAddress', sql.NVarChar(15), adminIP || 'Unknown')
+        .input('CH_EventType', sql.NVarChar(50), `PasswordChanged_By_Admin_${adminId}`)
+        .query(logQuery);
+
+      console.log(`📝 Audit log created: PasswordChanged for SU_ID ${id} by Admin ${adminId}`);
+
       return { success: true };
     } catch (error) {
       console.error('Error resetting password:', error);

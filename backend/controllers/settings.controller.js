@@ -319,7 +319,15 @@ class SettingsController {
         });
       }
 
-      await settingsService.resetPassword(id, password);
+      // ดึง Admin ID จาก req.user (จะต้องมี middleware ที่ verify token และใส่ user info ลง req.user)
+      const adminId = req.user?.SU_ID || 1103; // Fallback to sysadmin
+
+      // ดึง IP Address จาก request
+      const adminIP = req.ip || req.connection.remoteAddress || 'Unknown';
+
+      console.log(`🔑 Admin ${adminId} (IP: ${adminIP}) is resetting password for User ${id}`);
+
+      await settingsService.resetPassword(id, password, adminId, adminIP);
 
       res.status(200).json({
         success: true,
@@ -329,7 +337,7 @@ class SettingsController {
       console.error('Error in resetPassword:', error);
       res.status(500).json({
         success: false,
-        message: 'Error resetting password',
+        message: error.message || 'Error resetting password',
         error: error.message
       });
     }
