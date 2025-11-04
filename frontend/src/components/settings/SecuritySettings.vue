@@ -783,7 +783,7 @@ onMounted(() => {
 
 /* Browser Tabs Header */
 .tabs-head {
-  background: #3c3c3c;
+  background: #0D47A1;
   height: 30px;
   display: flex;
   justify-content: space-between;
@@ -803,7 +803,7 @@ onMounted(() => {
   max-width: 170px;
   height: 26px;
   border-radius: 5px 5px 0 0;
-  background-color: #535353;
+  background-color: #1565C0;
   display: flex;
   gap: 6px;
   align-items: center;
@@ -813,9 +813,9 @@ onMounted(() => {
 }
 
 .tabs-head .tab-open span {
-  color: #e8e8e8;
+  color: #fff;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -823,7 +823,7 @@ onMounted(() => {
 }
 
 .tabs-head .tab-open .close-tab {
-  color: #b0b0b0;
+  color: #fff;
   font-size: 13px;
   width: 14px;
   height: 14px;
@@ -836,11 +836,12 @@ onMounted(() => {
   border: none;
   transition: all 0.2s;
   flex-shrink: 0;
+  opacity: 0.8;
 }
 
 .tabs-head .tab-open .close-tab:hover {
-  background-color: #6a6a6a;
-  color: #fff;
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
 }
 
 .tabs-head .window-opt {
@@ -856,22 +857,23 @@ onMounted(() => {
   border: none;
   background-color: transparent;
   transition: 0.15s ease-out;
-  color: #b0b0b0;
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 3px;
   font-size: 12px;
+  opacity: 0.9;
 }
 
 .tabs-head .window-opt button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
 }
 
 .tabs-head .window-opt .window-close:hover {
-  background-color: #e81123;
+  background-color: #dc3545;
   color: #fff;
 }
 
@@ -880,7 +882,7 @@ onMounted(() => {
   position: relative;
   width: 100%;
   height: 42px;
-  background-color: #535353;
+  background-color: #1565C0;
   padding: 5px 10px;
   display: flex;
   gap: 8px;
@@ -892,7 +894,7 @@ onMounted(() => {
   height: 26px;
   border: none;
   background-color: transparent;
-  color: #b0b0b0;
+  color: #fff;
   border-radius: 3px;
   transition: 0.15s ease-in-out;
   cursor: pointer;
@@ -900,24 +902,25 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0.8;
 }
 
 .head-browser button:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .head-browser button:hover:not(:disabled) {
-  background-color: #6a6a6a;
-  color: #fff;
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
 }
 
 .head-browser .url-bar {
-  background-color: #404040;
-  border: 1px solid #606060;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: none;
   height: 30px;
   border-radius: 15px;
-  color: #e8e8e8;
+  color: #fff;
   padding: 0 14px;
   flex: 1;
   transition: 0.15s ease-in-out;
@@ -928,18 +931,18 @@ onMounted(() => {
 }
 
 .head-browser .url-bar:hover {
-  border-color: #707070;
-  background-color: #4a4a4a;
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 .head-browser .url-text {
-  color: #e8e8e8;
+  color: #fff;
   font-size: 13px;
   font-weight: 400;
+  opacity: 0.9;
 }
 
 .head-browser .star {
-  color: #b0b0b0;
+  color: #fff;
   font-size: 16px;
   opacity: 0.7;
   background: transparent;
@@ -956,9 +959,8 @@ onMounted(() => {
 }
 
 .head-browser .star:hover {
-  background-color: #606060;
+  background-color: rgba(255, 255, 255, 0.15);
   opacity: 1;
-  color: #ffd700;
 }
 
 /* Browser Content */
