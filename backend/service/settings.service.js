@@ -16,7 +16,8 @@ class SettingsService {
           IC_LocalName,
           IC_EnglishName,
           IC_IsActive,
-          IC_Remarks
+          IC_Remarks,
+          IC_LogoPath
         FROM [dbo].[InternalCompany]
         ORDER BY IC_Code ASC
       `;
@@ -39,7 +40,8 @@ class SettingsService {
           IC_LocalName,
           IC_EnglishName,
           IC_IsActive,
-          IC_Remarks
+          IC_Remarks,
+          IC_LogoPath
         FROM [dbo].[InternalCompany]
         WHERE IC_ID = @IC_ID
       `;
@@ -89,7 +91,8 @@ class SettingsService {
             IC_LocalName,
             IC_EnglishName,
             IC_ShortLocalName,
-            IC_ShortEnglishName
+            IC_ShortEnglishName,
+            IC_LogoPath
           FROM [dbo].[InternalCompany]
           WHERE IC_IsActive = 1
           ORDER BY IC_Code ASC
@@ -105,7 +108,8 @@ class SettingsService {
             IC_LocalName,
             IC_EnglishName,
             IC_ShortLocalName,
-            IC_ShortEnglishName
+            IC_ShortEnglishName,
+            IC_LogoPath
           FROM [dbo].[InternalCompany]
           WHERE IC_ID = @CompanyId AND IC_IsActive = 1
           ORDER BY IC_Code ASC
@@ -133,14 +137,16 @@ class SettingsService {
           IC_LocalName,
           IC_EnglishName,
           IC_IsActive,
-          IC_Remarks
+          IC_Remarks,
+          IC_LogoPath
         )
         VALUES (
           @IC_Code,
           @IC_LocalName,
           @IC_EnglishName,
           @IC_IsActive,
-          @IC_Remarks
+          @IC_Remarks,
+          @IC_LogoPath
         );
         SELECT SCOPE_IDENTITY() AS IC_ID;
       `;
@@ -150,6 +156,7 @@ class SettingsService {
         .input('IC_EnglishName', sql.NVarChar, data.englishName || null)
         .input('IC_IsActive', sql.Bit, data.isActive !== undefined ? data.isActive : 1)
         .input('IC_Remarks', sql.NVarChar, data.remarks || null)
+        .input('IC_LogoPath', sql.NVarChar, data.logoPath || null)
         .query(query);
       return result.recordset[0];
     } catch (error) {
@@ -169,7 +176,8 @@ class SettingsService {
           IC_LocalName = @IC_LocalName,
           IC_EnglishName = @IC_EnglishName,
           IC_IsActive = @IC_IsActive,
-          IC_Remarks = @IC_Remarks
+          IC_Remarks = @IC_Remarks,
+          IC_LogoPath = @IC_LogoPath
         WHERE IC_ID = @IC_ID
       `;
       await pool.request()
@@ -179,10 +187,31 @@ class SettingsService {
         .input('IC_EnglishName', sql.NVarChar, data.englishName || null)
         .input('IC_IsActive', sql.Bit, data.isActive)
         .input('IC_Remarks', sql.NVarChar, data.remarks || null)
+        .input('IC_LogoPath', sql.NVarChar, data.logoPath || null)
         .query(query);
       return { success: true };
     } catch (error) {
       console.error('Error updating company:', error);
+      throw error;
+    }
+  }
+
+  // อัพเดต Logo Path ของบริษัท
+  async updateCompanyLogo(id, logoPath) {
+    try {
+      const pool = await dbService.connect();
+      const query = `
+        UPDATE [dbo].[InternalCompany]
+        SET IC_LogoPath = @IC_LogoPath
+        WHERE IC_ID = @IC_ID
+      `;
+      await pool.request()
+        .input('IC_ID', sql.Int, id)
+        .input('IC_LogoPath', sql.NVarChar, logoPath)
+        .query(query);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating company logo:', error);
       throw error;
     }
   }

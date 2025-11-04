@@ -164,6 +164,44 @@ class SettingsController {
     }
   }
 
+  async uploadCompanyLogo(req, res) {
+    try {
+      const companyId = req.params.id;
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาเลือกไฟล์ logo'
+        });
+      }
+
+      // สร้าง path สำหรับเก็บในฐานข้อมูล
+      const logoPath = `/uploads/logos/${req.file.filename}`;
+
+      // อัพเดต IC_LogoPath ในตาราง InternalCompany
+      await settingsService.updateCompanyLogo(companyId, logoPath);
+
+      console.log(`📤 Logo uploaded for company ${companyId}: ${logoPath}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'อัปโหลด logo สำเร็จ',
+        data: {
+          filename: req.file.filename,
+          logoPath: logoPath,
+          size: req.file.size
+        }
+      });
+    } catch (error) {
+      console.error('Error in uploadCompanyLogo:', error);
+      res.status(500).json({
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการอัปโหลด logo',
+        error: error.message
+      });
+    }
+  }
+
   // ==================== USERS ====================
 
   async getAllUsers(req, res) {

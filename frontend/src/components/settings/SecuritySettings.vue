@@ -317,17 +317,35 @@
     <!-- Modal: เปลี่ยนรหัสผ่าน -->
     <Teleport to="body">
       <div v-if="passwordModal.show" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);" @click.self="closePasswordModal">
-        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl transform transition-all duration-300">
-          <div class="flex justify-between items-center px-8 py-6 bg-gradient-to-r from-amber-500 to-amber-600 rounded-t-2xl">
-            <h3 class="text-2xl font-bold text-white tracking-wide">{{ passwordModal.title }}</h3>
-            <button @click="closePasswordModal" class="text-white hover:text-gray-200 transition-all duration-200 hover:rotate-90 transform">
-              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+        <div class="browser-modal">
+          <!-- Browser Tabs Header -->
+          <div class="tabs-head">
+            <div class="tabs">
+              <div class="tab-open">
+                <span>{{ passwordModal.title }}</span>
+                <button @click="closePasswordModal" class="close-tab">✕</button>
+              </div>
+            </div>
+            <div class="window-opt">
+              <button>−</button>
+              <button>□</button>
+              <button @click="closePasswordModal" class="window-close">✕</button>
+            </div>
           </div>
 
-          <div class="p-8 space-y-5">
+          <!-- Browser URL Bar -->
+          <div class="head-browser">
+            <button disabled>←</button>
+            <button disabled>→</button>
+            <div class="url-bar">
+              <span class="url-text">password/change</span>
+              <button class="star">★</button>
+            </div>
+            <button>⋮</button>
+          </div>
+
+          <!-- Content Area -->
+          <div class="browser-content">
             <!-- ข้อมูล User -->
             <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl mb-4 border border-blue-100 shadow-sm">
               <div class="grid grid-cols-2 gap-3 text-sm">
@@ -417,14 +435,14 @@
                 </li>
               </ul>
             </div>
-          </div>
 
-          <!-- ปุ่ม -->
-          <div class="flex justify-end gap-4 px-8 py-6 border-t bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl">
-            <BaseButton variant="secondary" @click="closePasswordModal" class="min-w-[120px]">ยกเลิก</BaseButton>
-            <BaseButton variant="primary" @click="changePassword" :loading="passwordChanging" class="min-w-[120px]">
-              เปลี่ยนรหัสผ่าน
-            </BaseButton>
+            <!-- ปุ่ม -->
+            <div class="flex justify-end gap-4 px-6 py-4 border-t bg-gray-50">
+              <BaseButton variant="secondary" @click="closePasswordModal" class="min-w-[100px]">ยกเลิก</BaseButton>
+              <BaseButton variant="primary" @click="changePassword" :loading="passwordChanging" class="min-w-[100px]">
+                เปลี่ยนรหัสผ่าน
+              </BaseButton>
+            </div>
           </div>
         </div>
       </div>

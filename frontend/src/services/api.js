@@ -48,6 +48,15 @@ export const companiesAPI = {
   create: (data) => apiClient.post('/settings/companies', data),
   update: (id, data) => apiClient.put(`/settings/companies/${id}`, data),
   delete: (id) => apiClient.delete(`/settings/companies/${id}`),
+  uploadLogo: (id, file) => {
+    const formData = new FormData();
+    formData.append('logo', file);
+    return apiClient.post(`/settings/companies/${id}/logo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 // ==================== USERS API ====================

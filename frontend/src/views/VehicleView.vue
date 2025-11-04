@@ -196,176 +196,266 @@
         </div>
 
         <!-- Pagination -->
-        <div v-if="pagination.totalPages > 1" class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          <div class="text-base text-gray-600 font-prompt">
-            หน้า {{ pagination.page }} จาก {{ pagination.totalPages }}
-          </div>
-          <div class="flex gap-2">
-            <button
-              @click="changePage(pagination.page - 1)"
-              :disabled="pagination.page === 1"
-              class="px-5 py-2.5 text-base font-semibold border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-prompt"
-            >
-              ก่อนหน้า
-            </button>
-            <button
-              @click="changePage(pagination.page + 1)"
-              :disabled="pagination.page >= pagination.totalPages"
-              class="px-5 py-2.5 text-base font-semibold border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-prompt"
-            >
-              ถัดไป
-            </button>
+        <div v-if="pagination.totalPages > 1" class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <div class="flex items-center justify-between">
+            <div class="text-base text-gray-600 font-prompt">
+              แสดง {{ (pagination.page - 1) * pagination.limit + 1 }}-{{ Math.min(pagination.page * pagination.limit, pagination.total) }} จาก {{ pagination.total }} รายการ
+            </div>
+            <div class="flex gap-2 items-center">
+              <!-- Previous Button -->
+              <button
+                @click="changePage(pagination.page - 1)"
+                :disabled="pagination.page === 1"
+                class="px-4 py-2 text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] disabled:opacity-40 disabled:cursor-not-allowed transition-all font-prompt"
+              >
+                ← ก่อนหน้า
+              </button>
+
+              <!-- Page Numbers -->
+              <div class="flex gap-1">
+                <!-- First Page -->
+                <button
+                  v-if="pagination.page > 6"
+                  @click="changePage(1)"
+                  class="w-10 h-10 flex items-center justify-center text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] transition-all font-prompt"
+                >
+                  1
+                </button>
+                <span v-if="pagination.page > 7" class="flex items-center px-2 text-gray-400">...</span>
+
+                <!-- Pages around current page -->
+                <button
+                  v-for="page in visiblePages"
+                  :key="page"
+                  @click="changePage(page)"
+                  :class="[
+                    'w-10 h-10 flex items-center justify-center text-base font-semibold border rounded-lg transition-all font-prompt',
+                    page === pagination.page
+                      ? 'bg-[#0090D3] text-white border-[#0090D3]'
+                      : 'border-gray-300 hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3]'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+
+                <!-- Last Page -->
+                <span v-if="pagination.page < pagination.totalPages - 6" class="flex items-center px-2 text-gray-400">...</span>
+                <button
+                  v-if="pagination.page < pagination.totalPages - 5"
+                  @click="changePage(pagination.totalPages)"
+                  class="w-10 h-10 flex items-center justify-center text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] transition-all font-prompt"
+                >
+                  {{ pagination.totalPages }}
+                </button>
+              </div>
+
+              <!-- Next Button -->
+              <button
+                @click="changePage(pagination.page + 1)"
+                :disabled="pagination.page >= pagination.totalPages"
+                class="px-4 py-2 text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] disabled:opacity-40 disabled:cursor-not-allowed transition-all font-prompt"
+              >
+                ถัดไป →
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Add/Edit Modal - Tailwind Only -->
-    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden m-4">
-        <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center modal-header rounded-t-2xl">
-          <h3 class="text-xl font-bold text-white font-prompt tracking-tight">
-            {{ modalMode === 'add' ? 'เพิ่มรถเข้า' : 'แก้ไขข้อมูลรถ' }}
-          </h3>
-          <button @click="closeModal" class="text-white hover:bg-white/20 rounded-xl p-2 transition-all">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <div class="px-6 py-6 overflow-y-auto max-h-[calc(90vh-160px)]">
-          <div class="grid grid-cols-2 gap-5">
-            <div class="col-span-2 md:col-span-1">
-              <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
-                ทะเบียนรถ <span class="text-red-500">*</span>
-              </label>
-              <input
-                v-model="formData.licensePlate"
-                type="text"
-                class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
-                placeholder="กท-1234"
-              />
+    <!-- Add/Edit Modal - Browser Style -->
+    <Teleport to="body">
+      <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm" @click.self="closeModal">
+        <div class="browser-modal browser-modal-large">
+          <!-- Browser Tabs Header -->
+          <div class="tabs-head">
+            <div class="tabs">
+              <div class="tab-open">
+                <span>{{ modalMode === 'add' ? 'เพิ่มรถเข้า' : 'แก้ไขข้อมูลรถ' }}</span>
+                <button @click="closeModal" class="close-tab">✕</button>
+              </div>
             </div>
-            <div class="col-span-2 md:col-span-1">
-              <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
-                จังหวัด
-              </label>
-              <input
-                v-model="formData.licenseProvince"
-                type="text"
-                class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
-                placeholder="กรุงเทพมหานคร"
-              />
+            <div class="window-opt">
+              <button>−</button>
+              <button>□</button>
+              <button @click="closeModal" class="window-close">✕</button>
             </div>
-            <div class="col-span-2 md:col-span-1">
-              <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
-                ประเภทรถ
-              </label>
-              <select
-                v-model="formData.vehicleType"
-                class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+          </div>
+
+          <!-- Browser URL Bar -->
+          <div class="head-browser">
+            <button disabled>←</button>
+            <button disabled>→</button>
+            <div class="url-bar">
+              <span class="url-text">{{ modalMode === 'add' ? 'vehicle/create' : 'vehicle/edit' }}</span>
+              <button class="star">★</button>
+            </div>
+            <button>⋮</button>
+          </div>
+
+          <!-- Content Area -->
+          <div class="browser-content">
+            <div class="grid grid-cols-2 gap-5">
+              <div class="col-span-2 md:col-span-1">
+                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                  ทะเบียนรถ <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="formData.licensePlate"
+                  type="text"
+                  class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+                  placeholder="กท-1234"
+                />
+              </div>
+              <div class="col-span-2 md:col-span-1">
+                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                  จังหวัด
+                </label>
+                <input
+                  v-model="formData.licenseProvince"
+                  type="text"
+                  class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+                  placeholder="กรุงเทพมหานคร"
+                />
+              </div>
+              <div class="col-span-2 md:col-span-1">
+                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                  ประเภทรถ
+                </label>
+                <select
+                  v-model="formData.vehicleType"
+                  class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+                >
+                  <option value="">เลือกประเภทรถ</option>
+                  <option value="4 ล้อ">4 ล้อ</option>
+                  <option value="6 ล้อ">6 ล้อ</option>
+                  <option value="10 ล้อ">10 ล้อ</option>
+                  <option value="รถกระบะ">รถกระบะ</option>
+                  <option value="รถยนต์">รถยนต์</option>
+                </select>
+              </div>
+              <div class="col-span-2 md:col-span-1">
+                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                  ชื่อคนขับ
+                </label>
+                <input
+                  v-model="formData.fullName"
+                  type="text"
+                  class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+                  placeholder="ชื่อ-นามสกุล"
+                />
+              </div>
+              <div class="col-span-2">
+                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                  หมายเหตุ
+                </label>
+                <textarea
+                  v-model="formData.remarks"
+                  rows="3"
+                  class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all resize-none font-prompt"
+                  placeholder="หมายเหตุเพิ่มเติม"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- ปุ่ม -->
+            <div class="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 -mx-8 -mb-8 mt-6">
+              <button
+                @click="closeModal"
+                class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all font-prompt"
               >
-                <option value="">เลือกประเภทรถ</option>
-                <option value="4 ล้อ">4 ล้อ</option>
-                <option value="6 ล้อ">6 ล้อ</option>
-                <option value="10 ล้อ">10 ล้อ</option>
-                <option value="รถกระบะ">รถกระบะ</option>
-                <option value="รถยนต์">รถยนต์</option>
-              </select>
+                ยกเลิก
+              </button>
+              <button
+                @click="saveVehicle"
+                class="px-6 py-3 text-base font-semibold bg-[#0090D3] text-white rounded-xl hover:bg-[#007AB8] active:scale-95 transition-all shadow-md font-prompt"
+              >
+                {{ modalMode === 'add' ? 'เพิ่มรถ' : 'บันทึก' }}
+              </button>
             </div>
-            <div class="col-span-2 md:col-span-1">
-              <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
-                ชื่อคนขับ
-              </label>
-              <input
-                v-model="formData.fullName"
-                type="text"
-                class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
-                placeholder="ชื่อ-นามสกุล"
-              />
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Checkout Modal - Browser Style -->
+    <Teleport to="body">
+      <div v-if="showCheckoutModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm" @click.self="closeCheckoutModal">
+        <div class="browser-modal">
+          <!-- Browser Tabs Header -->
+          <div class="tabs-head tabs-head-green">
+            <div class="tabs">
+              <div class="tab-open">
+                <span>บันทึกรถออก</span>
+                <button @click="closeCheckoutModal" class="close-tab">✕</button>
+              </div>
             </div>
-            <div class="col-span-2">
-              <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <div class="window-opt">
+              <button>−</button>
+              <button>□</button>
+              <button @click="closeCheckoutModal" class="window-close">✕</button>
+            </div>
+          </div>
+
+          <!-- Browser URL Bar -->
+          <div class="head-browser head-browser-green">
+            <button disabled>←</button>
+            <button disabled>→</button>
+            <div class="url-bar">
+              <span class="url-text">vehicle/checkout</span>
+              <button class="star">★</button>
+            </div>
+            <button>⋮</button>
+          </div>
+
+          <!-- Content Area -->
+          <div class="browser-content">
+            <div class="mb-6 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
+              <p class="text-base text-gray-700 mb-3 font-prompt">
+                <span class="font-semibold text-gray-600">ทะเบียนรถ:</span>
+                <span class="font-bold text-gray-900 text-lg ml-2">{{ checkoutData.vehicle?.WI_LicensePlate }}</span>
+              </p>
+              <p class="text-base text-gray-700 font-prompt">
+                <span class="font-semibold text-gray-600">คนขับ:</span>
+                <span class="font-bold text-gray-900 text-lg ml-2">{{ checkoutData.vehicle?.WI_FullName || '-' }}</span>
+              </p>
+            </div>
+            <div>
+              <label class="block text-base font-bold text-gray-700 mb-3 font-prompt">
                 หมายเหตุ
               </label>
               <textarea
-                v-model="formData.remarks"
-                rows="3"
-                class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all resize-none font-prompt"
-                placeholder="หมายเหตุเพิ่มเติม"
+                v-model="checkoutData.remarks"
+                rows="4"
+                class="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#3AAA35] focus:border-[#3AAA35] transition-all resize-none leading-relaxed font-prompt"
+                placeholder="หมายเหตุการออก (ถ้ามี)"
               ></textarea>
+            </div>
+
+            <!-- ปุ่ม -->
+            <div class="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 -mx-8 -mb-8 mt-6">
+              <button
+                @click="closeCheckoutModal"
+                class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all font-prompt"
+              >
+                ยกเลิก
+              </button>
+              <button
+                @click="saveCheckout"
+                class="px-6 py-3 text-base font-semibold bg-[#3AAA35] text-white rounded-xl hover:bg-[#339A2E] active:scale-95 transition-all shadow-md font-prompt"
+              >
+                บันทึกออก
+              </button>
             </div>
           </div>
         </div>
-        <div class="px-6 py-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 rounded-b-2xl">
-          <button
-            @click="closeModal"
-            class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all font-prompt"
-          >
-            ยกเลิก
-          </button>
-          <button
-            @click="saveVehicle"
-            class="px-6 py-3 text-base font-semibold bg-[#0090D3] text-white rounded-xl hover:bg-[#007AB8] active:scale-95 transition-all shadow-md font-prompt"
-          >
-            {{ modalMode === 'add' ? 'เพิ่มรถ' : 'บันทึก' }}
-          </button>
-        </div>
       </div>
-    </div>
-
-    <!-- Checkout Modal - Tailwind Only -->
-    <div v-if="showCheckoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden m-4">
-        <div class="px-7 py-6 border-b border-gray-100 modal-header-green rounded-t-2xl">
-          <h3 class="text-2xl font-bold text-white font-prompt tracking-tight">
-            บันทึกรถออก
-          </h3>
-        </div>
-        <div class="px-7 py-6">
-          <div class="mb-6 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
-            <p class="text-base text-gray-700 mb-3 font-prompt">
-              <span class="font-semibold text-gray-600">ทะเบียนรถ:</span>
-              <span class="font-bold text-gray-900 text-lg ml-2">{{ checkoutData.vehicle?.WI_LicensePlate }}</span>
-            </p>
-            <p class="text-base text-gray-700 font-prompt">
-              <span class="font-semibold text-gray-600">คนขับ:</span>
-              <span class="font-bold text-gray-900 text-lg ml-2">{{ checkoutData.vehicle?.WI_FullName || '-' }}</span>
-            </p>
-          </div>
-          <div>
-            <label class="block text-base font-bold text-gray-700 mb-3 font-prompt">
-              หมายเหตุ
-            </label>
-            <textarea
-              v-model="checkoutData.remarks"
-              rows="4"
-              class="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#3AAA35] focus:border-[#3AAA35] transition-all resize-none leading-relaxed font-prompt"
-              placeholder="หมายเหตุการออก (ถ้ามี)"
-            ></textarea>
-          </div>
-        </div>
-        <div class="px-7 py-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 rounded-b-2xl">
-          <button
-            @click="closeCheckoutModal"
-            class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all font-prompt"
-          >
-            ยกเลิก
-          </button>
-          <button
-            @click="saveCheckout"
-            class="px-6 py-3 text-base font-semibold bg-[#3AAA35] text-white rounded-xl hover:bg-[#339A2E] active:scale-95 transition-all shadow-md font-prompt"
-          >
-            บันทึกออก
-          </button>
-        </div>
-      </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { vehiclesAPI } from '../services/api';
 
 // ==================== STATE ====================
@@ -379,12 +469,12 @@ const filters = ref({
   search: '',
   status: '',
   page: 1,
-  limit: 50,
+  limit: 25,
 });
 
 const pagination = ref({
   page: 1,
-  limit: 50,
+  limit: 25,
   total: 0,
   totalPages: 0,
 });
@@ -409,6 +499,25 @@ const formData = ref({
 const checkoutData = ref({
   vehicle: null,
   remarks: '',
+});
+
+// ==================== COMPUTED ====================
+
+// คำนวณหน้าที่จะแสดงใน pagination (แสดงแค่ 10 หน้ารอบๆ หน้าปัจจุบัน)
+const visiblePages = computed(() => {
+  const current = pagination.value.page;
+  const total = pagination.value.totalPages;
+  const pages = [];
+
+  // แสดงหน้ารอบๆ หน้าปัจจุบัน (5 หน้าก่อนหน้า + หน้าปัจจุบัน + 4 หน้าถัดไป = 10 หน้า)
+  const start = Math.max(1, current - 5);
+  const end = Math.min(total, current + 4);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
 });
 
 // ==================== FUNCTIONS ====================
@@ -603,7 +712,7 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style>
 /* ============================================
    CSS เหลือแค่ส่วนที่ Tailwind ทำไม่ได้
    ============================================ */
@@ -637,13 +746,232 @@ onMounted(() => {
   letter-spacing: -0.02em;
 }
 
-/* 3. Modal Header Gradients */
-.modal-header {
-  background: linear-gradient(135deg, #0090D3 0%, #00B1EF 100%);
+/* ============================================
+   Browser Modal Styles
+   ============================================ */
+
+/* Browser Modal Container */
+.browser-modal {
+  width: 650px;
+  max-width: 90vw;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
-.modal-header-green {
-  background: linear-gradient(135deg, #3AAA35 0%, #45B845 100%);
+.browser-modal-large {
+  width: 800px;
+  max-width: 90vw;
+}
+
+/* Browser Tabs Header - Default Blue */
+.tabs-head {
+  background: #0D47A1;
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 8px;
+}
+
+/* Green variant for checkout */
+.tabs-head-green {
+  background: #2E7D32 !important;
+}
+
+.tabs-head .tabs {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  align-items: flex-end;
+}
+
+.tabs-head .tab-open {
+  min-width: 110px;
+  max-width: 200px;
+  height: 26px;
+  border-radius: 5px 5px 0 0;
+  background-color: #1565C0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  position: relative;
+}
+
+.tabs-head-green .tab-open {
+  background-color: #43A047 !important;
+}
+
+.tabs-head .tab-open span {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabs-head .tab-open .close-tab {
+  color: #fff;
+  font-size: 13px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.tabs-head .tab-open .close-tab:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+.tabs-head .window-opt {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 100%;
+}
+
+.tabs-head .window-opt button {
+  height: 24px;
+  width: 24px;
+  border: none;
+  background-color: transparent;
+  transition: 0.15s ease-out;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.tabs-head .window-opt button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.tabs-head .window-opt .window-close:hover {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+/* Browser URL Bar */
+.head-browser {
+  position: relative;
+  width: 100%;
+  height: 42px;
+  background-color: #1565C0;
+  padding: 5px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.head-browser-green {
+  background-color: #43A047 !important;
+}
+
+.head-browser button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  border-radius: 3px;
+  transition: 0.15s ease-in-out;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.head-browser button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.head-browser button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.head-browser .url-bar {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: none;
+  height: 30px;
+  border-radius: 15px;
+  color: #fff;
+  padding: 0 14px;
+  flex: 1;
+  transition: 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.head-browser .url-bar:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.head-browser .url-text {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.head-browser .star {
+  color: #fff;
+  font-size: 16px;
+  opacity: 0.7;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s;
+}
+
+.head-browser .star:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+/* Browser Content */
+.browser-content {
+  background: #fff;
+  padding: 32px;
+  max-height: 70vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 /* Responsive */

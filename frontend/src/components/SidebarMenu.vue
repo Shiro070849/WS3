@@ -10,12 +10,13 @@
 
       <transition name="fade">
         <div v-if="!isCollapsed" class="company-info">
-          <!-- Logo Card (สีขาวเพื่อให้ logo เด่น) -->
-          <div v-if="logoUrl" class="logo-card">
-            <img class="app-logo company-logo" :src="logoUrl" alt="Company Logo" />
+          <!-- Logo + Company Name (Horizontal Layout) -->
+          <div v-if="logoUrl" class="company-header-card">
+            <div class="company-logo-container">
+              <img class="company-logo-horizontal" :src="logoUrl" alt="Company Logo" />
+            </div>
+            <h1 class="company-name-horizontal">{{ companyName }}</h1>
           </div>
-          <h1 class="company-name">{{ companyName }}</h1>
-          <p class="company-subtitle">Cold Storage</p>
         </div>
       </transition>
     </div>
@@ -73,38 +74,67 @@
   </aside>
 
   <!-- Logout Modal -->
-  <transition name="modal">
-    <div v-if="showLogoutModal" class="modal-overlay" :class="{ 'main-admin-modal': isMainAdmin }" @click.self="showLogoutModal = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
+  <Teleport to="body">
+    <transition name="modal">
+      <div v-if="showLogoutModal" class="modal-overlay" @click.self="showLogoutModal = false">
+        <div class="browser-modal">
+          <!-- Browser Tabs Header -->
+          <div class="tabs-head" :class="{ 'main-admin-tabs': isMainAdmin }">
+            <div class="tabs">
+              <div class="tab-open">
+                <span>ยืนยันการออกจากระบบ</span>
+                <button @click="showLogoutModal = false" class="close-tab">✕</button>
+              </div>
+            </div>
+            <div class="window-opt">
+              <button>−</button>
+              <button>□</button>
+              <button @click="showLogoutModal = false" class="window-close">✕</button>
+            </div>
           </div>
-          <h3>ยืนยันการออกจากระบบ</h3>
-        </div>
 
-        <div class="modal-body">
-          <p class="modal-question">คุณต้องการออกจากระบบใช่หรือไม่?</p>
-          <p class="modal-hint">กรุณายืนยันการออกจากระบบอีกครั้ง</p>
-        </div>
+          <!-- Browser URL Bar -->
+          <div class="head-browser" :class="{ 'main-admin-url': isMainAdmin }">
+            <button disabled>←</button>
+            <button disabled>→</button>
+            <div class="url-bar">
+              <span class="url-text">auth/logout</span>
+              <button class="star">★</button>
+            </div>
+            <button>⋮</button>
+          </div>
 
-        <div class="modal-footer">
-          <button @click="showLogoutModal = false" class="btn-cancel">ยกเลิก</button>
-          <button @click="confirmLogout" class="btn-confirm">ยืนยัน Logout</button>
+          <!-- Content Area -->
+          <div class="browser-content">
+            <div class="logout-content-wrapper">
+              <div class="modal-icon-large">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </div>
+              <p class="modal-question">คุณต้องการออกจากระบบใช่หรือไม่?</p>
+              <p class="modal-hint">กรุณายืนยันการออกจากระบบอีกครั้ง</p>
+            </div>
+
+            <!-- ปุ่ม -->
+            <div class="flex justify-end gap-4 px-6 py-4 border-t bg-gray-50">
+              <button @click="showLogoutModal = false" class="btn-cancel">ยกเลิก</button>
+              <button @click="confirmLogout" class="btn-confirm">ยืนยัน Logout</button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </transition>
+    </transition>
+  </Teleport>
 </template>
 
 <script setup>
 import { ref, computed, defineEmits, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
+import { companiesAPI, getBackendBaseUrl } from '@/services/api'
 
 const router = useRouter()
 const route = useRoute()
@@ -118,6 +148,7 @@ const showLogoutModal = ref(false)
 const companyName = ref(localStorage.getItem('companyName') || 'Smart Security')
 const userName = ref(localStorage.getItem('userName') || 'Admin User')
 const userEmail = ref(localStorage.getItem('userEmail') || '')
+const companyLogoPath = ref(null)
 
 // Check if Super Admin (IC_ID = NULL)
 const isMainAdmin = computed(() => {
@@ -127,7 +158,15 @@ const isMainAdmin = computed(() => {
 
 // Theme
 const { currentTheme, loadTheme } = useTheme()
+
+// Logo URL - ใช้ logo ของบริษัทจาก IC_LogoPath หรือ fallback ไปที่ theme logo
 const logoUrl = computed(() => {
+  // ถ้ามี company logo ให้ใช้ logo ของบริษัท
+  if (companyLogoPath.value) {
+    return `${getBackendBaseUrl()}${companyLogoPath.value}`
+  }
+
+  // ถ้าไม่มี ให้ใช้ theme logo (สำหรับ Super Admin)
   if (!currentTheme.value?.logo_url) return ''
 
   // ถ้าเป็น URL เต็ม ใช้เลย
@@ -136,8 +175,28 @@ const logoUrl = computed(() => {
   }
 
   // ถ้าเป็น path ใน backend ให้ต่อกับ API base URL
-  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}${currentTheme.value.logo_url}`
+  return `${getBackendBaseUrl()}${currentTheme.value.logo_url}`
 })
+
+// ดึง company logo
+const fetchCompanyLogo = async () => {
+  try {
+    const companyId = localStorage.getItem('companyId')
+
+    // ถ้าเป็น Super Admin ไม่ต้องดึง logo
+    if (!companyId || companyId === 'null' || companyId === 'undefined') {
+      return
+    }
+
+    const response = await companiesAPI.getById(companyId)
+    if (response.data.success && response.data.data.IC_LogoPath) {
+      companyLogoPath.value = response.data.data.IC_LogoPath
+      console.log('[SIDEBAR] Company logo loaded:', companyLogoPath.value)
+    }
+  } catch (error) {
+    console.error('[SIDEBAR] Error fetching company logo:', error)
+  }
+}
 
 // Menu Items
 const menuItems = [
@@ -187,12 +246,15 @@ const confirmLogout = () => {
   router.push('/login')
 }
 
-// Load theme on mount
+// Load theme and company logo on mount
 onMounted(async () => {
   const companyId = localStorage.getItem('companyId')
   if (companyId) {
     await loadTheme(parseInt(companyId))
   }
+
+  // ดึง company logo
+  await fetchCompanyLogo()
 })
 </script>
 
@@ -346,6 +408,78 @@ onMounted(async () => {
   object-fit: contain;
 }
 
+/* Company Header Card - Horizontal Layout */
+.company-header-card {
+  background: linear-gradient(145deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.1) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+  width: 100%;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.company-header-card:hover {
+  background: linear-gradient(145deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.15) 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+.company-logo-container {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  max-width: 60px;
+  height: 60px;
+  background: white;
+  border-radius: 8px;
+  padding: 0.4rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.company-logo-horizontal {
+  max-width: 60px;
+  max-height: 60px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+.company-name-horizontal {
+  flex: 1;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  text-align: left;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
 .company-name {
   font-size: 0.95rem;
   font-weight: 700;
@@ -369,6 +503,7 @@ onMounted(async () => {
   text-overflow: ellipsis;
   text-align: center;
   width: 100%;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* ===== Profile ===== */
@@ -622,7 +757,7 @@ onMounted(async () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -630,55 +765,256 @@ onMounted(async () => {
   backdrop-filter: blur(4px);
 }
 
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+/* Browser Modal Container */
+.browser-modal {
+  width: 500px;
+  max-width: 90vw;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
-.modal-header {
-  background: linear-gradient(135deg, var(--primary-color, #0090D3) 0%, var(--primary-color-light, #00B1EF) 100%);
-  padding: 1.5rem;
+/* Browser Tabs Header - Default uses theme colors */
+.tabs-head {
+  background: var(--primary-color, #0D47A1);
+  height: 30px;
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 8px;
 }
 
 /* Override for Main Admin only */
-.modal-overlay.main-admin-modal .modal-header {
-  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%) !important;
+.tabs-head.main-admin-tabs {
+  background: #0D47A1 !important;
 }
 
-.modal-icon {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.2);
+.tabs-head .tabs {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  align-items: flex-end;
+}
+
+.tabs-head .tab-open {
+  min-width: 110px;
+  max-width: 200px;
+  height: 26px;
+  border-radius: 5px 5px 0 0;
+  background-color: var(--primary-color-light, #1565C0);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  position: relative;
+}
+
+/* Override for Main Admin only */
+.tabs-head.main-admin-tabs .tab-open {
+  background-color: #1565C0 !important;
+}
+
+.tabs-head .tab-open span {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabs-head .tab-open .close-tab {
+  color: #fff;
+  font-size: 13px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.tabs-head .tab-open .close-tab:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+.tabs-head .window-opt {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 100%;
+}
+
+.tabs-head .window-opt button {
+  height: 24px;
+  width: 24px;
+  border: none;
+  background-color: transparent;
+  transition: 0.15s ease-out;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.tabs-head .window-opt button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.tabs-head .window-opt .window-close:hover {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+/* Browser URL Bar - Default uses theme colors */
+.head-browser {
+  position: relative;
+  width: 100%;
+  height: 42px;
+  background-color: var(--primary-color-light, #1565C0);
+  padding: 5px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Override for Main Admin only */
+.head-browser.main-admin-url {
+  background-color: #1565C0 !important;
+}
+
+.head-browser button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  border-radius: 3px;
+  transition: 0.15s ease-in-out;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.head-browser button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.head-browser button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.head-browser .url-bar {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: none;
+  height: 30px;
+  border-radius: 15px;
+  color: #fff;
+  padding: 0 14px;
+  flex: 1;
+  transition: 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.head-browser .url-bar:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.head-browser .url-text {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.head-browser .star {
+  color: #fff;
+  font-size: 16px;
+  opacity: 0.7;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s;
+}
+
+.head-browser .star:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+/* Browser Content */
+.browser-content {
+  background: #fff;
+  padding: 32px;
+  max-height: 70vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Logout Modal Specific Styles */
+.logout-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.modal-icon-large {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--primary-color, #0090D3) 0%, var(--primary-color-light, #00B1EF) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 144, 211, 0.3);
 }
 
-.modal-header h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: white;
-  margin: 0;
-  font-family: 'Prompt', sans-serif;
-}
-
-.modal-body {
-  padding: 1.5rem;
-  text-align: center;
+.modal-icon-large svg {
+  stroke: white;
 }
 
 .modal-question {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   color: #1F2937;
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 600;
   font-family: 'Prompt', sans-serif;
   line-height: 1.5;
@@ -692,14 +1028,6 @@ onMounted(async () => {
   line-height: 1.4;
 }
 
-.modal-footer {
-  padding: 1rem 1.5rem;
-  background: #F9FAFB;
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
 .btn-cancel,
 .btn-confirm {
   padding: 0.625rem 1.25rem;
@@ -710,6 +1038,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.2s;
   font-family: 'Prompt', sans-serif;
+  min-width: 100px;
 }
 
 .btn-cancel {
@@ -735,6 +1064,37 @@ onMounted(async () => {
 .btn-cancel:active,
 .btn-confirm:active {
   transform: scale(0.98);
+}
+
+/* Utility Classes (Tailwind-like) */
+.flex {
+  display: flex;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.border-t {
+  border-top: 1px solid #e5e7eb;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb;
 }
 
 /* ===== Transitions ===== */

@@ -1,5 +1,6 @@
 const settingsController = require('../controllers/settings.controller');
 const upload = require('../middleware/upload');
+const uploadLogo = require('../middleware/uploadLogo');
 
 module.exports = (app) => {
   // ==================== COMPANIES ====================
@@ -14,6 +15,8 @@ module.exports = (app) => {
   app.post('/api/settings/companies', settingsController.createCompany);
   // แก้ไขข้อมูลบริษัท
   app.put('/api/settings/companies/:id', settingsController.updateCompany);
+  // อัปโหลด logo ของบริษัท
+  app.post('/api/settings/companies/:id/logo', uploadLogo.single('logo'), settingsController.uploadCompanyLogo);
   // ลบบริษัท (Soft Delete)
   app.delete('/api/settings/companies/:id', settingsController.deleteCompany);
 
