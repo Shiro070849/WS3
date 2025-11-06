@@ -87,8 +87,8 @@
               </div>
             </div>
             <div class="window-opt">
-              <button>−</button>
-              <button>□</button>
+              <button @click="showLogoutModal = false">−</button>
+              <button @click="showLogoutModal = false">□</button>
               <button @click="showLogoutModal = false" class="window-close">✕</button>
             </div>
           </div>
@@ -275,7 +275,7 @@ onMounted(async () => {
   flex-direction: column;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
-  z-index: 100;
+  z-index: 10; /* ต่ำกว่า modal backdrop (999) เพื่อให้โดน blur */
   overflow: hidden;
   font-family: 'Prompt', sans-serif;
 }

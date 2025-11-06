@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);">
+      <div v-if="show" class="fixed inset-0 flex items-center justify-center p-4" style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 999;">
         <div class="fixed inset-0" @click="handleClose"></div>
 
         <div :class="[browserModalClasses, { 'main-admin-modal': isMainAdmin }]" class="browser-modal">
@@ -14,8 +14,8 @@
               </div>
             </div>
             <div class="window-opt">
-              <button>−</button>
-              <button>□</button>
+              <button @click="emit('close')">−</button>
+              <button @click="emit('close')">□</button>
               <button @click="emit('close')" class="window-close">✕</button>
             </div>
           </div>
@@ -109,7 +109,7 @@ const handleClose = () => {
   overflow: hidden;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  z-index: 100;
+  z-index: 1000;
 }
 
 /* Size variants */

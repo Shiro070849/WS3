@@ -120,6 +120,7 @@ body {
   width: 100%;
   min-height: 100vh;
   position: relative;
+  z-index: 1; /* ให้ต่ำกว่า modal backdrop (z-index: 999) */
 }
 
 /* ===== Main Content Area ===== */

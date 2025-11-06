@@ -19,7 +19,8 @@
       "Bash(grep:*)",
       "Bash(node server.js:*)",
       "Bash(npm run serve:*)",
-      "Bash(node run_migration.js:*)"
+      "Bash(node run_migration.js:*)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []
