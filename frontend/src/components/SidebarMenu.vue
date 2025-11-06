@@ -60,15 +60,13 @@
 
     <!-- Logout Section -->
     <div class="logout-section">
-      <button @click="showLogoutModal = true" class="logout-btn" :title="isCollapsed ? 'Logout' : ''">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-        <transition name="fade">
-          <span v-if="!isCollapsed">Logout</span>
-        </transition>
+      <button @click="showLogoutModal = true" class="Btn" :class="{ 'collapsed': isCollapsed }">
+        <div class="sign">
+          <svg viewBox="0 0 512 512">
+            <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
+          </svg>
+        </div>
+        <div class="text">Logout</div>
       </button>
     </div>
   </aside>
@@ -248,9 +246,24 @@ const confirmLogout = () => {
 
 // Load theme and company logo on mount
 onMounted(async () => {
-  const companyId = localStorage.getItem('companyId')
-  if (companyId) {
-    await loadTheme(parseInt(companyId))
+  // Get user data from localStorage
+  const userDataStr = localStorage.getItem('user')
+
+  if (userDataStr) {
+    try {
+      const userData = JSON.parse(userDataStr)
+      const companyId = userData.IC_ID
+
+      // Check if Super Admin (IC_ID is null, undefined, or missing)
+      const isSuperAdmin = !companyId || companyId === null || companyId === undefined
+
+      if (!isSuperAdmin) {
+        // Company Admin: Load theme using IC_ID
+        await loadTheme(companyId)
+      }
+    } catch (error) {
+      console.error('[ERROR] Failed to parse user data:', error)
+    }
   }
 
   // ดึง company logo
@@ -477,6 +490,7 @@ onMounted(async () => {
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -702,55 +716,106 @@ onMounted(async () => {
 .logout-section {
   padding: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: center;
 }
 
 .sidebar.collapsed .logout-section {
   padding: 0.75rem 0.5rem;
 }
 
-.logout-btn {
+/* Animated Logout Button */
+.Btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 45px;
+  height: 45px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
+  background-color: rgb(255, 65, 65);
+}
+
+/* plus sign */
+.Btn .sign {
   width: 100%;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+}
+
+.Btn .sign svg {
+  width: 17px;
+  transition: transform 0.3s ease;
+}
+
+.Btn .sign svg path {
+  fill: white;
+}
+
+/* text */
+.Btn .text {
+  position: absolute;
+  right: 0%;
+  width: 0%;
+  opacity: 0;
   color: white;
-  font-size: 0.9rem;
+  font-size: 1.2em;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: 'Prompt', sans-serif;
-  letter-spacing: 0.01em;
-  backdrop-filter: blur(10px);
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  white-space: nowrap;
 }
 
-.logout-btn svg {
-  width: 16px;
-  height: 16px;
+/* hover effect on button width */
+.Btn:hover {
+  width: 125px;
+  border-radius: 40px;
+  box-shadow: 4px 4px 15px rgba(255, 65, 65, 0.4);
+  transform: translateY(-2px);
 }
 
-.logout-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+.Btn:hover .sign {
+  width: 30%;
+  padding-left: 20px;
 }
 
-.logout-btn:active {
-  transform: scale(0.98);
+.Btn:hover .sign svg {
+  transform: translateX(2px);
 }
 
-.sidebar.collapsed .logout-btn {
-  padding: 0.5rem 0.35rem;
-  gap: 0;
+/* hover effect button's text */
+.Btn:hover .text {
+  opacity: 1;
+  width: 70%;
+  padding-right: 10px;
 }
 
-.sidebar.collapsed .logout-btn svg {
-  width: 14px; /* ลดจาก 20px */
-  height: 14px;
+/* button click effect*/
+.Btn:active {
+  transform: translate(2px, 2px) scale(0.95);
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
+  transition: all 0.1s ease;
+}
+
+/* When sidebar is collapsed */
+.sidebar.collapsed .Btn {
+  width: 45px;
+  height: 45px;
+}
+
+.sidebar.collapsed .Btn:hover {
+  width: 45px;
+  border-radius: 50%;
+}
+
+.sidebar.collapsed .Btn .text {
+  display: none;
 }
 
 /* ===== Modal ===== */
@@ -761,7 +826,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 999;
   backdrop-filter: blur(4px);
 }
 

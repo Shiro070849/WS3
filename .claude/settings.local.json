@@ -20,7 +20,8 @@
       "Bash(node server.js:*)",
       "Bash(npm run serve:*)",
       "Bash(node run_migration.js:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

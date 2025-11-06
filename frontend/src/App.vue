@@ -40,32 +40,45 @@ export default {
     onMounted(() => {
       console.log('[INIT] App mounted - Loading theme...')
 
-      // Get companyId from localStorage (set during login)
-      const companyId = localStorage.getItem('companyId')
-      if (companyId) {
-        console.log('[USER] User company ID:', companyId)
-        loadTheme(parseInt(companyId))
-      } else {
-        // Fallback: try to get from user object
-        const userStr = localStorage.getItem('user')
-        if (userStr) {
-          try {
-            const user = JSON.parse(userStr)
-            const fallbackCompanyId = user.IC_ID || 1
-            console.log('[USER] Fallback company ID from user object:', fallbackCompanyId)
-            loadTheme(fallbackCompanyId)
-          } catch (error) {
-            console.error('[ERROR] Error parsing user data:', error)
-          }
-        } else {
-          console.warn('[INFO] No company ID found, theme will not load')
+      // Get user data from localStorage (set during login)
+      const userDataStr = localStorage.getItem('user')
+
+      if (!userDataStr) {
+        console.log('[INFO] No user data found - using default theme')
+        return
+      }
+
+      try {
+        const userData = JSON.parse(userDataStr)
+        const companyId = userData.IC_ID
+
+        // Check if Super Admin (IC_ID is null, undefined, or missing)
+        const isSuperAdmin = !companyId || companyId === null || companyId === undefined
+
+        if (isSuperAdmin) {
+          console.log('[SUPER ADMIN] Super Admin detected (IC_ID = NULL) - using default hardcoded theme')
+
+          // Clear any theme cache that might exist for Super Admin
+          localStorage.removeItem('theme_null')
+          localStorage.removeItem('theme_null_timestamp')
+          localStorage.removeItem('theme_undefined')
+          localStorage.removeItem('theme_undefined_timestamp')
+
+          // Super Admin: Do not load theme from database
+          return
         }
+
+        // Company Admin: Load theme from database using IC_ID (e.g., 1002, 1103, 5)
+        console.log('[COMPANY ADMIN] Loading theme for company IC_ID:', companyId)
+        loadTheme(companyId)
+      } catch (error) {
+        console.error('[ERROR] Failed to parse user data:', error)
       }
     })
 
     // Watch for route changes (in case user switches company)
     watch(() => route.query.companyId, (newCompanyId) => {
-      if (newCompanyId) {
+      if (newCompanyId && newCompanyId !== 'null' && newCompanyId !== 'undefined') {
         console.log('[UPDATE] Company changed via route:', newCompanyId)
         loadTheme(parseInt(newCompanyId))
       }
@@ -128,9 +141,10 @@ body {
   flex: 1;
   min-height: 100vh;
   padding: 2rem;
-  background: #f0f4f8;
+  background: var(--background-color, #f0f4f8);
+  color: var(--text-color, #1a202c);
   margin-left: 220px; /* ตรงกับความกว้าง sidebar ใหม่ */
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, color 0.3s ease;
   box-sizing: border-box;
 }
 

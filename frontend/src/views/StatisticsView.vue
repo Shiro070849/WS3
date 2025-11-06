@@ -639,18 +639,7 @@ onMounted(() => {
   animation: fadeIn 0.5s ease-in;
 }
 
-/* 2. Gradient Text - Tailwind ทำได้แต่ยาว */
-.page-title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #0B4F6C 0%, #0090D3 50%, #20B2AA 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0 0 0.75rem 0;
-  font-family: 'Prompt', sans-serif;
-  letter-spacing: -0.02em;
-}
+/* 2. Page Title - moved to theme-variables.css for theming support */
 
 /* 3. Period Button Styles */
 .period-btn {
@@ -718,10 +707,5 @@ onMounted(() => {
   background: linear-gradient(135deg, #0EA5E9, #0284C7);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 1.75rem;
-  }
-}
+/* Responsive - page-title moved to theme-variables.css */
 </style>

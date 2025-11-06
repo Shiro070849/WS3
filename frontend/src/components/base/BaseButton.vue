@@ -46,10 +46,10 @@ const buttonClasses = computed(() => {
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variantClasses = {
-    primary: 'bg-[#0090D3] text-white hover:bg-[#007AB8] active:bg-[#006A9F] shadow-sm hover:shadow-md',
-    secondary: 'bg-white text-[#555452] border border-gray-300 hover:bg-gray-50 active:bg-gray-100',
+    primary: 'btn-primary text-white shadow-sm hover:shadow-md',
+    secondary: 'btn-secondary shadow-sm hover:shadow-md',
     danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm hover:shadow-md',
-    success: 'bg-[#3AAA35] text-white hover:bg-[#339A2E] active:bg-[#2D8A28] shadow-sm hover:shadow-md',
+    success: 'btn-success text-white shadow-sm hover:shadow-md',
     ghost: 'text-[#555452] hover:bg-gray-100 active:bg-gray-200',
   };
 

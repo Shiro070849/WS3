@@ -784,15 +784,9 @@ class SettingsService {
       favicon_url: '',
       primary_color: '#0090D3',
       secondary_color: '#6B7280',
-      theme_mode: 'light',
-      font_family: 'Prompt',
       accent_color: '#10B981',
       background_color: '#FFFFFF',
-      text_color: '#1A202C',
-      border_radius: '8',
-      base_font_size: '14',
-      header_height: '64',
-      compact_mode: 'false'
+      text_color: '#1A202C'
     };
   }
 
@@ -856,15 +850,9 @@ class SettingsService {
         favicon_url: settings.favicon_url || defaults.favicon_url,
         primary_color: settings.primary_color || defaults.primary_color,
         secondary_color: settings.secondary_color || defaults.secondary_color,
-        theme_mode: settings.theme_mode || defaults.theme_mode,
-        font_family: settings.font_family || defaults.font_family,
         accent_color: settings.accent_color || defaults.accent_color,
         background_color: settings.background_color || defaults.background_color,
-        text_color: settings.text_color || defaults.text_color,
-        border_radius: settings.border_radius || defaults.border_radius,
-        base_font_size: settings.base_font_size || defaults.base_font_size,
-        header_height: settings.header_height || defaults.header_height,
-        compact_mode: settings.compact_mode || defaults.compact_mode
+        text_color: settings.text_color || defaults.text_color
       };
     } catch (error) {
       console.error('Error getting appearance settings:', error);
@@ -895,11 +883,10 @@ class SettingsService {
 
       console.log(`[PUT] Updating appearance settings - userId: ${userId}, companyId: ${companyId}`);
 
-      // Update/Insert SystemSettings (13 ฟิลด์)
+      // Update/Insert SystemSettings (7 ฟิลด์)
       const settingsFields = [
         'logo_url', 'favicon_url', 'primary_color', 'secondary_color',
-        'theme_mode', 'font_family', 'accent_color', 'background_color',
-        'text_color', 'border_radius', 'base_font_size', 'header_height', 'compact_mode'
+        'accent_color', 'background_color', 'text_color'
       ];
 
       // สร้าง VALUES สำหรับ MERGE แบบ Batch
@@ -908,7 +895,7 @@ class SettingsService {
         return `(@Key${index}, @Value${index})`;
       }).join(',\n        ');
 
-      // MERGE Query แบบ Batch (1 Query สำหรับ 13 ฟิลด์)
+      // MERGE Query แบบ Batch (1 Query สำหรับ 7 ฟิลด์)
       const mergeQuery = `
         MERGE [dbo].[SystemSettings] AS target
         USING (

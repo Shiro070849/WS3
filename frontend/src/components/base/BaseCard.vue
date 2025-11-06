@@ -29,7 +29,7 @@ const props = defineProps({
 });
 
 const cardClasses = computed(() => {
-  return 'card-modern bg-white rounded-2xl overflow-hidden transition-all duration-300';
+  return 'card-modern rounded-2xl overflow-hidden transition-all duration-300';
 });
 
 const contentClasses = computed(() => {
@@ -39,6 +39,8 @@ const contentClasses = computed(() => {
 
 <style scoped>
 .card-modern {
+  background-color: var(--background-color, #FFFFFF);
+  color: var(--text-color, #1A202C);
   box-shadow:
     0 0 0 1px rgba(148, 163, 184, 0.1),
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
@@ -66,5 +68,6 @@ const contentClasses = computed(() => {
 .card-header h3 {
   font-family: 'Prompt', sans-serif;
   letter-spacing: -0.01em;
+  color: var(--text-color, #1F2937);
 }
 </style>

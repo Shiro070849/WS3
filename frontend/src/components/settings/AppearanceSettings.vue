@@ -157,103 +157,6 @@
               </div>
             </div>
 
-            <!-- ส่วนที่ 3: ธีมและฟอนต์ -->
-            <div class="border-b pb-6">
-              <h3 class="text-lg font-semibold text-gray-800 mb-4">ธีมและฟอนต์</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-base font-medium text-gray-700 mb-2">โหมดธีม</label>
-                  <select
-                    v-model="formData.theme_mode"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] text-sm"
-                  >
-                    <option value="light">Light (สว่าง)</option>
-                    <option value="dark">Dark (มืด)</option>
-                    <option value="auto">Auto (อัตโนมัติ)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-base font-medium text-gray-700 mb-2">ฟอนต์</label>
-                  <select
-                    v-model="formData.font_family"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] text-sm"
-                  >
-                    <option value="Prompt">Prompt</option>
-                    <option value="Sarabun">Sarabun</option>
-                    <option value="Kanit">Kanit</option>
-                    <option value="Inter">Inter</option>
-                    <option value="Roboto">Roboto</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- ส่วนที่ 4: การตั้งค่าเลย์เอาต์ -->
-            <div class="border-b pb-6">
-              <h3 class="text-lg font-semibold text-gray-800 mb-4">เลย์เอาต์</h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-base font-medium text-gray-700 mb-2">มุมโค้ง (px)</label>
-                  <input
-                    type="number"
-                    v-model.number="formData.border_radius"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] text-sm"
-                    min="0"
-                    max="20"
-                  />
-                </div>
-
-                <div>
-                  <label class="block text-base font-medium text-gray-700 mb-2">ขนาดฟอนต์ (px)</label>
-                  <input
-                    type="number"
-                    v-model.number="formData.base_font_size"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] text-sm"
-                    min="12"
-                    max="18"
-                  />
-                </div>
-
-                <div>
-                  <label class="block text-base font-medium text-gray-700 mb-2">ความสูง Header (px)</label>
-                  <input
-                    type="number"
-                    v-model.number="formData.header_height"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] text-sm"
-                    min="48"
-                    max="80"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- ส่วนที่ 5: โหมดกระชับ -->
-            <div class="border-b pb-6">
-              <h3 class="text-lg font-semibold text-gray-800 mb-4">โหมดการแสดงผล</h3>
-              <div class="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  v-model="compactModeChecked"
-                  id="compactMode"
-                  class="w-5 h-5 rounded border-gray-300 text-[#0090D3] focus:ring-[#0090D3]"
-                />
-                <label for="compactMode" class="text-base font-medium text-gray-700">
-                  เปิดใช้โหมดกระชับ (Compact Mode)
-                </label>
-              </div>
-
-              <!-- คำแนะนำ -->
-              <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 class="text-sm font-medium text-blue-900 mb-2">คำแนะนำ:</h4>
-                <ul class="text-xs text-blue-800 space-y-1 list-disc list-inside">
-                  <li>โหมดกระชับจะลดขนาด padding และ spacing ของ UI</li>
-                  <li>เหมาะสำหรับจอขนาดเล็กหรือต้องการดูข้อมูลจำนวนมากในครั้งเดียว</li>
-                  <li>สามารถสลับระหว่างโหมดปกติและโหมดกระชับได้ตลอดเวลา</li>
-                </ul>
-              </div>
-            </div>
-
             <!-- Buttons -->
             <div class="flex justify-end gap-3 pt-4 border-t">
               <BaseButton
@@ -322,26 +225,12 @@ const formData = ref({
   favicon_url: '',
   primary_color: '#0090D3',
   secondary_color: '#6B7280',
-  theme_mode: 'light',
-  font_family: 'Prompt',
   accent_color: '#10B981',
   background_color: '#FFFFFF',
-  text_color: '#1A202C',
-  border_radius: '8',
-  base_font_size: '14',
-  header_height: '64',
-  compact_mode: 'false'
+  text_color: '#1A202C'
 });
 
 const originalData = ref({});
-
-// Computed property สำหรับ checkbox
-const compactModeChecked = computed({
-  get: () => formData.value.compact_mode === 'true',
-  set: (val) => {
-    formData.value.compact_mode = val ? 'true' : 'false';
-  }
-});
 
 // Helper function: สร้าง Full URL สำหรับรูปภาพ (ใช้ environment variable)
 const getImageUrl = (url) => {
@@ -418,17 +307,6 @@ const validateForm = () => {
     errors.push('สีตัวอักษรไม่ถูกต้อง (ต้องเป็น #RRGGBB)');
   }
 
-  // Validate numbers
-  if (formData.value.border_radius < 0 || formData.value.border_radius > 20) {
-    errors.push('มุมโค้งต้องอยู่ระหว่าง 0-20 px');
-  }
-  if (formData.value.base_font_size < 12 || formData.value.base_font_size > 18) {
-    errors.push('ขนาดฟอนต์ต้องอยู่ระหว่าง 12-18 px');
-  }
-  if (formData.value.header_height < 48 || formData.value.header_height > 80) {
-    errors.push('ความสูง Header ต้องอยู่ระหว่าง 48-80 px');
-  }
-
   return errors;
 };
 
@@ -455,13 +333,35 @@ const handleSave = async () => {
     const response = await systemSettingsAPI.updateAppearance(formData.value, props.companyId);
 
     if (response.data.success) {
-      successMessage.value = 'บันทึกข้อมูลสำเร็จ และ Apply Theme แล้ว';
+      successMessage.value = 'บันทึกข้อมูลสำเร็จ';
       originalData.value = { ...formData.value };
-      console.log('[SUCCESS] Appearance settings saved successfully');
+      console.log('[SUCCESS] Appearance settings saved to database for company IC_ID:', props.companyId);
 
-      // Apply theme immediately after save
-      console.log('[THEME] Applying theme to entire application...');
-      await reloadTheme(props.companyId);
+      // Check if current logged-in user belongs to this company
+      const userDataStr = localStorage.getItem('user');
+      if (userDataStr) {
+        try {
+          const userData = JSON.parse(userDataStr);
+          const userCompanyId = userData.IC_ID;
+
+          // Only reload theme if the saved settings belong to the CURRENTLY LOGGED-IN user's company
+          // Super Admin (IC_ID = NULL) should NEVER reload theme
+          // Company Admin should only reload if they're editing THEIR OWN company settings
+          if (userCompanyId && userCompanyId === props.companyId) {
+            console.log('[THEME] Reloading theme for current user company:', userCompanyId);
+            await reloadTheme(props.companyId);
+            successMessage.value = 'บันทึกข้อมูลสำเร็จ และ Apply Theme แล้ว';
+          } else if (!userCompanyId) {
+            console.log('[SUPER ADMIN] Settings saved but theme NOT reloaded (Super Admin uses default theme)');
+            successMessage.value = 'บันทึกข้อมูลสำเร็จ (บริษัทนี้จะเห็นธีมใหม่เมื่อ Login)';
+          } else {
+            console.log('[INFO] Settings saved for different company - theme NOT reloaded for current user');
+            successMessage.value = 'บันทึกข้อมูลสำเร็จ (บริษัทนี้จะเห็นธีมใหม่เมื่อ Login)';
+          }
+        } catch (error) {
+          console.error('[ERROR] Failed to parse user data:', error);
+        }
+      }
 
       // ซ่อนข้อความหลัง 3 วินาที
       setTimeout(() => {

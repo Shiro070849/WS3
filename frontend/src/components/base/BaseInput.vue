@@ -111,8 +111,8 @@ const inputClasses = computed(() => {
 
   const errorClasses = props.error
     ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-    : 'border-gray-300 focus:border-[#0090D3] focus:ring-[#0090D3]/20';
+    : 'input-focus';
 
-  return `${baseClasses} ${paddingClasses} ${errorClasses} focus:outline-none focus:ring-4`;
+  return `${baseClasses} ${paddingClasses} ${errorClasses} focus:outline-none focus:ring-2`;
 });
 </script>

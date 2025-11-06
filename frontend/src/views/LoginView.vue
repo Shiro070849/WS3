@@ -168,12 +168,20 @@ const handleLogin = async () => {
       localStorage.setItem('userName', userData.SU_Name1 || username.value)
       localStorage.setItem('userEmail', userData.SU_Email || '')
       localStorage.setItem('userId', userData.SU_ID)
-      localStorage.setItem('companyId', userData.IC_ID)
+
+      // เก็บ IC_ID (ถ้าเป็น null/undefined ให้เก็บเป็น string 'null' เพื่อแยก Super Admin)
+      localStorage.setItem('companyId', userData.IC_ID ?? 'null')
       localStorage.setItem('companyName', 'Smart Security')
 
-      // 🎨 Load Theme ทันทีหลัง Login
-      console.log('🎨 Loading theme for company:', userData.IC_ID)
-      await loadTheme(userData.IC_ID)
+      // 🎨 Load Theme ตามประเภทของ User
+      const isSuperAdmin = !userData.IC_ID || userData.IC_ID === null || userData.IC_ID === undefined
+
+      if (isSuperAdmin) {
+        console.log('🎨 [SUPER ADMIN] Skipping theme load - using default hardcoded theme')
+      } else {
+        console.log('🎨 [COMPANY ADMIN] Loading theme for company ID:', userData.IC_ID)
+        await loadTheme(userData.IC_ID)
+      }
 
       successMessage.value = 'Login successful! Redirecting...'
 

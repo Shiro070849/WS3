@@ -6,6 +6,25 @@ const isThemeLoaded = ref(false);
 
 export function useTheme() {
   /**
+   * Calculate if text should be white or black based on background brightness
+   */
+  const getContrastColor = (hexColor) => {
+    if (!hexColor || !hexColor.startsWith('#')) return '#FFFFFF';
+
+    // Convert hex to RGB
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    // Calculate relative luminance (WCAG formula)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Return white for dark colors, black for light colors
+    return luminance > 0.5 ? '#1A202C' : '#FFFFFF';
+  };
+
+  /**
    * Apply theme settings to the application
    */
   const applyTheme = (settings) => {
@@ -20,29 +39,14 @@ export function useTheme() {
     root.style.setProperty('--accent-color', settings.accent_color || '#10B981');
     root.style.setProperty('--background-color', settings.background_color || '#FFFFFF');
     root.style.setProperty('--text-color', settings.text_color || '#1A202C');
-    root.style.setProperty('--font-family', settings.font_family || 'Prompt');
-    root.style.setProperty('--border-radius', (settings.border_radius || '8') + 'px');
-    root.style.setProperty('--base-font-size', (settings.base_font_size || '14') + 'px');
-    root.style.setProperty('--header-height', (settings.header_height || '64') + 'px');
+
+    // Calculate contrast colors for buttons
+    root.style.setProperty('--secondary-text-color', getContrastColor(settings.secondary_color || '#6B7280'));
 
     // Apply Sidebar Colors (for company theme)
     root.style.setProperty('--sidebar-bg-start', settings.primary_color || '#1a4d7e');
     root.style.setProperty('--sidebar-bg-middle', adjustColorBrightness(settings.primary_color || '#1a4d7e', -10));
     root.style.setProperty('--sidebar-bg-end', adjustColorBrightness(settings.primary_color || '#1a4d7e', -20));
-
-    // Apply Theme Mode (Dark/Light)
-    if (settings.theme_mode === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-
-    // Apply Compact Mode
-    if (settings.compact_mode === 'true') {
-      root.classList.add('compact');
-    } else {
-      root.classList.remove('compact');
-    }
 
     // Apply Logo
     if (settings.logo_url) {
@@ -53,9 +57,6 @@ export function useTheme() {
     if (settings.favicon_url) {
       updateFavicon(settings.favicon_url);
     }
-
-    // Apply Font Family to body
-    document.body.style.fontFamily = `${settings.font_family || 'Prompt'}, sans-serif`;
 
     currentTheme.value = settings;
     isThemeLoaded.value = true;
@@ -183,13 +184,7 @@ export function useTheme() {
     secondary_color: '#6B7280',
     accent_color: '#10B981',
     background_color: '#FFFFFF',
-    text_color: '#1A202C',
-    font_family: 'Prompt',
-    border_radius: '8',
-    base_font_size: '14',
-    header_height: '64',
-    theme_mode: 'light',
-    compact_mode: 'false'
+    text_color: '#1A202C'
   });
 
   /**

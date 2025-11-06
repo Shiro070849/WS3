@@ -2,16 +2,16 @@
   <!-- Main Container - Tailwind Only -->
   <div class="w-full max-w-full animate-fadeIn">
 
-    <!-- Page Header - Tailwind -->
-    <div class="mb-6">
+    <!-- Page Header - Tailwind with Animation -->
+    <div class="mb-6 animate-slideDown">
       <h1 class="page-title">ตั้งค่า</h1>
       <p class="text-lg text-slate-500 m-0 font-medium font-prompt">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
     </div>
 
-    <!-- Company Selector - Tailwind + Custom Dropdown CSS -->
-    <div v-if="accessibleCompanies.length > 0" class="mb-8 flex items-center gap-4 py-4">
+    <!-- Company Selector - Tailwind + Custom Dropdown CSS with Animation -->
+    <div v-if="accessibleCompanies.length > 0" class="mb-8 flex items-center gap-4 py-4 animate-slideUp" style="position: relative; z-index: 9999;">
       <div class="flex items-center gap-2 text-sm font-semibold text-gray-800 whitespace-nowrap">
-        <svg class="w-[18px] h-[18px] stroke-[#0090D3] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-[18px] h-[18px] stroke-[#0090D3] flex-shrink-0 transition-transform duration-300 hover:scale-110" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
         <span class="text-gray-800">เลือกบริษัท:</span>
@@ -40,8 +40,8 @@
       </div>
     </div>
 
-    <!-- Tabs Content - Tailwind -->
-    <div class="w-full">
+    <!-- Tabs Content - Tailwind with Animation -->
+    <div class="w-full animate-scaleIn">
       <BaseTabs v-model="activeTab" :tabs="tabs">
 
         <!-- TAB: ทั่วไป -->
@@ -57,16 +57,6 @@
         <!-- TAB: ความปลอดภัย -->
         <template #security>
           <SecuritySettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
-        </template>
-
-        <!-- TAB: อีเมล -->
-        <template #email>
-          <EmailSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
-        </template>
-
-        <!-- TAB: การแจ้งเตือน -->
-        <template #notifications>
-          <NotificationSettings :companyId="selectedCompanyId" :key="selectedCompanyId" />
         </template>
 
         <!-- TAB: จัดการบริษัท -->
@@ -386,8 +376,6 @@ import BaseModal from '../components/base/BaseModal.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import AppearanceSettings from '../components/settings/AppearanceSettings.vue';
 import SecuritySettings from '../components/settings/SecuritySettings.vue';
-import EmailSettings from '../components/settings/EmailSettings.vue';
-import NotificationSettings from '../components/settings/NotificationSettings.vue';
 import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../services/api';
 import { useTheme } from '@/composables/useTheme';
 
@@ -452,25 +440,21 @@ const checkIsMainAdmin = () => {
 
 const tabs = computed(() => {
   if (isMainAdmin.value) {
+    // Super Admin: Show General, Appearance, Security, Companies, Users, Departments
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
       { key: 'security', label: 'ความปลอดภัย', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
-      { key: 'email', label: 'อีเมล', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-      { key: 'notifications', label: 'การแจ้งเตือน', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
       { key: 'companies', label: 'จัดการบริษัท', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
       { key: 'users', label: 'จัดการผู้ใช้งาน', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
       { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
     ];
   } else {
-    // Company Admin: Show General, Appearance, Security, Email, Notifications
-    // (filtered by companyId automatically via props)
+    // Company Admin: Show General, Appearance, Security only
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
       { key: 'security', label: 'ความปลอดภัย', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
-      { key: 'email', label: 'อีเมล', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-      { key: 'notifications', label: 'การแจ้งเตือน', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
     ];
   }
 });
@@ -852,7 +836,7 @@ onBeforeUnmount(() => {
    CSS เหลือแค่ส่วนที่ Tailwind ทำไม่ได้
    ============================================ */
 
-/* 1. Animation */
+/* 1. Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -865,21 +849,55 @@ onBeforeUnmount(() => {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-in;
+  animation: fadeIn 0.5s ease-out;
 }
 
-/* 2. Gradient Title */
-.page-title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #0B4F6C 0%, #0090D3 50%, #20B2AA 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0 0 0.75rem 0;
-  font-family: 'Prompt', sans-serif;
-  letter-spacing: -0.02em;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
+.animate-slideDown {
+  animation: slideDown 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+}
+
+/* 2. Page Title - moved to theme-variables.css for theming support */
 
 /* 3. Custom Dropdown (Complex component) */
 .select {
@@ -889,7 +907,7 @@ onBeforeUnmount(() => {
   transition: 300ms;
   color: white;
   overflow: visible;
-  z-index: 50;
+  z-index: 9998;
 }
 
 .selected {
@@ -898,7 +916,7 @@ onBeforeUnmount(() => {
   margin-bottom: 3px;
   border-radius: 6px;
   position: relative;
-  z-index: 51;
+  z-index: 9999;
   font-size: 0.875rem;
   display: flex;
   align-items: center;
@@ -925,7 +943,7 @@ onBeforeUnmount(() => {
   transform: rotate(-90deg);
   width: 20px;
   fill: white;
-  z-index: 52;
+  z-index: 10000;
   transition: 300ms;
   flex-shrink: 0;
 }
@@ -946,7 +964,7 @@ onBeforeUnmount(() => {
   max-height: 280px;
   overflow-y: auto;
   box-shadow: 0 8px 20px rgba(0, 122, 184, 0.15);
-  z-index: 53;
+  z-index: 10001;
 }
 
 .select.open > .options {
@@ -980,22 +998,20 @@ onBeforeUnmount(() => {
 }
 
 .options label {
-  display: inline-block;
+  display: block;
+  width: 100%;
   cursor: pointer;
 }
 
 .options label::before {
   content: attr(data-txt);
+  display: block;
+  width: 100%;
 }
 
 .options input[type="radio"]:checked + label {
   display: none;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 1.75rem;
-  }
-}
+/* Responsive - page-title moved to theme-variables.css */
 </style>
