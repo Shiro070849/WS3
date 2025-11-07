@@ -4,10 +4,12 @@ class DashboardController {
   // ดึงสถิติของ Dashboard
   async getStats(req, res) {
     try {
-      // รับ companyId จาก query parameter
+      // รับ companyId และ date range จาก query parameter
       const companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+      const dateFrom = req.query.dateFrom || null;
+      const dateTo = req.query.dateTo || null;
 
-      const stats = await dashboardService.getTodayStats(companyId);
+      const stats = await dashboardService.getTodayStats(companyId, dateFrom, dateTo);
 
       res.status(200).json({
         success: true,
@@ -28,8 +30,11 @@ class DashboardController {
     try {
       const limit = parseInt(req.query.limit) || 10;
       const companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+      const dateFrom = req.query.dateFrom || null;
+      const dateTo = req.query.dateTo || null;
+      const search = req.query.search || null;
 
-      const activities = await dashboardService.getRecentActivities(limit, companyId);
+      const activities = await dashboardService.getRecentActivities(limit, companyId, dateFrom, dateTo, search);
 
       res.status(200).json({
         success: true,

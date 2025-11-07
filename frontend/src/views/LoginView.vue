@@ -134,7 +134,7 @@ import { authAPI } from '../services/api'
 import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
-const { loadTheme } = useTheme()
+const { loadTheme, clearAllThemes } = useTheme()  // เพิ่ม clearAllThemes
 
 const username = ref('')
 const password = ref('')
@@ -156,13 +156,17 @@ const handleLogin = async () => {
     successMessage.value = ''
     isLoading.value = true
 
-    // Call API
+    // STEP 1: ล้าง Theme ทั้งหมดก่อน Login (ป้องกัน theme เก่าค้าง)
+    console.log('[LOGIN] Clearing all previous themes...')
+    clearAllThemes()
+
+    // STEP 2: Call API
     const response = await authAPI.login(username.value, password.value)
 
     if (response.data.success) {
       const userData = response.data.data
 
-      // Store user session
+      // STEP 3: Store user session
       localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('isLoggedIn', 'true')
       localStorage.setItem('userName', userData.SU_Name1 || username.value)
@@ -173,13 +177,14 @@ const handleLogin = async () => {
       localStorage.setItem('companyId', userData.IC_ID ?? 'null')
       localStorage.setItem('companyName', 'Smart Security')
 
-      // 🎨 Load Theme ตามประเภทของ User
+      // STEP 4: Load Theme ตามประเภทของ User
       const isSuperAdmin = !userData.IC_ID || userData.IC_ID === null || userData.IC_ID === undefined
 
       if (isSuperAdmin) {
-        console.log('🎨 [SUPER ADMIN] Skipping theme load - using default hardcoded theme')
+        console.log('[SUPER ADMIN LOGIN] Using default theme - NO company theme loaded')
+        // Default theme already applied by clearAllThemes()
       } else {
-        console.log('🎨 [COMPANY ADMIN] Loading theme for company ID:', userData.IC_ID)
+        console.log('[COMPANY ADMIN LOGIN] Loading company theme for IC_ID:', userData.IC_ID)
         await loadTheme(userData.IC_ID)
       }
 

@@ -13,6 +13,56 @@
     <!-- Content -->
     <div class="w-full">
 
+      <!-- Filters Row: Date Range + Company -->
+      <div class="filters-row">
+        <div class="date-filter-wrapper">
+          <DateRangeFilter
+            v-model:dateFrom="filters.dateFrom"
+            v-model:dateTo="filters.dateTo"
+            @filter="handleDateFilter"
+          />
+        </div>
+
+        <div class="company-filter-wrapper">
+          <select
+            id="companyFilter"
+            v-model="filters.companyId"
+            class="company-select-inline"
+            @change="handleCompanyFilter"
+          >
+            <option :value="null">ทุกบริษัท</option>
+            <option
+              v-for="company in companies"
+              :key="company.IC_ID"
+              :value="company.IC_ID"
+            >
+              {{ company.IC_LocalName }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="search-container">
+        <div class="search-bar">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="search-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            v-model="filters.search"
+            type="text"
+            placeholder="ค้นหาทะเบียนรถ, ชื่อคนขับ..."
+            class="search-input"
+            @input="handleSearch"
+          />
+          <button v-if="filters.search" @click="clearSearch" class="clear-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Stats Cards Grid - Tailwind Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 mb-10">
 
@@ -119,7 +169,8 @@
 import { ref, onMounted } from 'vue';
 import BaseCard from '../components/base/BaseCard.vue';
 import BaseTable from '../components/base/BaseTable.vue';
-import { dashboardAPI } from '../services/api';
+import DateRangeFilter from '../components/DateRangeFilter.vue';
+import { dashboardAPI, companiesAPI } from '../services/api';
 
 const stats = ref({
   wayInToday: 0,
@@ -130,6 +181,14 @@ const stats = ref({
 
 const activities = ref([]);
 const loading = ref(false);
+const companies = ref([]);
+
+const filters = ref({
+  search: '',
+  dateFrom: null,
+  dateTo: null,
+  companyId: null,
+});
 
 const columns = [
   { key: 'WI_DateTimeIn', label: 'เวลา' },
@@ -139,12 +198,28 @@ const columns = [
   { key: 'Status', label: 'สถานะ' },
 ];
 
+const fetchCompanies = async () => {
+  try {
+    const response = await companiesAPI.getAll();
+    // Filter only active companies (IC_IsActive can be true, 1, or '1')
+    companies.value = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+  } catch (error) {
+    console.error('Error fetching companies:', error);
+  }
+};
+
 const fetchStats = async () => {
   try {
-    const companyId = localStorage.getItem('companyId');
-    const isSuperAdmin = !companyId || companyId === 'null' || companyId === 'undefined';
-    const filterCompanyId = isSuperAdmin ? null : companyId;
-    const response = await dashboardAPI.getStats(filterCompanyId);
+    // Use filters.value.companyId if set, otherwise use localStorage companyId
+    const loggedInCompanyId = localStorage.getItem('companyId');
+    const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
+
+    // Priority: 1. User selected filter, 2. Logged-in user's company, 3. null (all)
+    const filterCompanyId = filters.value.companyId !== null
+      ? filters.value.companyId
+      : (isSuperAdmin ? null : loggedInCompanyId);
+
+    const response = await dashboardAPI.getStats(filterCompanyId, filters.value.dateFrom, filters.value.dateTo);
     stats.value = response.data.data;
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -154,16 +229,49 @@ const fetchStats = async () => {
 const fetchActivities = async () => {
   loading.value = true;
   try {
-    const companyId = localStorage.getItem('companyId');
-    const isSuperAdmin = !companyId || companyId === 'null' || companyId === 'undefined';
-    const filterCompanyId = isSuperAdmin ? null : companyId;
-    const response = await dashboardAPI.getActivities(10, filterCompanyId);
+    // Use filters.value.companyId if set, otherwise use localStorage companyId
+    const loggedInCompanyId = localStorage.getItem('companyId');
+    const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
+
+    // Priority: 1. User selected filter, 2. Logged-in user's company, 3. null (all)
+    const filterCompanyId = filters.value.companyId !== null
+      ? filters.value.companyId
+      : (isSuperAdmin ? null : loggedInCompanyId);
+
+    const response = await dashboardAPI.getActivities(
+      10,
+      filterCompanyId,
+      filters.value.dateFrom,
+      filters.value.dateTo,
+      filters.value.search
+    );
     activities.value = response.data.data;
   } catch (error) {
     console.error('Error fetching activities:', error);
   } finally {
     loading.value = false;
   }
+};
+
+const handleDateFilter = ({ dateFrom, dateTo }) => {
+  filters.value.dateFrom = dateFrom;
+  filters.value.dateTo = dateTo;
+  fetchStats();
+  fetchActivities();
+};
+
+const handleCompanyFilter = () => {
+  fetchStats();
+  fetchActivities();
+};
+
+const handleSearch = () => {
+  fetchActivities();
+};
+
+const clearSearch = () => {
+  filters.value.search = '';
+  fetchActivities();
 };
 
 const formatDateTime = (dateTime) => {
@@ -181,6 +289,7 @@ const formatDateTime = (dateTime) => {
 };
 
 onMounted(() => {
+  fetchCompanies();
   fetchStats();
   fetchActivities();
 });
@@ -261,10 +370,128 @@ onMounted(() => {
   background: linear-gradient(135deg, #A7F3D0 0%, #6EE7B7 100%);
 }
 
+/* Filters Row Layout */
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.date-filter-wrapper {
+  flex: 1;
+}
+
+.company-filter-wrapper {
+  min-width: 200px;
+  max-width: 250px;
+}
+
+/* Company Filter Inline */
+.company-select-inline {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-family: 'Prompt', sans-serif;
+  font-weight: 500;
+  color: #475569;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  height: 44px;
+}
+
+.company-select-inline:hover {
+  border-color: #cbd5e1;
+}
+
+.company-select-inline:focus {
+  outline: none;
+  border-color: #0B4F6C;
+  box-shadow: 0 0 0 3px rgba(11, 79, 108, 0.1);
+}
+
+/* Search Bar */
+.search-container {
+  margin-bottom: 1.5rem;
+}
+
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.search-bar:hover {
+  border-color: #cbd5e1;
+}
+
+.search-bar:focus-within {
+  border-color: #0B4F6C;
+  box-shadow: 0 0 0 3px rgba(11, 79, 108, 0.1);
+}
+
+.search-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #94a3b8;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.9375rem;
+  font-family: 'Prompt', sans-serif;
+  color: #1e293b;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.clear-btn {
+  padding: 0.375rem;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.clear-btn:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page-title {
     font-size: 1.75rem;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .company-filter-wrapper {
+    min-width: 100%;
+    max-width: 100%;
   }
 
   .stat-icon-blue,
@@ -279,6 +506,10 @@ onMounted(() => {
   .stat-icon-orange svg,
   .stat-icon-purple svg {
     @apply w-7 h-7;
+  }
+
+  .search-input {
+    font-size: 0.875rem;
   }
 }
 </style>

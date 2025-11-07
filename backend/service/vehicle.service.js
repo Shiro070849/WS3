@@ -38,13 +38,19 @@ class VehicleService {
       }
 
       // Filter by date range
+      // หมายเหตุ: Date จะใช้ timezone ของ server (local time)
+      // Frontend ส่งมาเป็น YYYY-MM-DD ซึ่งจะถูกแปลงเป็น local midnight
       if (filters.dateFrom) {
+        const startOfDay = new Date(filters.dateFrom);
+        startOfDay.setHours(0, 0, 0, 0);
         whereConditions.push('WI.WI_RecordedOn >= @DateFrom');
-        request.input('DateFrom', sql.DateTime, new Date(filters.dateFrom));
+        request.input('DateFrom', sql.DateTime, startOfDay);
       }
       if (filters.dateTo) {
+        const endOfDay = new Date(filters.dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
         whereConditions.push('WI.WI_RecordedOn <= @DateTo');
-        request.input('DateTo', sql.DateTime, new Date(filters.dateTo));
+        request.input('DateTo', sql.DateTime, endOfDay);
       }
 
       // Filter by company
@@ -117,10 +123,14 @@ class VehicleService {
         countRequest.input('Search', sql.NVarChar, `%${filters.search}%`);
       }
       if (filters.dateFrom) {
-        countRequest.input('DateFrom', sql.DateTime, new Date(filters.dateFrom));
+        const startOfDay = new Date(filters.dateFrom);
+        startOfDay.setHours(0, 0, 0, 0);
+        countRequest.input('DateFrom', sql.DateTime, startOfDay);
       }
       if (filters.dateTo) {
-        countRequest.input('DateTo', sql.DateTime, new Date(filters.dateTo));
+        const endOfDay = new Date(filters.dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        countRequest.input('DateTo', sql.DateTime, endOfDay);
       }
       if (filters.companyId) {
         countRequest.input('CompanyId', sql.Int, parseInt(filters.companyId));

@@ -10,6 +10,13 @@
 
     <!-- Main Content - Tailwind Layout -->
     <div class="w-full">
+      <!-- Date Range Filter -->
+      <DateRangeFilter
+        v-model:dateFrom="filters.dateFrom"
+        v-model:dateTo="filters.dateTo"
+        @filter="handleDateFilter"
+      />
+
       <!-- Filter Card - Tailwind Only -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -327,11 +334,16 @@
                   class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
                 >
                   <option value="">เลือกประเภทรถ</option>
-                  <option value="4 ล้อ">4 ล้อ</option>
-                  <option value="6 ล้อ">6 ล้อ</option>
-                  <option value="10 ล้อ">10 ล้อ</option>
-                  <option value="รถกระบะ">รถกระบะ</option>
+                  <option value="รถมอไซต์">รถมอไซต์</option>
+                  <option value="รถสามล้อ">รถสามล้อ</option>
                   <option value="รถยนต์">รถยนต์</option>
+                  <option value="รถกระบะ">รถกระบะ</option>
+                  <option value="รถ 6 ล้อ">รถ 6 ล้อ</option>
+                  <option value="รถ 10 ล้อ">รถ 10 ล้อ</option>
+                  <option value="รถ 12 ล้อ">รถ 12 ล้อ</option>
+                  <option value="รถ 20 ล้อ">รถ 20 ล้อ</option>
+                  <option value="รถ 40 ล้อ">รถ 40 ล้อ</option>
+                  <option value="ไม่มีพานพาหนะ">ไม่มีพานพาหนะ</option>
                 </select>
               </div>
               <div class="col-span-2 md:col-span-1">
@@ -457,6 +469,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { vehiclesAPI } from '../services/api';
+import DateRangeFilter from '../components/DateRangeFilter.vue';
 
 // ==================== STATE ====================
 const vehicles = ref([]);
@@ -468,6 +481,8 @@ const modalMode = ref('add');
 const filters = ref({
   search: '',
   status: '',
+  dateFrom: null,
+  dateTo: null,
   page: 1,
   limit: 25,
 });
@@ -534,6 +549,8 @@ const fetchVehicles = async () => {
     const params = {
       search: filters.value.search || undefined,
       status: filters.value.status || undefined,
+      dateFrom: filters.value.dateFrom || undefined,
+      dateTo: filters.value.dateTo || undefined,
       page: pagination.value.page,
       limit: pagination.value.limit,
       companyId: filterCompanyId, // ส่ง companyId ไปด้วย (null ถ้าเป็น Admin ใหญ่)
@@ -548,6 +565,13 @@ const fetchVehicles = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleDateFilter = ({ dateFrom, dateTo }) => {
+  filters.value.dateFrom = dateFrom;
+  filters.value.dateTo = dateTo;
+  pagination.value.page = 1;
+  fetchVehicles();
 };
 
 const changePage = (page) => {

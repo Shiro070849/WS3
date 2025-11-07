@@ -199,6 +199,35 @@ export function useTheme() {
   };
 
   /**
+   * NEW: ล้าง Theme ทั้งหมด (ใช้หลัง Logout)
+   * Reset ทุกอย่างกลับไปเป็น Default Theme
+   */
+  const clearAllThemes = () => {
+    console.log('[LOGOUT] Clearing ALL themes and resetting to default...');
+
+    // 1. ล้าง localStorage ทั้งหมดที่เกี่ยวกับ theme
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('theme_')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    console.log(`[INFO] Cleared ${keysToRemove.length} theme cache entries`);
+
+    // 2. Reset CSS Variables กลับไปเป็น Default
+    const defaultTheme = getDefaultTheme();
+    applyTheme(defaultTheme);
+
+    // 3. ล้าง currentTheme state
+    currentTheme.value = null;
+    isThemeLoaded.value = false;
+
+    console.log('[SUCCESS] All themes cleared successfully');
+  };
+
+  /**
    * Reload theme (useful after settings update)
    */
   const reloadTheme = async (companyId) => {
@@ -213,6 +242,7 @@ export function useTheme() {
     loadTheme,
     reloadTheme,
     clearThemeCache,
+    clearAllThemes,  // NEW: Export function ใหม่
     getDefaultTheme
   };
 }

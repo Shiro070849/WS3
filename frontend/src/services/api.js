@@ -80,13 +80,20 @@ export const departmentsAPI = {
 
 // ==================== DASHBOARD API ====================
 export const dashboardAPI = {
-  getStats: (companyId) => {
-    const params = companyId ? `?companyId=${companyId}` : '';
-    return apiClient.get(`/dashboard/stats${params}`);
+  getStats: (companyId, dateFrom, dateTo) => {
+    const params = new URLSearchParams();
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    const queryString = params.toString();
+    return apiClient.get(`/dashboard/stats${queryString ? '?' + queryString : ''}`);
   },
-  getActivities: (limit = 10, companyId) => {
+  getActivities: (limit = 10, companyId, dateFrom, dateTo, search) => {
     const params = new URLSearchParams({ limit });
     if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    if (search) params.append('search', search);
     return apiClient.get(`/dashboard/activities?${params}`);
   },
   getTopCompanies: (limit = 5) => apiClient.get(`/dashboard/companies?limit=${limit}`),

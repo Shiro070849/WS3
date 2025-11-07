@@ -181,8 +181,10 @@ const fetchCompanyLogo = async () => {
   try {
     const companyId = localStorage.getItem('companyId')
 
-    // ถ้าเป็น Super Admin ไม่ต้องดึง logo
-    if (!companyId || companyId === 'null' || companyId === 'undefined') {
+    // ถ้าเป็น Super Admin (IC_ID = null) ไม่ต้องดึง logo
+    if (!companyId || companyId === 'null' || companyId === 'undefined' || companyId === '') {
+      console.log('[SIDEBAR] Super Admin detected - no company logo needed')
+      companyLogoPath.value = null  // ล้าง logo path
       return
     }
 
@@ -190,9 +192,13 @@ const fetchCompanyLogo = async () => {
     if (response.data.success && response.data.data.IC_LogoPath) {
       companyLogoPath.value = response.data.data.IC_LogoPath
       console.log('[SIDEBAR] Company logo loaded:', companyLogoPath.value)
+    } else {
+      companyLogoPath.value = null  // ถ้าไม่มี logo ให้เคลียร์
+      console.log('[SIDEBAR] No company logo found')
     }
   } catch (error) {
     console.error('[SIDEBAR] Error fetching company logo:', error)
+    companyLogoPath.value = null  // Error แล้วก็เคลียร์
   }
 }
 
@@ -236,10 +242,24 @@ const isActive = (routePath) => {
 }
 
 const confirmLogout = () => {
+  // ล้าง Theme ทั้งหมดก่อน Logout
+  const { clearAllThemes } = useTheme()
+  clearAllThemes()
+
+  // ล้าง company logo path
+  companyLogoPath.value = null
+  companyName.value = 'Smart Security'  // Reset กลับไปเป็นค่า default
+
+  // ล้าง localStorage
   localStorage.removeItem('isLoggedIn')
   localStorage.removeItem('userName')
   localStorage.removeItem('userEmail')
   localStorage.removeItem('companyName')
+  localStorage.removeItem('companyId')  // ล้าง companyId ด้วย
+  localStorage.removeItem('userId')     // ล้าง userId ด้วย
+  localStorage.removeItem('user')       // ล้าง user object ด้วย
+
+  console.log('[LOGOUT] User logged out successfully - Theme and Logo cleared')
   showLogoutModal.value = false
   router.push('/login')
 }
@@ -826,7 +846,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 9999;
   backdrop-filter: blur(4px);
 }
 
