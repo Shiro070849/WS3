@@ -3,9 +3,25 @@ const dbService = require('./db.service');
 
 class DashboardService {
   // ดึงสถิติรวมของวันนี้
-  async getTodayStats(companyId = null, dateFrom = null, dateTo = null) {
+  // userCompanyId: IC_ID ของ user ที่ login (null = Super Admin)
+  // filterCompanyId: IC_ID ที่ user เลือกจาก dropdown (Super Admin เท่านั้น)
+  async getTodayStats(userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null) {
     try {
       const pool = await dbService.connect();
+
+      // กำหนด companyId สุดท้าย
+      let finalCompanyId;
+      if (userCompanyId === null || userCompanyId === undefined) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือกจาก dropdown
+        finalCompanyId = filterCompanyId;
+        console.log(`📊 [SUPER ADMIN] Filter by companyId: ${finalCompanyId || 'ALL'}`);
+      } else {
+        // Company Admin: บังคับใช้ IC_ID ของตัวเอง
+        finalCompanyId = userCompanyId;
+        console.log(`📊 [COMPANY ADMIN] Forced filter by companyId: ${finalCompanyId}`);
+      }
+
+      const companyId = finalCompanyId;
 
       // กำหนด date range
       // หมายเหตุ: Date จะใช้ timezone ของ server (local time)
@@ -98,10 +114,22 @@ class DashboardService {
   }
 
   // ดึงรายการเข้า-ออกล่าสุด
-  async getRecentActivities(limit = 10, companyId = null, dateFrom = null, dateTo = null, search = null) {
+  async getRecentActivities(limit = 10, userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null, search = null) {
     try {
       const pool = await dbService.connect();
       const request = pool.request();
+
+      // กำหนด companyId สุดท้าย
+      let finalCompanyId;
+      if (userCompanyId === null || userCompanyId === undefined) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือกจาก dropdown
+        finalCompanyId = filterCompanyId;
+      } else {
+        // Company Admin: บังคับใช้ IC_ID ของตัวเอง
+        finalCompanyId = userCompanyId;
+      }
+
+      const companyId = finalCompanyId;
 
       // สร้าง WHERE conditions
       const conditions = [];

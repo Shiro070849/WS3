@@ -3,16 +3,32 @@ const vehicleService = require('../service/vehicle.service');
 class VehicleController {
   /**
    * ดึงรายการรถทั้งหมด พร้อมกรอง
-   * Query params: status, search, dateFrom, dateTo, companyId, page, limit
+   * Query params: status, search, dateFrom, dateTo, companyId, userId, page, limit
    */
   async getAllVehicles(req, res) {
     try {
+      // รับ userId และ filterCompanyId จาก query parameter
+      const userId = req.query.userId ? parseInt(req.query.userId) : null;
+      const filterCompanyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+
+      // ดึง IC_ID ของ user จาก database
+      let userCompanyId = null;
+      if (userId) {
+        const pool = await require('../service/db.service').connect();
+        const userQuery = `SELECT IC_ID FROM [dbo].[SystemUser] WHERE SU_ID = @UserId`;
+        const userResult = await pool.request()
+          .input('UserId', require('mssql').Int, userId)
+          .query(userQuery);
+        userCompanyId = userResult.recordset[0]?.IC_ID || null;
+      }
+
       const filters = {
         status: req.query.status || null,
         search: req.query.search || null,
         dateFrom: req.query.dateFrom || null,
         dateTo: req.query.dateTo || null,
-        companyId: req.query.companyId || null,
+        companyId: filterCompanyId,
+        userCompanyId: userCompanyId,
       };
 
       const page = parseInt(req.query.page) || 1;

@@ -4,7 +4,7 @@ const dbService = require('./db.service');
 class VehicleService {
   /**
    * ดึงรายการรถทั้งหมด พร้อม JOIN ข้อมูลที่เกี่ยวข้อง
-   * @param {Object} filters - กรองข้อมูล (status, search, dateFrom, dateTo, companyId)
+   * @param {Object} filters - กรองข้อมูล (status, search, dateFrom, dateTo, companyId, userCompanyId)
    * @param {Number} page - หน้าที่ต้องการ
    * @param {Number} limit - จำนวนรายการต่อหน้า
    */
@@ -14,6 +14,18 @@ class VehicleService {
       const request = pool.request();
 
       const offset = (page - 1) * limit;
+
+      // กำหนด companyId สุดท้าย (ตาม role)
+      let finalCompanyId;
+      if (filters.userCompanyId === null || filters.userCompanyId === undefined) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือก
+        finalCompanyId = filters.companyId;
+        console.log(`🚗 [SUPER ADMIN] Vehicle filter by companyId: ${finalCompanyId || 'ALL'}`);
+      } else {
+        // Company Admin: บังคับใช้ IC_ID ของตัวเอง
+        finalCompanyId = filters.userCompanyId;
+        console.log(`🚗 [COMPANY ADMIN] Vehicle forced filter by companyId: ${finalCompanyId}`);
+      }
 
       // Base query
       let whereConditions = [];
@@ -53,10 +65,10 @@ class VehicleService {
         request.input('DateTo', sql.DateTime, endOfDay);
       }
 
-      // Filter by company
-      if (filters.companyId) {
+      // Filter by company (ใช้ finalCompanyId แทน filters.companyId)
+      if (finalCompanyId) {
         whereConditions.push('WI.IC_ID = @CompanyId');
-        request.input('CompanyId', sql.Int, parseInt(filters.companyId));
+        request.input('CompanyId', sql.Int, parseInt(finalCompanyId));
       }
 
       const whereClause = whereConditions.length > 0
@@ -132,8 +144,8 @@ class VehicleService {
         endOfDay.setHours(23, 59, 59, 999);
         countRequest.input('DateTo', sql.DateTime, endOfDay);
       }
-      if (filters.companyId) {
-        countRequest.input('CompanyId', sql.Int, parseInt(filters.companyId));
+      if (finalCompanyId) {
+        countRequest.input('CompanyId', sql.Int, parseInt(finalCompanyId));
       }
 
       const countResult = await countRequest.query(countQuery);

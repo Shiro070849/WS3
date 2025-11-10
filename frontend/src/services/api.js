@@ -80,16 +80,18 @@ export const departmentsAPI = {
 
 // ==================== DASHBOARD API ====================
 export const dashboardAPI = {
-  getStats: (companyId, dateFrom, dateTo) => {
+  getStats: (userId, companyId, dateFrom, dateTo) => {
     const params = new URLSearchParams();
+    if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
     const queryString = params.toString();
     return apiClient.get(`/dashboard/stats${queryString ? '?' + queryString : ''}`);
   },
-  getActivities: (limit = 10, companyId, dateFrom, dateTo, search) => {
+  getActivities: (limit = 10, userId, companyId, dateFrom, dateTo, search) => {
     const params = new URLSearchParams({ limit });
+    if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
@@ -101,7 +103,11 @@ export const dashboardAPI = {
 
 // ==================== VEHICLES API ====================
 export const vehiclesAPI = {
-  getAll: (params) => apiClient.get('/vehicles', { params }),
+  getAll: (params) => {
+    // Ensure userId is included in params if available
+    const queryParams = { ...params };
+    return apiClient.get('/vehicles', { params: queryParams });
+  },
   getById: (id) => apiClient.get(`/vehicles/${id}`),
   create: (data) => apiClient.post('/vehicles', data),
   update: (id, data) => apiClient.put(`/vehicles/${id}`, data),
@@ -119,12 +125,54 @@ export const reportsAPI = {
 
 // ==================== STATISTICS API ====================
 export const statisticsAPI = {
-  getOverview: (period = 'week') => apiClient.get(`/statistics/overview?period=${period}`),
-  getVehicleTypes: (period = 'week') => apiClient.get(`/statistics/vehicle-types?period=${period}`),
-  getPeakHours: (period = 'week') => apiClient.get(`/statistics/peak-hours?period=${period}`),
-  getTopCompanies: (period = 'week', limit = 5) => apiClient.get(`/statistics/top-companies?period=${period}&limit=${limit}`),
-  getTrafficTrend: (period = 'week') => apiClient.get(`/statistics/traffic-trend?period=${period}`),
-  getAdditional: (period = 'week') => apiClient.get(`/statistics/additional?period=${period}`),
+  getOverview: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+    const params = new URLSearchParams({ period });
+    if (userId) params.append('userId', userId);
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    return apiClient.get(`/statistics/overview?${params}`);
+  },
+  getVehicleTypes: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+    const params = new URLSearchParams({ period });
+    if (userId) params.append('userId', userId);
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    return apiClient.get(`/statistics/vehicle-types?${params}`);
+  },
+  getPeakHours: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+    const params = new URLSearchParams({ period });
+    if (userId) params.append('userId', userId);
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    return apiClient.get(`/statistics/peak-hours?${params}`);
+  },
+  getTopCompanies: (period = 'week', limit = 5, userId, companyId, dateFrom, dateTo) => {
+    const params = new URLSearchParams({ period, limit });
+    if (userId) params.append('userId', userId);
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    return apiClient.get(`/statistics/top-companies?${params}`);
+  },
+  getTrafficTrend: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+    const params = new URLSearchParams({ period });
+    if (userId) params.append('userId', userId);
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    return apiClient.get(`/statistics/traffic-trend?${params}`);
+  },
+  getAdditional: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+    const params = new URLSearchParams({ period });
+    if (userId) params.append('userId', userId);
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    return apiClient.get(`/statistics/additional?${params}`);
+  },
 };
 
 // ==================== SYSTEM SETTINGS API ====================

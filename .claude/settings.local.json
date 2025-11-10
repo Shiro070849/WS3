@@ -22,7 +22,9 @@
       "Bash(node run_migration.js:*)",
       "Bash(nul)",
       "Bash(npm run:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(node index.js:*)",
+      "Bash(node -c:*)"
     ],
     "deny": [],
     "ask": []

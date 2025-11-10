@@ -4,12 +4,24 @@ class DashboardController {
   // ดึงสถิติของ Dashboard
   async getStats(req, res) {
     try {
-      // รับ companyId และ date range จาก query parameter
-      const companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+      // รับ userId และ filterCompanyId จาก query parameter
+      const userId = req.query.userId ? parseInt(req.query.userId) : null;
+      const filterCompanyId = req.query.companyId ? parseInt(req.query.companyId) : null;
       const dateFrom = req.query.dateFrom || null;
       const dateTo = req.query.dateTo || null;
 
-      const stats = await dashboardService.getTodayStats(companyId, dateFrom, dateTo);
+      // ดึง IC_ID ของ user จาก database
+      let userCompanyId = null;
+      if (userId) {
+        const pool = await require('../service/db.service').connect();
+        const userQuery = `SELECT IC_ID FROM [dbo].[SystemUser] WHERE SU_ID = @UserId`;
+        const userResult = await pool.request()
+          .input('UserId', require('mssql').Int, userId)
+          .query(userQuery);
+        userCompanyId = userResult.recordset[0]?.IC_ID || null;
+      }
+
+      const stats = await dashboardService.getTodayStats(userCompanyId, filterCompanyId, dateFrom, dateTo);
 
       res.status(200).json({
         success: true,
@@ -29,12 +41,24 @@ class DashboardController {
   async getRecentActivities(req, res) {
     try {
       const limit = parseInt(req.query.limit) || 10;
-      const companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+      const userId = req.query.userId ? parseInt(req.query.userId) : null;
+      const filterCompanyId = req.query.companyId ? parseInt(req.query.companyId) : null;
       const dateFrom = req.query.dateFrom || null;
       const dateTo = req.query.dateTo || null;
       const search = req.query.search || null;
 
-      const activities = await dashboardService.getRecentActivities(limit, companyId, dateFrom, dateTo, search);
+      // ดึง IC_ID ของ user จาก database
+      let userCompanyId = null;
+      if (userId) {
+        const pool = await require('../service/db.service').connect();
+        const userQuery = `SELECT IC_ID FROM [dbo].[SystemUser] WHERE SU_ID = @UserId`;
+        const userResult = await pool.request()
+          .input('UserId', require('mssql').Int, userId)
+          .query(userQuery);
+        userCompanyId = userResult.recordset[0]?.IC_ID || null;
+      }
+
+      const activities = await dashboardService.getRecentActivities(limit, userCompanyId, filterCompanyId, dateFrom, dateTo, search);
 
       res.status(200).json({
         success: true,

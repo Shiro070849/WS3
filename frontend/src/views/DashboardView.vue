@@ -23,7 +23,7 @@
           />
         </div>
 
-        <div class="company-filter-wrapper">
+        <div class="company-filter-wrapper" v-if="isSuperAdmin">
           <select
             id="companyFilter"
             v-model="filters.companyId"
@@ -183,6 +183,13 @@ const activities = ref([]);
 const loading = ref(false);
 const companies = ref([]);
 
+// ดึงข้อมูล user จาก localStorage
+const userId = parseInt(localStorage.getItem('userId'));
+const loggedInCompanyId = localStorage.getItem('companyId');
+const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
+
+console.log(`👤 Dashboard User: userId=${userId}, companyId=${loggedInCompanyId}, isSuperAdmin=${isSuperAdmin}`);
+
 const filters = ref({
   search: '',
   dateFrom: null,
@@ -210,16 +217,10 @@ const fetchCompanies = async () => {
 
 const fetchStats = async () => {
   try {
-    // Use filters.value.companyId if set, otherwise use localStorage companyId
-    const loggedInCompanyId = localStorage.getItem('companyId');
-    const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
+    // ส่ง userId และ companyId ไป Backend
+    const filterCompanyId = filters.value.companyId;
 
-    // Priority: 1. User selected filter, 2. Logged-in user's company, 3. null (all)
-    const filterCompanyId = filters.value.companyId !== null
-      ? filters.value.companyId
-      : (isSuperAdmin ? null : loggedInCompanyId);
-
-    const response = await dashboardAPI.getStats(filterCompanyId, filters.value.dateFrom, filters.value.dateTo);
+    const response = await dashboardAPI.getStats(userId, filterCompanyId, filters.value.dateFrom, filters.value.dateTo);
     stats.value = response.data.data;
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -229,17 +230,12 @@ const fetchStats = async () => {
 const fetchActivities = async () => {
   loading.value = true;
   try {
-    // Use filters.value.companyId if set, otherwise use localStorage companyId
-    const loggedInCompanyId = localStorage.getItem('companyId');
-    const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
-
-    // Priority: 1. User selected filter, 2. Logged-in user's company, 3. null (all)
-    const filterCompanyId = filters.value.companyId !== null
-      ? filters.value.companyId
-      : (isSuperAdmin ? null : loggedInCompanyId);
+    // ส่ง userId และ companyId ไป Backend
+    const filterCompanyId = filters.value.companyId;
 
     const response = await dashboardAPI.getActivities(
       10,
+      userId,
       filterCompanyId,
       filters.value.dateFrom,
       filters.value.dateTo,

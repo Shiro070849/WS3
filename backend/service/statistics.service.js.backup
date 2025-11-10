@@ -54,16 +54,10 @@ class StatisticsService {
   }
 
   // 1. ดึงสถิติภาพรวม
-  async getOverviewStats(period = 'week', companyId = null) {
+  async getOverviewStats(period = 'week') {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
-
-      // สร้าง company filter
-      let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
-      }
 
       // สถิติช่วงเวลาปัจจุบัน
       const currentStats = await pool.request()
@@ -76,7 +70,6 @@ class StatisticsService {
           LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
           WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
             AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
-            ${companyFilter}
         `);
 
       // สถิติช่วงก่อนหน้า (สำหรับคำนวณ trend)
@@ -94,7 +87,6 @@ class StatisticsService {
           LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
           WHERE WI.WI_RecordedOn >= '${previousStart.toISOString()}'
             AND WI.WI_RecordedOn <= '${previousEnd.toISOString()}'
-            ${companyFilter}
         `);
 
       const current = currentStats.recordset[0];
@@ -146,16 +138,10 @@ class StatisticsService {
   }
 
   // 2. ดึงข้อมูลประเภทรถ
-  async getVehicleTypeStats(period = 'week', companyId = null) {
+  async getVehicleTypeStats(period = 'week') {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
-
-      // สร้าง company filter
-      let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND IC_ID = ${parseInt(companyId)}`;
-      }
 
       const result = await pool.request()
         .query(`
@@ -166,7 +152,6 @@ class StatisticsService {
           WHERE WI_RecordedOn >= '${startDate.toISOString()}'
             AND WI_RecordedOn <= '${endDate.toISOString()}'
             AND WI_VehicleType IS NOT NULL
-            ${companyFilter}
           GROUP BY WI_VehicleType
           ORDER BY COUNT(*) DESC
         `);
@@ -194,16 +179,10 @@ class StatisticsService {
   }
 
   // 3. ดึงข้อมูลช่วงเวลาเร่งด่วน
-  async getPeakHoursStats(period = 'week', companyId = null) {
+  async getPeakHoursStats(period = 'week') {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
-
-      // สร้าง company filter
-      let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND IC_ID = ${parseInt(companyId)}`;
-      }
 
       const result = await pool.request()
         .query(`
@@ -213,7 +192,6 @@ class StatisticsService {
           FROM [dbo].[WayIn]
           WHERE WI_RecordedOn >= '${startDate.toISOString()}'
             AND WI_RecordedOn <= '${endDate.toISOString()}'
-            ${companyFilter}
           GROUP BY DATEPART(HOUR, WI_RecordedOn)
           ORDER BY traffic DESC
         `);
@@ -233,16 +211,10 @@ class StatisticsService {
   }
 
   // 4. ดึงข้อมูลบริษัทที่ใช้บริการบ่อยที่สุด
-  async getTopCompaniesStats(period = 'week', limit = 5, companyId = null) {
+  async getTopCompaniesStats(period = 'week', limit = 5) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
-
-      // สร้าง company filter
-      let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
-      }
 
       const result = await pool.request()
         .query(`
@@ -253,7 +225,6 @@ class StatisticsService {
           INNER JOIN [dbo].[InternalCompany] IC ON WI.IC_ID = IC.IC_ID
           WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
             AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
-            ${companyFilter}
           GROUP BY IC.IC_LocalName
           ORDER BY COUNT(WI.WI_ID) DESC
         `);
@@ -273,16 +244,10 @@ class StatisticsService {
   }
 
   // 5. ดึงข้อมูลแนวโน้มการเข้า-ออก (สำหรับกราฟ)
-  async getTrafficTrendStats(period = 'week', companyId = null) {
+  async getTrafficTrendStats(period = 'week') {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
-
-      // สร้าง company filter
-      let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
-      }
 
       // ดึงข้อมูลแบ่งตามวัน
       const result = await pool.request()
@@ -296,7 +261,6 @@ class StatisticsService {
             AND CAST(WO.WO_RecordedOn AS DATE) = CAST(WI.WI_RecordedOn AS DATE)
           WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
             AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
-            ${companyFilter}
           GROUP BY CAST(WI.WI_RecordedOn AS DATE)
           ORDER BY CAST(WI.WI_RecordedOn AS DATE)
         `);
@@ -329,16 +293,10 @@ class StatisticsService {
   }
 
   // 6. ดึงสถิติเพิ่มเติม
-  async getAdditionalStats(period = 'week', companyId = null) {
+  async getAdditionalStats(period = 'week') {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
-
-      // สร้าง company filter
-      let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
-      }
 
       // คำนวณเวลาเฉลี่ยที่อยู่ในคลัง
       const avgTimeResult = await pool.request()
@@ -349,29 +307,18 @@ class StatisticsService {
           INNER JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
           WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
             AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
-            ${companyFilter}
         `);
 
       const avgMinutes = avgTimeResult.recordset[0].avgMinutes || 0;
       const avgHours = (avgMinutes / 60).toFixed(1);
 
-      // นับจำนวนบริษัททั้งหมด (ถ้ากรองตาม company จะแสดง 1 บริษัท)
-      let companyResult;
-      if (companyId) {
-        companyResult = await pool.request()
-          .query(`
-            SELECT COUNT(DISTINCT IC_ID) as count
-            FROM [dbo].[InternalCompany]
-            WHERE IC_IsActive = 1 AND IC_ID = ${parseInt(companyId)}
-          `);
-      } else {
-        companyResult = await pool.request()
-          .query(`
-            SELECT COUNT(DISTINCT IC_ID) as count
-            FROM [dbo].[InternalCompany]
-            WHERE IC_IsActive = 1
-          `);
-      }
+      // นับจำนวนบริษัททั้งหมด
+      const companyResult = await pool.request()
+        .query(`
+          SELECT COUNT(DISTINCT IC_ID) as count
+          FROM [dbo].[InternalCompany]
+          WHERE IC_IsActive = 1
+        `);
 
       // คำนวณประสิทธิภาพ (% ของรถที่ออกเทียบกับรถเข้า)
       const efficiencyResult = await pool.request()
@@ -383,7 +330,6 @@ class StatisticsService {
           LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
           WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
             AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
-            ${companyFilter}
         `);
 
       const { totalIn, totalOut } = efficiencyResult.recordset[0];

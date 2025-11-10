@@ -10,12 +10,34 @@
 
     <!-- Main Content - Tailwind Layout -->
     <div class="w-full">
-      <!-- Date Range Filter -->
-      <DateRangeFilter
-        v-model:dateFrom="filters.dateFrom"
-        v-model:dateTo="filters.dateTo"
-        @filter="handleDateFilter"
-      />
+      <!-- Filters Row: Date Range + Company -->
+      <div class="filters-row">
+        <div class="date-filter-wrapper">
+          <DateRangeFilter
+            v-model:dateFrom="filters.dateFrom"
+            v-model:dateTo="filters.dateTo"
+            @filter="handleDateFilter"
+          />
+        </div>
+
+        <div class="company-filter-wrapper" v-if="isSuperAdmin">
+          <select
+            id="companyFilter"
+            v-model="filters.companyId"
+            class="company-select-inline"
+            @change="handleCompanyFilter"
+          >
+            <option :value="null">ทุกบริษัท</option>
+            <option
+              v-for="company in companies"
+              :key="company.IC_ID"
+              :value="company.IC_ID"
+            >
+              {{ company.IC_LocalName }}
+            </option>
+          </select>
+        </div>
+      </div>
 
       <!-- Filter Card - Tailwind Only -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
@@ -468,21 +490,28 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { vehiclesAPI } from '../services/api';
+import { vehiclesAPI, companiesAPI } from '../services/api';
 import DateRangeFilter from '../components/DateRangeFilter.vue';
 
 // ==================== STATE ====================
 const vehicles = ref([]);
+const companies = ref([]);
 const loading = ref(false);
 const showModal = ref(false);
 const showCheckoutModal = ref(false);
 const modalMode = ref('add');
+
+// Extract user info from localStorage
+const userId = parseInt(localStorage.getItem('userId'));
+const loggedInCompanyId = localStorage.getItem('companyId');
+const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
 
 const filters = ref({
   search: '',
   status: '',
   dateFrom: null,
   dateTo: null,
+  companyId: null,
   page: 1,
   limit: 25,
 });
@@ -540,20 +569,18 @@ const visiblePages = computed(() => {
 const fetchVehicles = async () => {
   loading.value = true;
   try {
-    // ดึง companyId จาก localStorage
-    const companyId = localStorage.getItem('companyId');
-    // ถ้าเป็น Super Admin (IC_ID = NULL) ไม่ต้องส่ง companyId เพื่อเห็นข้อมูลทุกบริษัท
-    const isSuperAdmin = !companyId || companyId === 'null' || companyId === 'undefined';
-    const filterCompanyId = isSuperAdmin ? undefined : companyId;
+    // Super Admin: ใช้ companyId จาก dropdown filter, Company Admin: ส่ง userId ให้ Backend query IC_ID
+    const filterCompanyId = isSuperAdmin ? (filters.value.companyId || undefined) : undefined;
 
     const params = {
+      userId: userId, // ส่ง userId ไปให้ Backend query IC_ID
       search: filters.value.search || undefined,
       status: filters.value.status || undefined,
       dateFrom: filters.value.dateFrom || undefined,
       dateTo: filters.value.dateTo || undefined,
       page: pagination.value.page,
       limit: pagination.value.limit,
-      companyId: filterCompanyId, // ส่ง companyId ไปด้วย (null ถ้าเป็น Admin ใหญ่)
+      companyId: filterCompanyId, // Super Admin: dropdown filter, Company Admin: undefined
     };
 
     const response = await vehiclesAPI.getAll(params);
@@ -567,9 +594,24 @@ const fetchVehicles = async () => {
   }
 };
 
+const fetchCompanies = async () => {
+  try {
+    const response = await companiesAPI.getAll();
+    // Filter only active companies (IC_IsActive can be true, 1, or '1')
+    companies.value = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+  } catch (error) {
+    console.error('Error fetching companies:', error);
+  }
+};
+
 const handleDateFilter = ({ dateFrom, dateTo }) => {
   filters.value.dateFrom = dateFrom;
   filters.value.dateTo = dateTo;
+  pagination.value.page = 1;
+  fetchVehicles();
+};
+
+const handleCompanyFilter = () => {
   pagination.value.page = 1;
   fetchVehicles();
 };
@@ -732,6 +774,7 @@ const formatDateTime = (dateTime) => {
 };
 
 onMounted(() => {
+  fetchCompanies();
   fetchVehicles();
 });
 </script>
@@ -758,6 +801,65 @@ onMounted(() => {
 }
 
 /* 2. Page Title - moved to theme-variables.css for theming support */
+
+/* ============================================
+   Filters Row Layout
+   ============================================ */
+
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.date-filter-wrapper {
+  flex: 1;
+}
+
+.company-filter-wrapper {
+  min-width: 200px;
+  max-width: 250px;
+}
+
+/* Company Filter Inline */
+.company-select-inline {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-family: 'Prompt', sans-serif;
+  font-weight: 500;
+  color: #475569;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  height: 44px;
+}
+
+.company-select-inline:hover {
+  border-color: #cbd5e1;
+}
+
+.company-select-inline:focus {
+  outline: none;
+  border-color: #0B4F6C;
+  box-shadow: 0 0 0 3px rgba(11, 79, 108, 0.1);
+}
+
+@media (max-width: 768px) {
+  .filters-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .company-filter-wrapper {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
 
 /* ============================================
    Browser Modal Styles

@@ -1,11 +1,36 @@
 const statisticsService = require('../service/statistics.service');
 
 class StatisticsController {
+  // Helper function: ดึง IC_ID จาก userId
+  async getUserCompanyId(userId) {
+    if (!userId) return null;
+    const pool = await require('../service/db.service').connect();
+    const userQuery = `SELECT IC_ID FROM [dbo].[SystemUser] WHERE SU_ID = @UserId`;
+    const userResult = await pool.request()
+      .input('UserId', require('mssql').Int, parseInt(userId))
+      .query(userQuery);
+    return userResult.recordset[0]?.IC_ID || null;
+  }
+
+  // Helper function: กำหนด companyId สุดท้าย
+  getFinalCompanyId(userCompanyId, filterCompanyId) {
+    if (userCompanyId === null || userCompanyId === undefined) {
+      // Super Admin: ใช้ filterCompanyId ที่เลือก
+      return filterCompanyId;
+    } else {
+      // Company Admin: บังคับใช้ IC_ID ของตัวเอง
+      return userCompanyId;
+    }
+  }
+
   // ดึงสถิติภาพรวม
   async getOverview(req, res) {
     try {
-      const { period } = req.query; // today, week, month, year
-      const overview = await statisticsService.getOverviewStats(period || 'week');
+      const { period, userId, companyId } = req.query;
+      const userCompanyId = await this.getUserCompanyId(userId);
+      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+
+      const overview = await statisticsService.getOverviewStats(period || 'week', finalCompanyId);
 
       res.status(200).json({
         success: true,
@@ -24,8 +49,11 @@ class StatisticsController {
   // ดึงข้อมูลประเภทรถ
   async getVehicleTypes(req, res) {
     try {
-      const { period } = req.query;
-      const vehicleTypes = await statisticsService.getVehicleTypeStats(period || 'week');
+      const { period, userId, companyId } = req.query;
+      const userCompanyId = await this.getUserCompanyId(userId);
+      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+
+      const vehicleTypes = await statisticsService.getVehicleTypeStats(period || 'week', finalCompanyId);
 
       res.status(200).json({
         success: true,
@@ -44,8 +72,11 @@ class StatisticsController {
   // ดึงข้อมูลช่วงเวลาเร่งด่วน
   async getPeakHours(req, res) {
     try {
-      const { period } = req.query;
-      const peakHours = await statisticsService.getPeakHoursStats(period || 'week');
+      const { period, userId, companyId } = req.query;
+      const userCompanyId = await this.getUserCompanyId(userId);
+      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+
+      const peakHours = await statisticsService.getPeakHoursStats(period || 'week', finalCompanyId);
 
       res.status(200).json({
         success: true,
@@ -64,10 +95,14 @@ class StatisticsController {
   // ดึงข้อมูลบริษัทยอดนิยม
   async getTopCompanies(req, res) {
     try {
-      const { period, limit } = req.query;
+      const { period, limit, userId, companyId } = req.query;
+      const userCompanyId = await this.getUserCompanyId(userId);
+      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+
       const topCompanies = await statisticsService.getTopCompaniesStats(
         period || 'week',
-        parseInt(limit) || 5
+        parseInt(limit) || 5,
+        finalCompanyId
       );
 
       res.status(200).json({
@@ -87,8 +122,11 @@ class StatisticsController {
   // ดึงข้อมูลแนวโน้มการเข้า-ออก
   async getTrafficTrend(req, res) {
     try {
-      const { period } = req.query;
-      const trend = await statisticsService.getTrafficTrendStats(period || 'week');
+      const { period, userId, companyId } = req.query;
+      const userCompanyId = await this.getUserCompanyId(userId);
+      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+
+      const trend = await statisticsService.getTrafficTrendStats(period || 'week', finalCompanyId);
 
       res.status(200).json({
         success: true,
@@ -107,8 +145,11 @@ class StatisticsController {
   // ดึงสถิติเพิ่มเติม
   async getAdditionalStats(req, res) {
     try {
-      const { period } = req.query;
-      const additional = await statisticsService.getAdditionalStats(period || 'week');
+      const { period, userId, companyId } = req.query;
+      const userCompanyId = await this.getUserCompanyId(userId);
+      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+
+      const additional = await statisticsService.getAdditionalStats(period || 'week', finalCompanyId);
 
       res.status(200).json({
         success: true,

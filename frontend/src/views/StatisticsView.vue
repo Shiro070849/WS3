@@ -2,6 +2,7 @@
   <div class="w-full max-w-full animate-fadeIn">
     <!-- Page Header - Tailwind Only -->
     <div class="mb-8">
+      <!-- Keep existing Period Filter -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 class="page-title">สถิติ</h1>
@@ -172,6 +173,9 @@ const periods = [
   { value: 'month', label: 'เดือนนี้' },
   { value: 'year', label: 'ปีนี้' }
 ];
+
+// Extract user info from localStorage
+const userId = parseInt(localStorage.getItem('userId'));
 
 // Loading states
 const loading = ref(false);
@@ -585,12 +589,12 @@ const fetchStatistics = async () => {
   try {
     // Fetch all data in parallel
     const [overviewRes, vehicleTypesRes, peakHoursRes, topCompaniesRes, trafficTrendRes, additionalRes] = await Promise.all([
-      statisticsAPI.getOverview(selectedPeriod.value),
-      statisticsAPI.getVehicleTypes(selectedPeriod.value),
-      statisticsAPI.getPeakHours(selectedPeriod.value),
-      statisticsAPI.getTopCompanies(selectedPeriod.value, 5),
-      statisticsAPI.getTrafficTrend(selectedPeriod.value),
-      statisticsAPI.getAdditional(selectedPeriod.value)
+      statisticsAPI.getOverview(selectedPeriod.value, userId),
+      statisticsAPI.getVehicleTypes(selectedPeriod.value, userId),
+      statisticsAPI.getPeakHours(selectedPeriod.value, userId),
+      statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId),
+      statisticsAPI.getTrafficTrend(selectedPeriod.value, userId),
+      statisticsAPI.getAdditional(selectedPeriod.value, userId)
     ]);
 
     overviewStats.value = overviewRes.data.data;
@@ -706,6 +710,4 @@ onMounted(() => {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, #0EA5E9, #0284C7);
 }
-
-/* Responsive - page-title moved to theme-variables.css */
 </style>
