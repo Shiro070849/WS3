@@ -159,6 +159,107 @@ class WayInController {
       });
     }
   }
+
+  // ค้นหาด้วย Barcode (สำหรับรีปริ้น)
+  async searchByBarcode(req, res) {
+    try {
+      const barcode = req.params.barcode;
+      const result = await wayInService.searchByBarcode(barcode);
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบรายการที่ค้นหา'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in WayIn searchByBarcode:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error searching by barcode',
+        error: error.message
+      });
+    }
+  }
+
+  // อัพเดทข้อมูล WayIn (สำหรับรีปริ้น)
+  async update(req, res) {
+    try {
+      const id = req.params.id;
+      const data = {
+        fullName: req.body.fullName,
+        gender: req.body.gender,
+        address: req.body.address,
+        licensePlate: req.body.licensePlate,
+        licenseProvince: req.body.licenseProvince,
+        vehicleType: req.body.vehicleType,
+        internalDivision: req.body.internalDivision,
+        follower: req.body.follower,
+        remarks: req.body.remarks,
+        fromCompany: req.body.fromCompany,
+        contactName: req.body.contactName
+      };
+
+      const result = await wayInService.updateWayIn(id, data);
+
+      res.status(200).json({
+        success: true,
+        message: 'อัพเดทข้อมูลสำเร็จ',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in WayIn update:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating Way In record',
+        error: error.message
+      });
+    }
+  }
+
+  // ดึงข้อมูลทั้งหมด (สำหรับรีปริ้น)
+  async getAll(req, res) {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
+      const result = await wayInService.getAllWayIn(limit);
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in WayIn getAll:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting all WayIn',
+        error: error.message
+      });
+    }
+  }
+
+  // ดึงรายการ VisitType (สำหรับ dropdown)
+  async getVisitTypes(req, res) {
+    try {
+      const result = await wayInService.getVisitTypes();
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in WayIn getVisitTypes:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting visit types',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = new WayInController();

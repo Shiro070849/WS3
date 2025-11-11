@@ -7,9 +7,13 @@ class AuthService {
       const pool = await dbService.connect();
 
       const query = `
-        SELECT SU_ID, SU_Code, SU_Name1, SU_Name2, SU_Email, SU_Username, SU_Password, SU_Active, IC_ID
-        FROM [dbo].[SystemUser]
-        WHERE SU_Username = @Username AND SU_Active = 1
+        SELECT
+          su.SU_ID, su.SU_Code, su.SU_Name1, su.SU_Name2, su.SU_Email,
+          su.SU_Username, su.SU_Password, su.SU_Active, su.IC_ID, su.SR_ID,
+          sr.SR_Code, sr.SR_Name
+        FROM [dbo].[SystemUser] su
+        LEFT JOIN [dbo].[SystemRole] sr ON su.SR_ID = sr.SR_ID
+        WHERE su.SU_Username = @Username AND su.SU_Active = 1
       `;
 
       const result = await pool.request()

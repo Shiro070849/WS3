@@ -281,6 +281,20 @@
               <BaseInput v-model="adminForm.email" type="email" placeholder="email@example.com" />
             </div>
 
+            <!-- Role -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">บทบาท (Role)</label>
+              <select
+                v-model="adminForm.roleId"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
+              >
+                <option :value="null">-- เลือกบทบาท --</option>
+                <option v-for="role in roles" :key="role.SR_ID" :value="role.SR_ID">
+                  {{ role.SR_Name }} ({{ role.SR_Code }})
+                </option>
+              </select>
+            </div>
+
             <!-- สถานะ -->
             <div class="pt-2">
               <label class="flex items-center cursor-pointer group">
@@ -456,7 +470,7 @@ import BaseCard from '../base/BaseCard.vue';
 import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import BaseTable from '../base/BaseTable.vue';
-import { systemSettingsAPI, usersAPI } from '@/services/api';
+import { systemSettingsAPI, usersAPI, rolesAPI } from '@/services/api';
 
 const props = defineProps({
   companyId: {
@@ -486,8 +500,9 @@ const adminLoading = ref(false);
 const adminModal = ref({ show: false, isEdit: false, title: '', id: null });
 const adminForm = ref({
   code: '', name1: '', name2: '', username: '', password: '',
-  email: '', active: true, remarks: ''
+  email: '', active: true, remarks: '', roleId: null
 });
+const roles = ref([]);
 
 const passwordModal = ref({ show: false, title: 'เปลี่ยนรหัสผ่าน', id: null });
 const passwordForm = ref({
@@ -504,6 +519,19 @@ const adminColumns = [
   { key: 'SU_Email', label: 'Email' },
   { key: 'SU_Active', label: 'สถานะ' }
 ];
+
+// Fetch roles for dropdown
+const fetchRoles = async () => {
+  try {
+    const response = await rolesAPI.getAll();
+    if (response.data.success) {
+      roles.value = response.data.data;
+      console.log('[SecuritySettings] Roles fetched:', roles.value.length);
+    }
+  } catch (error) {
+    console.error('[SecuritySettings] Error fetching roles:', error);
+  }
+};
 
 // Fetch admins by companyId (only company admins, excludes Super Admin)
 const fetchAdmins = async () => {
@@ -556,7 +584,8 @@ const openAdminModal = () => {
     password: '',
     email: '',
     active: true,
-    remarks: ''
+    remarks: '',
+    roleId: null
   };
 };
 
@@ -575,7 +604,8 @@ const editAdmin = (row) => {
     password: '', // Don't show existing password
     email: row.SU_Email || '',
     active: row.SU_Active,
-    remarks: row.SU_Remarks || ''
+    remarks: row.SU_Remarks || '',
+    roleId: row.SR_ID || null
   };
 };
 
@@ -626,7 +656,8 @@ const saveAdmin = async () => {
       email: adminForm.value.email,
       active: adminForm.value.active,
       remarks: adminForm.value.remarks,
-      companyId: props.companyId
+      companyId: props.companyId,
+      roleId: adminForm.value.roleId
     };
 
     if (adminModal.value.isEdit) {
@@ -782,6 +813,7 @@ watch(() => props.companyId, () => {
 onMounted(() => {
   loadSettings();
   fetchAdmins();
+  fetchRoles();
 });
 </script>
 

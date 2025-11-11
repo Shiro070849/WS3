@@ -20,6 +20,11 @@ module.exports = (app) => {
   // ลบบริษัท (Soft Delete)
   app.delete('/api/settings/companies/:id', settingsController.deleteCompany);
 
+  // ==================== ROLES ====================
+
+  // ดึงรายการ Roles
+  app.get('/api/settings/roles', settingsController.getRoles);
+
   // ==================== USERS ====================
 
   // ดึงรายการ User ทั้งหมด

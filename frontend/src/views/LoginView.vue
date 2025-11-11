@@ -177,6 +177,11 @@ const handleLogin = async () => {
       localStorage.setItem('companyId', userData.IC_ID ?? 'null')
       localStorage.setItem('companyName', 'Smart Security')
 
+      // เก็บ SR_ID และ SR_Code สำหรับการตรวจสอบสิทธิ์
+      localStorage.setItem('roleId', userData.SR_ID || '')
+      localStorage.setItem('roleCode', userData.SR_Code || '')
+      localStorage.setItem('roleName', userData.SR_Name || '')
+
       // STEP 4: Load Theme ตามประเภทของ User
       const isSuperAdmin = !userData.IC_ID || userData.IC_ID === null || userData.IC_ID === undefined
 

@@ -915,6 +915,25 @@ class SettingsController {
       });
     }
   }
+
+  // ดึงรายการ Roles
+  async getRoles(req, res) {
+    try {
+      const result = await settingsService.getRoles();
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in getRoles:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting roles',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = new SettingsController();

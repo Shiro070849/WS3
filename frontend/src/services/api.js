@@ -69,6 +69,11 @@ export const usersAPI = {
   delete: (id) => apiClient.delete(`/settings/users/${id}`),
 };
 
+// ==================== ROLES API ====================
+export const rolesAPI = {
+  getAll: () => apiClient.get('/settings/roles'),
+};
+
 // ==================== DEPARTMENTS API ====================
 export const departmentsAPI = {
   getAll: () => apiClient.get('/settings/departments'),
@@ -215,6 +220,15 @@ export const systemSettingsAPI = {
       },
     });
   },
+};
+
+// ==================== WAYIN API (สำหรับรีปริ้น) ====================
+export const wayinAPI = {
+  getAll: (params) => apiClient.get('/wayin', { params }),
+  searchByBarcode: (barcode) => apiClient.get(`/wayin/barcode/${barcode}`),
+  getById: (id) => apiClient.get(`/wayin/${id}`),
+  update: (id, data) => apiClient.put(`/wayin/${id}`, data),
+  getVisitTypes: () => apiClient.get('/wayin/visit-types'),
 };
 
 export default apiClient;

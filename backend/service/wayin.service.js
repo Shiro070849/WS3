@@ -160,10 +160,17 @@ class WayInService {
           su.SU_Name1 as SystemUserName,
           su.SU_Code as SystemUserCode,
           wo.WO_ID,
-          wo.WO_RecordedOn as CheckOutTime
+          wo.WO_RecordedOn as CheckOutTime,
+          ic.IC_LogoPath,
+          ic.IC_LocalName,
+          ic.IC_EnglishName,
+          vt.VT_LocalName,
+          vt.VT_EnglishName
         FROM [dbo].[WayIn] wi
         LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
         LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
+        LEFT JOIN [dbo].[InternalCompany] ic ON wi.IC_ID = ic.IC_ID
+        LEFT JOIN [dbo].[VisitType] vt ON wi.VT_ID = vt.VT_ID
         ORDER BY wi.WI_RecordedOn DESC
         OFFSET @Offset ROWS
         FETCH NEXT @Limit ROWS ONLY
@@ -172,6 +179,140 @@ class WayInService {
       request.input('Offset', sql.Int, offset);
       request.input('Limit', sql.Int, limit);
 
+      const result = await request.query(query);
+      return result.recordset;
+    } catch (error) {
+      console.error('Error getting all WayIn:', error);
+      throw error;
+    }
+  }
+
+  // ค้นหาด้วย Barcode (สำหรับรีปริ้น)
+  async searchByBarcode(barcode) {
+    try {
+      const pool = await dbService.connect();
+      const request = pool.request();
+
+      const query = `
+        SELECT
+          wi.*,
+          su.SU_Name1 as SystemUserName,
+          su.SU_Code as SystemUserCode,
+          wo.WO_ID,
+          wo.WO_RecordedOn as CheckOutTime
+        FROM [dbo].[WayIn] wi
+        LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
+        LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
+        WHERE wi.WI_Barcode = @Barcode
+      `;
+
+      request.input('Barcode', sql.NVarChar, barcode);
+      const result = await request.query(query);
+      return result.recordset[0];
+    } catch (error) {
+      console.error('Error searching by barcode:', error);
+      throw error;
+    }
+  }
+
+  // อัพเดทข้อมูล WayIn (สำหรับรีปริ้น)
+  async updateWayIn(id, data) {
+    try {
+      const pool = await dbService.connect();
+      const request = pool.request();
+
+      const query = `
+        UPDATE [dbo].[WayIn]
+        SET
+          [WI_FullName] = @WI_FullName,
+          [WI_CardID] = @WI_CardID,
+          [WI_Address] = @WI_Address,
+          [WI_LicensePlate] = @WI_LicensePlate,
+          [WI_LicenseProvince] = @WI_LicenseProvince,
+          [WI_VehicleType] = @WI_VehicleType,
+          [VT_ID] = @VT_ID,
+          [WI_InternalDivision] = @WI_InternalDivision,
+          [WI_Follower] = @WI_Follower,
+          [WI_Remarks] = @WI_Remarks
+        WHERE [WI_ID] = @WI_ID;
+
+        SELECT
+          wi.*,
+          su.SU_Name1 as SystemUserName,
+          su.SU_Code as SystemUserCode
+        FROM [dbo].[WayIn] wi
+        LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
+        WHERE wi.WI_ID = @WI_ID
+      `;
+
+      request.input('WI_ID', sql.Int, id);
+      request.input('WI_FullName', sql.NVarChar, data.fullName || null);
+      request.input('WI_CardID', sql.NVarChar, data.cardId || null);
+      request.input('WI_Address', sql.NVarChar, data.address || null);
+      request.input('WI_LicensePlate', sql.NVarChar, data.licensePlate || null);
+      request.input('WI_LicenseProvince', sql.NVarChar, data.licenseProvince || null);
+      request.input('WI_VehicleType', sql.NVarChar, data.vehicleType || null);
+      request.input('VT_ID', sql.Int, data.visitTypeId || null);
+      request.input('WI_InternalDivision', sql.NVarChar, data.internalDivision || null);
+      request.input('WI_Follower', sql.Int, data.follower !== undefined ? data.follower : null);
+      request.input('WI_Remarks', sql.NVarChar, data.remarks || null);
+
+      const result = await request.query(query);
+      return result.recordset[0];
+    } catch (error) {
+      console.error('Error updating WayIn:', error);
+      throw error;
+    }
+  }
+
+  // ดึงรายการ VisitType (สำหรับ dropdown)
+  async getVisitTypes() {
+    try {
+      const pool = await dbService.connect();
+      const request = pool.request();
+
+      const query = `
+        SELECT VT_ID, VT_LocalName, VT_EnglishName
+        FROM [dbo].[VisitType]
+        WHERE VT_IsActive = 1
+        ORDER BY VT_LocalName
+      `;
+
+      const result = await request.query(query);
+      return result.recordset;
+    } catch (error) {
+      console.error('Error getting visit types:', error);
+      throw error;
+    }
+  }
+
+  // ดึงข้อมูลทั้งหมด (สำหรับรีปริ้น)
+  async getAllWayIn(limit = 1000) {
+    try {
+      const pool = await dbService.connect();
+      const request = pool.request();
+
+      const query = `
+        SELECT TOP (@Limit)
+          wi.*,
+          su.SU_Name1 as SystemUserName,
+          su.SU_Code as SystemUserCode,
+          wo.WO_ID,
+          wo.WO_RecordedOn as CheckOutTime,
+          ic.IC_LogoPath,
+          ic.IC_LocalName,
+          ic.IC_EnglishName,
+          vt.VT_LocalName,
+          vt.VT_EnglishName
+        FROM [dbo].[WayIn] wi
+        LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
+        LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
+        LEFT JOIN [dbo].[InternalCompany] ic ON wi.IC_ID = ic.IC_ID
+        LEFT JOIN [dbo].[VisitType] vt ON wi.VT_ID = vt.VT_ID
+        ORDER BY wi.WI_RecordedOn DESC
+      `;
+
+      request.input('Limit', sql.Int, limit);
       const result = await request.query(query);
       return result.recordset;
     } catch (error) {

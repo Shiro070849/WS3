@@ -311,7 +311,8 @@ class SettingsService {
           SU_Active,
           SU_PinCode,
           SU_Remarks,
-          IC_ID
+          IC_ID,
+          SR_ID
         )
         VALUES (
           @SU_Code,
@@ -323,7 +324,8 @@ class SettingsService {
           @SU_Active,
           @SU_PinCode,
           @SU_Remarks,
-          @IC_ID
+          @IC_ID,
+          @SR_ID
         );
         SELECT SCOPE_IDENTITY() AS SU_ID;
       `;
@@ -338,6 +340,7 @@ class SettingsService {
         .input('SU_PinCode', sql.NVarChar, data.pinCode || null)
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
         .input('IC_ID', sql.Int, data.companyId)
+        .input('SR_ID', sql.Int, data.roleId || null)
         .query(query);
       return result.recordset[0];
     } catch (error) {
@@ -361,7 +364,8 @@ class SettingsService {
           SU_Active = @SU_Active,
           SU_PinCode = @SU_PinCode,
           SU_Remarks = @SU_Remarks,
-          IC_ID = @IC_ID
+          IC_ID = @IC_ID,
+          SR_ID = @SR_ID
         WHERE SU_ID = @SU_ID
       `;
       await pool.request()
@@ -375,6 +379,7 @@ class SettingsService {
         .input('SU_PinCode', sql.NVarChar, data.pinCode || null)
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
         .input('IC_ID', sql.Int, data.companyId)
+        .input('SR_ID', sql.Int, data.roleId || null)
         .query(query);
       return { success: true };
     } catch (error) {
@@ -927,6 +932,21 @@ class SettingsService {
 
       await request.query(mergeQuery);
 
+      // อัพเดท IC_LogoPath ใน InternalCompany table ถ้ามีการเปลี่ยน logo_url
+      if (data.logo_url !== undefined && data.logo_url !== null && data.logo_url !== '') {
+        const updateLogoQuery = `
+          UPDATE [dbo].[InternalCompany]
+          SET IC_LogoPath = @IC_LogoPath
+          WHERE IC_ID = @IC_ID
+        `;
+        await pool.request()
+          .input('IC_ID', sql.Int, companyId)
+          .input('IC_LogoPath', sql.NVarChar, data.logo_url)
+          .query(updateLogoQuery);
+
+        console.log(`[SUCCESS] IC_LogoPath updated for IC_ID: ${companyId} -> ${data.logo_url}`);
+      }
+
       console.log(`[SUCCESS] Appearance settings updated for IC_ID: ${companyId}`);
 
       return { success: true };
@@ -1297,6 +1317,26 @@ class SettingsService {
       return { success: true };
     } catch (error) {
       console.error('Error updating notification settings:', error);
+      throw error;
+    }
+  }
+
+  // ดึงรายการ Roles (สำหรับ dropdown)
+  async getRoles() {
+    try {
+      const pool = await dbService.connect();
+
+      const query = `
+        SELECT SR_ID, SR_Code, SR_Name, SR_Description
+        FROM [dbo].[SystemRole]
+        WHERE SR_Active = 1
+        ORDER BY SR_Name
+      `;
+
+      const result = await pool.request().query(query);
+      return result.recordset;
+    } catch (error) {
+      console.error('Error getting roles:', error);
       throw error;
     }
   }

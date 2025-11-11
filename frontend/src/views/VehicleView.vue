@@ -111,6 +111,9 @@
                 <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
                   ทะเบียนรถ
                 </th>
+                <th v-if="canReprint" class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                  Barcode
+                </th>
                 <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
                   ประเภทรถ
                 </th>
@@ -136,7 +139,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="loading" class="bg-white">
-                <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                <td :colspan="canReprint ? 9 : 8" class="px-6 py-10 text-center text-gray-500">
                   <div class="flex justify-center items-center">
                     <svg class="animate-spin h-6 w-6 mr-3 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -147,7 +150,7 @@
                 </td>
               </tr>
               <tr v-else-if="vehicles.length === 0" class="bg-white">
-                <td colspan="8" class="px-6 py-10 text-center text-base text-gray-500 font-prompt">
+                <td :colspan="canReprint ? 9 : 8" class="px-6 py-10 text-center text-base text-gray-500 font-prompt">
                   ไม่พบข้อมูล
                 </td>
               </tr>
@@ -158,6 +161,11 @@
                   </div>
                   <div class="text-sm text-gray-500 font-prompt">
                     {{ vehicle.WI_LicenseProvince || '-' }}
+                  </div>
+                </td>
+                <td v-if="canReprint" class="px-6 py-5 whitespace-nowrap">
+                  <div class="text-sm text-gray-700 font-mono font-medium">
+                    {{ vehicle.WI_Barcode || '-' }}
                   </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
@@ -204,6 +212,13 @@
                       class="px-4 py-2 bg-[#3AAA35] text-white rounded-lg hover:bg-[#339A2E] active:scale-95 transition-all text-base font-semibold shadow-sm font-prompt"
                     >
                       บันทึกออก
+                    </button>
+                    <button
+                      v-if="canReprint"
+                      @click="openReprintModal(vehicle)"
+                      class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:scale-95 transition-all text-base font-semibold shadow-sm font-prompt"
+                    >
+                      รีปริ้น
                     </button>
                     <button
                       @click="openEditModal(vehicle)"
@@ -485,13 +500,347 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Reprint Modal -->
+    <Teleport to="body">
+      <div v-if="showReprintModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm print:hidden" @click.self="closeReprintModal">
+        <div class="browser-modal browser-modal-large max-h-[90vh] overflow-y-auto">
+          <!-- Browser Tabs Header -->
+          <div class="tabs-head">
+            <div class="tabs">
+              <div class="tab-open">
+                <span>รีปริ้น / Reprint</span>
+                <button @click="closeReprintModal" class="close-tab">✕</button>
+              </div>
+            </div>
+            <div class="window-opt">
+              <button>−</button>
+              <button>□</button>
+              <button @click="closeReprintModal" class="window-close">✕</button>
+            </div>
+          </div>
+
+          <!-- Browser URL Bar -->
+          <div class="head-browser">
+            <button disabled>←</button>
+            <button disabled>→</button>
+            <div class="url-bar">
+              <span class="url-text">reprint/slip</span>
+              <button class="star">★</button>
+            </div>
+            <button>⋮</button>
+          </div>
+
+          <!-- Content Area -->
+          <div class="browser-content">
+            <!-- VisitType Selector -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-gray-800 mb-2">ประเภทการเข้า (Visit Type)</label>
+              <select
+                v-model="reprintData.visitTypeId"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
+              >
+                <option :value="null">-- เลือกประเภทการเข้า --</option>
+                <option v-for="vt in visitTypes" :key="vt.VT_ID" :value="vt.VT_ID">
+                  {{ vt.VT_LocalName }} / {{ vt.VT_EnglishName }}
+                </option>
+              </select>
+              <button
+                @click="updateVisitType"
+                class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold"
+              >
+                อัพเดทประเภทการเข้า
+              </button>
+            </div>
+
+            <!-- Print Preview Container (80mm width) -->
+            <div class="print-slip-preview border-2 border-gray-300 rounded-lg p-4 bg-white">
+              <div class="slip-80mm mx-auto font-prompt">
+                <!-- Company Logo -->
+                <div class="flex justify-center" v-if="reprintData.vehicle" style="margin-bottom: 4px;">
+                  <img
+                    v-if="reprintData.vehicle.IC_LogoPath"
+                    :src="`${getBackendBaseUrl()}${reprintData.vehicle.IC_LogoPath}`"
+                    alt="Company Logo"
+                    style="height: 64px !important;"
+                    @error="(e) => { console.error('[REPRINT] Logo load error:', e); e.target.style.display = 'none'; }"
+                  />
+                  <div v-else class="text-gray-600 font-semibold" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
+                </div>
+
+                <!-- Company Name -->
+                <div class="text-center" v-if="reprintData.vehicle" style="margin-bottom: 6px;">
+                  <h2 class="font-bold" style="font-size: 11px !important; line-height: 1.2 !important;">{{ reprintData.vehicle.IC_LocalName || 'บริษัท' }}</h2>
+                  <p class="text-gray-600" style="font-size: 9px !important; line-height: 1.2 !important;">{{ reprintData.vehicle.IC_EnglishName || 'Company Name' }}</p>
+                </div>
+
+                <!-- Visitor Information -->
+                <div v-if="reprintData.vehicle" style="line-height: 1.3 !important; margin-bottom: 6px;">
+                  <!-- ประเภทผู้มาติดต่อ -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">ประเภทผู้มาติดต่อ: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.VT_LocalName || 'qqq' }}</span>
+                  </div>
+
+                  <!-- ชื่อ-สกุล -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">ชื่อ-สกุล: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_FullName || 'สกุล. qqq' }}</span>
+                  </div>
+
+                  <!-- เลขบัตรประชาชน (ฟอนต์เล็กกว่า) -->
+                  <div style="margin-bottom: 2px; font-size: 9px !important;">
+                    <span style="font-weight: 500; font-size: 9px !important;">เลขบัตรประชาชน: </span>
+                    <span style="font-size: 9px !important;">{{ reprintData.vehicle.WI_CardID || '1111111111111' }}</span>
+                  </div>
+
+                  <!-- เลขทะเบียน -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">เลขทะเบียน: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_LicensePlate || 'qqq' }}</span>
+                  </div>
+
+                  <!-- ทะเบียนจังหวัด -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">ทะเบียนจังหวัด: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_LicenseProvince || 'qqqqq' }}</span>
+                  </div>
+
+                  <!-- รายละเอียด -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">รายละเอียด: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_Remarks || '' }}</span>
+                  </div>
+
+                  <!-- จำนวนผู้มาติดต่อ -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">จำนวนผู้มาติดต่อ: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_Follower || '1' }}</span>
+                  </div>
+
+                  <!-- ยานพาหนะ -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">ยานพาหนะ: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_VehicleType || 'รถส่วนสัตว์' }}</span>
+                  </div>
+
+                  <!-- ผู้รับการติดต่อ/แผนก (ฟอนต์เล็กกว่า) -->
+                  <div style="margin-bottom: 2px; font-size: 9px !important;">
+                    <span style="font-weight: 500; font-size: 9px !important;">ผู้รับการติดต่อ/แผนก: </span>
+                    <span style="font-size: 9px !important;">{{ reprintData.vehicle.WI_ContactName || '-' }}</span>
+                  </div>
+
+                  <!-- เวลาเข้า -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">เวลาเข้า: </span>
+                    <span style="font-size: 11px !important;">{{ formatDateTime(reprintData.vehicle.WI_RecordedOn) }}</span>
+                  </div>
+
+                  <!-- เวลาออก -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">เวลาออก: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.CheckOutTime ? formatDateTime(reprintData.vehicle.CheckOutTime) : '-' }}</span>
+                  </div>
+
+                  <!-- หมายเหตุ -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">หมายเหตุ: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_InternalNote || '' }}</span>
+                  </div>
+
+                  <!-- สถานที่ปริ้น -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">สถานที่ปริ้น: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.IC_LocalName || 'ประตู1' }}</span>
+                  </div>
+                </div>
+
+                <!-- QR Code -->
+                <div class="flex justify-center" style="margin-bottom: 4px;">
+                  <img v-if="reprintData.qrCodeUrl" :src="reprintData.qrCodeUrl" alt="QR Code" style="width: 112px !important; height: 112px !important;" />
+                </div>
+
+                <!-- Barcode -->
+                <div class="flex justify-center" style="margin-bottom: 6px;">
+                  <img v-if="reprintData.barcodeUrl" :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
+                </div>
+
+                <!-- Footer Warnings (เฉพาะประเภท "ผู้มาติดต่อ") -->
+                <div v-if="reprintData.vehicle.VT_LocalName === 'ผู้มาติดต่อ'" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
+                  <p style="font-size: 7px !important; margin-bottom: 2px;">กรุณา Check In กับเจ้าหน้าที่ที่มาติดต่อ</p>
+                  <p style="font-size: 7px !important; margin-bottom: 2px;">ก่อนออกจากบริษัท</p>
+                </div>
+
+                <!-- ห้ามทำใบสลิปหาย (แสดงเสมอ) -->
+                <div class="text-center" style="margin-top: 4px;">
+                  <p class="font-bold" style="font-size: 9px !important;">*** ห้ามทำใบสลิปหาย ***</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Print Instructions -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p class="text-sm text-blue-800 font-semibold mb-2">คำแนะนำการพิมพ์:</p>
+              <ul class="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                <li>เลือกเครื่องปริ้น: <strong>EPSON TM-T82X Receipt</strong></li>
+                <li>Paper size: <strong>80mm</strong> (3.15 inches)</li>
+                <li>Margins: <strong>None</strong></li>
+                <li>Scale: <strong>100%</strong></li>
+              </ul>
+            </div>
+
+            <!-- Print Button -->
+            <div class="flex justify-end gap-3 mt-6">
+              <button
+                @click="closeReprintModal"
+                class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all"
+              >
+                ยกเลิก
+              </button>
+              <button
+                @click="printSlip"
+                class="px-6 py-3 text-base font-semibold bg-purple-600 text-white rounded-xl hover:bg-purple-700 active:scale-95 transition-all shadow-md"
+              >
+                พิมพ์ / Print
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Print-only Slip (hidden on screen, shown when printing) -->
+    <div class="print:block hidden">
+      <div class="slip-80mm-print font-prompt" v-if="reprintData.vehicle">
+        <!-- Company Logo -->
+        <div class="flex justify-center" style="margin-bottom: 4px;">
+          <img
+            v-if="reprintData.vehicle.IC_LogoPath"
+            :src="`${getBackendBaseUrl()}${reprintData.vehicle.IC_LogoPath}`"
+            alt="Company Logo"
+            style="height: 64px !important;"
+          />
+          <div v-else class="text-gray-700 font-semibold" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
+        </div>
+
+        <!-- Company Name -->
+        <div class="text-center" style="margin-bottom: 6px;">
+          <h2 class="font-bold" style="font-size: 11px !important; line-height: 1.2 !important;">{{ reprintData.vehicle.IC_LocalName || 'บริษัท' }}</h2>
+          <p class="text-gray-700" style="font-size: 9px !important; line-height: 1.2 !important;">{{ reprintData.vehicle.IC_EnglishName || 'Company Name' }}</p>
+        </div>
+
+        <!-- Visitor Information -->
+        <div style="line-height: 1.3 !important; margin-bottom: 6px;">
+          <!-- ประเภทผู้มาติดต่อ -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">ประเภทผู้มาติดต่อ: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.VT_LocalName || 'qqq' }}</span>
+          </div>
+
+          <!-- ชื่อ-สกุล -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">ชื่อ-สกุล: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_FullName || 'สกุล. qqq' }}</span>
+          </div>
+
+          <!-- เลขบัตรประชาชน (ฟอนต์เล็กกว่า) -->
+          <div style="margin-bottom: 2px; font-size: 9px !important;">
+            <span style="font-weight: 500; font-size: 9px !important;">เลขบัตรประชาชน: </span>
+            <span style="font-size: 9px !important;">{{ reprintData.vehicle.WI_CardID || '1111111111111' }}</span>
+          </div>
+
+          <!-- เลขทะเบียน -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">เลขทะเบียน: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_LicensePlate || 'qqq' }}</span>
+          </div>
+
+          <!-- ทะเบียนจังหวัด -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">ทะเบียนจังหวัด: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_LicenseProvince || 'qqqqq' }}</span>
+          </div>
+
+          <!-- รายละเอียด -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">รายละเอียด: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_Remarks || '' }}</span>
+          </div>
+
+          <!-- จำนวนผู้มาติดต่อ -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">จำนวนผู้มาติดต่อ: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_Follower || '1' }}</span>
+          </div>
+
+          <!-- ยานพาหนะ -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">ยานพาหนะ: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_VehicleType || 'รถส่วนสัตว์' }}</span>
+          </div>
+
+          <!-- ผู้รับการติดต่อ/แผนก (ฟอนต์เล็กกว่า) -->
+          <div style="margin-bottom: 2px; font-size: 9px !important;">
+            <span style="font-weight: 500; font-size: 9px !important;">ผู้รับการติดต่อ/แผนก: </span>
+            <span style="font-size: 9px !important;">{{ reprintData.vehicle.WI_ContactName || '-' }}</span>
+          </div>
+
+          <!-- เวลาเข้า -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">เวลาเข้า: </span>
+            <span style="font-size: 11px !important;">{{ formatDateTime(reprintData.vehicle.WI_RecordedOn) }}</span>
+          </div>
+
+          <!-- เวลาออก -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">เวลาออก: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.CheckOutTime ? formatDateTime(reprintData.vehicle.CheckOutTime) : '-' }}</span>
+          </div>
+
+          <!-- หมายเหตุ -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">หมายเหตุ: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_InternalNote || '' }}</span>
+          </div>
+
+          <!-- สถานที่ปริ้น -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">สถานที่ปริ้น: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.IC_LocalName || 'ประตู1' }}</span>
+          </div>
+        </div>
+
+        <!-- QR Code -->
+        <div class="flex justify-center" style="margin-bottom: 4px;">
+          <img v-if="reprintData.qrCodeUrl" :src="reprintData.qrCodeUrl" alt="QR Code" style="width: 112px !important; height: 112px !important;" />
+        </div>
+
+        <!-- Barcode -->
+        <div class="flex justify-center" style="margin-bottom: 6px;">
+          <img v-if="reprintData.barcodeUrl" :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
+        </div>
+
+        <!-- Footer Warnings (เฉพาะประเภท "ผู้มาติดต่อ") -->
+        <div v-if="reprintData.vehicle.VT_LocalName === 'ผู้มาติดต่อ'" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
+          <p style="font-size: 7px !important; margin-bottom: 2px;">กรุณา Check In กับเจ้าหน้าที่ที่มาติดต่อ</p>
+          <p style="font-size: 7px !important; margin-bottom: 2px;">ก่อนออกจากบริษัท</p>
+        </div>
+
+        <!-- ห้ามทำใบสลิปหาย (แสดงเสมอ) -->
+        <div class="text-center" style="margin-top: 4px;">
+          <p class="font-bold" style="font-size: 9px !important;">*** ห้ามทำใบสลิปหาย ***</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { vehiclesAPI, companiesAPI } from '../services/api';
+import { vehiclesAPI, companiesAPI, wayinAPI, getBackendBaseUrl } from '../services/api';
 import DateRangeFilter from '../components/DateRangeFilter.vue';
+import QRCode from 'qrcode';
+import JsBarcode from 'jsbarcode';
 
 // ==================== STATE ====================
 const vehicles = ref([]);
@@ -505,6 +854,22 @@ const modalMode = ref('add');
 const userId = parseInt(localStorage.getItem('userId'));
 const loggedInCompanyId = localStorage.getItem('companyId');
 const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
+const userRoleCode = localStorage.getItem('roleCode');
+
+// Check if user can reprint (Super Admin or ADM role)
+const canReprint = computed(() => {
+  return isSuperAdmin || userRoleCode === 'ADM';
+});
+
+// Reprint modal state
+const showReprintModal = ref(false);
+const reprintData = ref({
+  vehicle: null,
+  visitTypeId: null,
+  qrCodeUrl: '',
+  barcodeUrl: ''
+});
+const visitTypes = ref([]);
 
 const filters = ref({
   search: '',
@@ -773,9 +1138,113 @@ const formatDateTime = (dateTime) => {
   });
 };
 
+// ==================== REPRINT FUNCTIONS ====================
+
+const fetchVisitTypes = async () => {
+  try {
+    const response = await wayinAPI.getVisitTypes();
+    if (response.data.success) {
+      visitTypes.value = response.data.data;
+    }
+  } catch (error) {
+    console.error('Error fetching visit types:', error);
+  }
+};
+
+const openReprintModal = async (vehicle) => {
+  console.log('[REPRINT] Vehicle data:', vehicle);
+  console.log('[REPRINT] IC_LogoPath:', vehicle.IC_LogoPath);
+  console.log('[REPRINT] Backend Base URL:', getBackendBaseUrl());
+
+  reprintData.value = {
+    vehicle: vehicle,
+    visitTypeId: vehicle.VT_ID || null,
+    qrCodeUrl: '',
+    barcodeUrl: ''
+  };
+
+  // Generate QR Code (URL สำหรับ "ติดต่อ" เท่านั้น, อื่นๆใช้เลขบาร์โค้ด)
+  try {
+    const isContactType = vehicle.VT_LocalName === 'ติดต่อ';
+    const qrData = isContactType
+      ? `https://smartsecurity.ruxchai.co.th/index.php?param=${vehicle.WI_Barcode}`
+      : vehicle.WI_Barcode;
+    reprintData.value.qrCodeUrl = await QRCode.toDataURL(qrData, { width: 200 });
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+  }
+
+  // Generate Barcode
+  try {
+    const canvas = document.createElement('canvas');
+    JsBarcode(canvas, vehicle.WI_Barcode, {
+      format: 'CODE128',
+      width: 2,
+      height: 50,
+      displayValue: true
+    });
+    reprintData.value.barcodeUrl = canvas.toDataURL();
+  } catch (error) {
+    console.error('Error generating barcode:', error);
+  }
+
+  showReprintModal.value = true;
+};
+
+const closeReprintModal = () => {
+  showReprintModal.value = false;
+  reprintData.value = { vehicle: null, visitTypeId: null, qrCodeUrl: '', barcodeUrl: '' };
+};
+
+const updateVisitType = async () => {
+  try {
+    if (!reprintData.value.visitTypeId) {
+      alert('กรุณาเลือกประเภทการเข้า');
+      return;
+    }
+
+    const vehicle = reprintData.value.vehicle;
+
+    await wayinAPI.update(vehicle.WI_ID, {
+      fullName: vehicle.WI_FullName,
+      cardId: vehicle.WI_CardID,
+      address: vehicle.WI_Address,
+      licensePlate: vehicle.WI_LicensePlate,
+      licenseProvince: vehicle.WI_LicenseProvince,
+      vehicleType: vehicle.WI_VehicleType,
+      visitTypeId: reprintData.value.visitTypeId,
+      internalDivision: vehicle.WI_InternalDivision,
+      follower: vehicle.WI_Follower,
+      remarks: vehicle.WI_Remarks
+    });
+
+    alert('อัพเดทประเภทการเข้าสำเร็จ');
+
+    // อัพเดทข้อมูลใน reprintData เพื่อให้แสดงผลถูกต้อง
+    reprintData.value.vehicle.VT_ID = reprintData.value.visitTypeId;
+    const selectedVisitType = visitTypes.value.find(vt => vt.VT_ID === reprintData.value.visitTypeId);
+    if (selectedVisitType) {
+      reprintData.value.vehicle.VT_LocalName = selectedVisitType.VT_LocalName;
+      reprintData.value.vehicle.VT_EnglishName = selectedVisitType.VT_EnglishName;
+    }
+
+    fetchVehicles();
+  } catch (error) {
+    console.error('Error updating visit type:', error);
+    alert('เกิดข้อผิดพลาดในการอัพเดท');
+  }
+};
+
+const printSlip = () => {
+  window.print();
+};
+
 onMounted(() => {
   fetchCompanies();
   fetchVehicles();
+  if (canReprint.value) {
+    fetchVisitTypes();
+  }
 });
 </script>
 
@@ -1090,4 +1559,72 @@ onMounted(() => {
 }
 
 /* Responsive - page-title moved to theme-variables.css */
+
+/* ============================================
+   80mm Thermal Printer Slip Styles
+   ============================================ */
+
+/* Preview slip (shown in modal) */
+.slip-80mm {
+  width: 80mm;
+  padding: 10mm;
+  background: white;
+  font-family: 'Courier New', monospace;
+}
+
+/* Print-only slip (actual print output) */
+.slip-80mm-print {
+  width: 80mm;
+  padding: 5mm;
+  background: white;
+  font-family: 'Courier New', monospace;
+}
+
+/* Print media query for 80mm thermal printer */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  * {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .slip-80mm-print,
+  .slip-80mm-print * {
+    visibility: visible;
+  }
+
+  .slip-80mm-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0 !important;
+    padding: 5mm !important;
+  }
+
+  /* ซ่อน modal และองค์ประกอบอื่นๆ */
+  .fixed,
+  .browser-modal,
+  button,
+  header,
+  nav,
+  aside,
+  .print\\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
 </style>
