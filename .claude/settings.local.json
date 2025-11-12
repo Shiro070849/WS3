@@ -24,7 +24,9 @@
       "Bash(npm run:*)",
       "Bash(tree:*)",
       "Bash(node index.js:*)",
-      "Bash(node -c:*)"
+      "Bash(node -c:*)",
+      "Bash(del nul)",
+      "Bash(del:*)"
     ],
     "deny": [],
     "ask": []

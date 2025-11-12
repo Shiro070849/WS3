@@ -665,10 +665,10 @@
                   <img v-if="reprintData.barcodeUrl" :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
                 </div>
 
-                <!-- Footer Warnings (เฉพาะประเภท "ผู้มาติดต่อ") -->
-                <div v-if="reprintData.vehicle.VT_LocalName === 'ผู้มาติดต่อ'" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
-                  <p style="font-size: 7px !important; margin-bottom: 2px;">กรุณา Check In กับเจ้าหน้าที่ที่มาติดต่อ</p>
-                  <p style="font-size: 7px !important; margin-bottom: 2px;">ก่อนออกจากบริษัท</p>
+                <!-- Footer Warnings -->
+                <div v-if="shouldShowFooterWarning(reprintData.vehicle.VT_ID)" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
+                  <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line1 }}</p>
+                  <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line2 }}</p>
                 </div>
 
                 <!-- ห้ามทำใบสลิปหาย (แสดงเสมอ) -->
@@ -820,10 +820,10 @@
           <img v-if="reprintData.barcodeUrl" :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
         </div>
 
-        <!-- Footer Warnings (เฉพาะประเภท "ผู้มาติดต่อ") -->
-        <div v-if="reprintData.vehicle.VT_LocalName === 'ผู้มาติดต่อ'" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
-          <p style="font-size: 7px !important; margin-bottom: 2px;">กรุณา Check In กับเจ้าหน้าที่ที่มาติดต่อ</p>
-          <p style="font-size: 7px !important; margin-bottom: 2px;">ก่อนออกจากบริษัท</p>
+        <!-- Footer Warnings -->
+        <div v-if="shouldShowFooterWarning(reprintData.vehicle.VT_ID)" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
+          <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line1 }}</p>
+          <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line2 }}</p>
         </div>
 
         <!-- ห้ามทำใบสลิปหาย (แสดงเสมอ) -->
@@ -841,6 +841,7 @@ import { vehiclesAPI, companiesAPI, wayinAPI, getBackendBaseUrl } from '../servi
 import DateRangeFilter from '../components/DateRangeFilter.vue';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
+import { REPRINT_CONFIG, isQRUrlType, shouldShowFooterWarning } from '../constants/visitTypes';
 
 // ==================== STATE ====================
 const vehicles = ref([]);
@@ -1153,6 +1154,9 @@ const fetchVisitTypes = async () => {
 
 const openReprintModal = async (vehicle) => {
   console.log('[REPRINT] Vehicle data:', vehicle);
+  console.log('[REPRINT] VT_ID:', vehicle.VT_ID);
+  console.log('[REPRINT] VT_LocalName:', vehicle.VT_LocalName);
+  console.log('[REPRINT] WI_Barcode:', vehicle.WI_Barcode);
   console.log('[REPRINT] IC_LogoPath:', vehicle.IC_LogoPath);
   console.log('[REPRINT] Backend Base URL:', getBackendBaseUrl());
 
@@ -1163,12 +1167,20 @@ const openReprintModal = async (vehicle) => {
     barcodeUrl: ''
   };
 
-  // Generate QR Code (URL สำหรับ "ติดต่อ" เท่านั้น, อื่นๆใช้เลขบาร์โค้ด)
+  // Generate QR Code (URL หรือเลขบาร์โค้ด ตาม VT_ID)
   try {
-    const isContactType = vehicle.VT_LocalName === 'ติดต่อ';
-    const qrData = isContactType
-      ? `https://smartsecurity.ruxchai.co.th/index.php?param=${vehicle.WI_Barcode}`
+    // ใช้ visitTypeId จาก reprintData (อัพเดทจาก dropdown) หรือ vehicle.VT_ID
+    const vtId = reprintData.value.visitTypeId || vehicle.VT_ID;
+    const isUrlType = isQRUrlType(vtId);
+    console.log('[REPRINT] Using VT_ID:', vtId);
+    console.log('[REPRINT] isQRUrlType:', isUrlType);
+    console.log('[REPRINT] REPRINT_CONFIG.QR_URL_TYPE_IDS:', REPRINT_CONFIG.QR_URL_TYPE_IDS);
+
+    const qrData = isUrlType
+      ? `${REPRINT_CONFIG.QR_URL_TEMPLATE}${vehicle.WI_Barcode}`
       : vehicle.WI_Barcode;
+
+    console.log('[REPRINT] QR Data:', qrData);
     reprintData.value.qrCodeUrl = await QRCode.toDataURL(qrData, { width: 200 });
   } catch (error) {
     console.error('Error generating QR code:', error);
@@ -1226,6 +1238,18 @@ const updateVisitType = async () => {
     if (selectedVisitType) {
       reprintData.value.vehicle.VT_LocalName = selectedVisitType.VT_LocalName;
       reprintData.value.vehicle.VT_EnglishName = selectedVisitType.VT_EnglishName;
+    }
+
+    // อัพเดท QR Code ใหม่ตาม VT_ID ที่เลือก
+    try {
+      const isUrlType = isQRUrlType(reprintData.value.visitTypeId);
+      const qrData = isUrlType
+        ? `${REPRINT_CONFIG.QR_URL_TEMPLATE}${vehicle.WI_Barcode}`
+        : vehicle.WI_Barcode;
+      reprintData.value.qrCodeUrl = await QRCode.toDataURL(qrData, { width: 200 });
+      console.log('[UPDATE] QR Code regenerated:', qrData);
+    } catch (error) {
+      console.error('Error regenerating QR code:', error);
     }
 
     fetchVehicles();

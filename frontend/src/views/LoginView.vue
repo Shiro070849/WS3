@@ -49,7 +49,6 @@
           <!-- Title -->
           <h1 class="text-sm font-medium text-gray-300 mb-2 tracking-widest uppercase font-prompt">Welcome to</h1>
           <h2 class="text-3xl font-bold text-white mb-1 font-prompt">RUXCHAI GROUP</h2>
-          <h3 class="text-xl font-semibold text-[#8bcbe9] mb-6 font-prompt">WAREHOUSE</h3>
         </div>
         <!-- Alert Messages - Tailwind Only -->
         <div v-if="errorMessage" class="mb-5 p-4 bg-red-500/20 backdrop-blur-sm border border-red-400/50 rounded-xl text-red-100 text-base flex items-start font-prompt">
