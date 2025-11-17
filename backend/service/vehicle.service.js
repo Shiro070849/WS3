@@ -71,6 +71,12 @@ class VehicleService {
         request.input('CompanyId', sql.Int, parseInt(finalCompanyId));
       }
 
+      // Filter by vehicle type
+      if (filters.vehicleType) {
+        whereConditions.push('WI.WI_VehicleType = @VehicleType');
+        request.input('VehicleType', sql.NVarChar, filters.vehicleType);
+      }
+
       const whereClause = whereConditions.length > 0
         ? 'WHERE ' + whereConditions.join(' AND ')
         : '';
@@ -156,6 +162,9 @@ class VehicleService {
       }
       if (finalCompanyId) {
         countRequest.input('CompanyId', sql.Int, parseInt(finalCompanyId));
+      }
+      if (filters.vehicleType) {
+        countRequest.input('VehicleType', sql.NVarChar, filters.vehicleType);
       }
 
       const countResult = await countRequest.query(countQuery);

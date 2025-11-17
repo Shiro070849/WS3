@@ -5,7 +5,7 @@ class DashboardService {
   // ดึงสถิติรวมของวันนี้
   // userCompanyId: IC_ID ของ user ที่ login (null = Super Admin)
   // filterCompanyId: IC_ID ที่ user เลือกจาก dropdown (Super Admin เท่านั้น)
-  async getTodayStats(userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null) {
+  async getTodayStats(userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
 
@@ -54,6 +54,11 @@ class DashboardService {
         wayInQuery += ' AND IC_ID = @CompanyId';
       }
 
+      if (vehicleType) {
+        wayInRequest.input('VehicleType', sql.NVarChar, vehicleType);
+        wayInQuery += ' AND WI_VehicleType = @VehicleType';
+      }
+
       const wayInResult = await wayInRequest.query(wayInQuery);
 
       // นับจำนวนรถออกวันนี้
@@ -73,6 +78,11 @@ class DashboardService {
         wayOutQuery += ' AND WI.IC_ID = @CompanyId';
       }
 
+      if (vehicleType) {
+        wayOutRequest.input('VehicleType', sql.NVarChar, vehicleType);
+        wayOutQuery += ' AND WI.WI_VehicleType = @VehicleType';
+      }
+
       const wayOutResult = await wayOutRequest.query(wayOutQuery);
 
       // นับจำนวนรถที่ยังไม่ออก
@@ -86,6 +96,11 @@ class DashboardService {
       if (companyId) {
         pendingRequest.input('CompanyId', sql.Int, parseInt(companyId));
         pendingQuery += ' AND IC_ID = @CompanyId';
+      }
+
+      if (vehicleType) {
+        pendingRequest.input('VehicleType', sql.NVarChar, vehicleType);
+        pendingQuery += ' AND WI_VehicleType = @VehicleType';
       }
 
       const pendingResult = await pendingRequest.query(pendingQuery);
@@ -114,7 +129,7 @@ class DashboardService {
   }
 
   // ดึงรายการเข้า-ออกล่าสุด
-  async getRecentActivities(limit = 10, userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null, search = null) {
+  async getRecentActivities(limit = 10, userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null, search = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const request = pool.request();
@@ -156,6 +171,12 @@ class DashboardService {
       if (search) {
         conditions.push('(WI.WI_LicensePlate LIKE @Search OR WI.WI_FullName LIKE @Search)');
         request.input('Search', sql.NVarChar, `%${search}%`);
+      }
+
+      // กรอง vehicle type
+      if (vehicleType) {
+        conditions.push('WI.WI_VehicleType = @VehicleType');
+        request.input('VehicleType', sql.NVarChar, vehicleType);
       }
 
       // รวม WHERE clause

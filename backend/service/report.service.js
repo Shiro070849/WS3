@@ -52,6 +52,10 @@ class ReportService {
         query += ` AND WI.IC_ID = ${parseInt(filters.companyId)}`;
       }
 
+      if (filters.vehicleType) {
+        query += ` AND WI.WI_VehicleType = N'${filters.vehicleType}'`;
+      }
+
       if (filters.status === 'in') {
         query += ` AND WO.WO_ID IS NULL`;
       } else if (filters.status === 'out') {
@@ -312,6 +316,10 @@ class ReportService {
       // เพิ่ม company filter
       if (filters.companyId && filters.companyId !== 'undefined') {
         query += ` AND WI.IC_ID = ${parseInt(filters.companyId)}`;
+      }
+
+      if (filters.vehicleType) {
+        query += ` AND WI.WI_VehicleType = N'${filters.vehicleType}'`;
       }
 
       const result = await pool.request().query(query);

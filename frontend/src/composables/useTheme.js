@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { systemSettingsAPI, getBackendBaseUrl } from '@/services/api';
+import { systemSettingsAPI, getFullImageUrl } from '@/services/api';
 
 const currentTheme = ref(null);
 const isThemeLoaded = ref(false);
@@ -102,19 +102,6 @@ export function useTheme() {
         applyTheme(getDefaultTheme());
       }
     }
-  };
-
-  /**
-   * Helper: แปลง relative path เป็น full URL
-   */
-  const getFullImageUrl = (url) => {
-    if (!url) return '';
-    // ถ้าเป็น full URL (http/https) ใช้ตรงๆ
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // ถ้าเป็น relative path ให้เติม backend base URL
-    return `${getBackendBaseUrl()}${url}`;
   };
 
   /**

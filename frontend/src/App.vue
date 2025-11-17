@@ -13,6 +13,9 @@
 
     <!-- ถ้าเป็นหน้า Login → แสดงเฉพาะ LoginView เต็มจอ -->
     <router-view v-else />
+
+    <!-- Global Notification Modal -->
+    <NotificationModal />
   </div>
 </template>
 
@@ -20,12 +23,14 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from '@/components/SidebarMenu.vue'
+import NotificationModal from '@/components/base/NotificationModal.vue'
 import { useTheme } from '@/composables/useTheme'
 
 export default {
   name: 'App',
   components: {
-    Sidebar
+    Sidebar,
+    NotificationModal
   },
   setup() {
     const isCollapsed = ref(false)

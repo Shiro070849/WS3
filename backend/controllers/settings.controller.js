@@ -484,7 +484,7 @@ class SettingsController {
   async updateDepartment(req, res) {
     try {
       const id = req.params.id;
-      const { code, localName, englishName, isActive, remarks } = req.body;
+      const { code, localName, englishName, type, parentId, isActive, remarks } = req.body;
 
       // Validate required fields
       if (!code || !localName) {
@@ -494,10 +494,20 @@ class SettingsController {
         });
       }
 
+      // Backend Validation: office type must have parent
+      if (type === 'office' && !parentId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Office type must have a parent branch'
+        });
+      }
+
       await settingsService.updateDepartment(id, {
         code,
         localName,
         englishName,
+        type,
+        parentId,
         isActive,
         remarks
       });
@@ -511,6 +521,35 @@ class SettingsController {
       res.status(500).json({
         success: false,
         message: 'Error updating department',
+        error: error.message
+      });
+    }
+  }
+
+  async linkDepartmentToCompany(req, res) {
+    try {
+      const { departmentId, companyId } = req.body;
+
+      // Validate required fields
+      if (!departmentId || !companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Department ID and Company ID are required'
+        });
+      }
+
+      const result = await settingsService.linkDepartmentToCompany(departmentId, companyId);
+
+      res.status(201).json({
+        success: true,
+        message: 'Department linked to company successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in linkDepartmentToCompany:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error linking department to company',
         error: error.message
       });
     }
@@ -530,6 +569,80 @@ class SettingsController {
       res.status(500).json({
         success: false,
         message: 'Error deleting department',
+        error: error.message
+      });
+    }
+  }
+
+  // ==================== COMPANY DEPARTMENTS (JUNCTION TABLE) ====================
+
+  async getCompanyDepartments(req, res) {
+    try {
+      const companyDepartments = await settingsService.getCompanyDepartments();
+      res.status(200).json({
+        success: true,
+        count: companyDepartments.length,
+        data: companyDepartments
+      });
+    } catch (error) {
+      console.error('Error in getCompanyDepartments:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting company-department relations',
+        error: error.message
+      });
+    }
+  }
+
+  // ดึงโครงสร้างแผนกแบบ Tree
+  async getDepartmentTree(req, res) {
+    try {
+      const companyId = parseInt(req.query.companyId);
+
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุ companyId'
+        });
+      }
+
+      console.log(`📥 GET /api/settings/departments/tree - companyId: ${companyId}`);
+
+      const tree = await settingsService.getDepartmentTree(companyId);
+
+      res.status(200).json({
+        success: true,
+        data: tree
+      });
+    } catch (error) {
+      console.error('Error in getDepartmentTree:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting department tree',
+        error: error.message
+      });
+    }
+  }
+
+  // ย้ายแผนกไปอยู่ภายใต้ Parent อื่น
+  async moveDepartment(req, res) {
+    try {
+      const id = req.params.id;
+      const { newParentId } = req.body;
+
+      console.log(`🔀 PUT /api/settings/departments/${id}/move - newParentId: ${newParentId}`);
+
+      await settingsService.moveDepartment(id, newParentId);
+
+      res.status(200).json({
+        success: true,
+        message: 'ย้ายแผนกสำเร็จ'
+      });
+    } catch (error) {
+      console.error('Error in moveDepartment:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error moving department',
         error: error.message
       });
     }

@@ -41,7 +41,7 @@
 
       <!-- Filter Card - Tailwind Only -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           <!-- Search -->
           <div class="md:col-span-2">
             <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
@@ -54,6 +54,27 @@
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @keyup.enter="fetchVehicles"
             />
+          </div>
+
+          <!-- Vehicle Type Filter -->
+          <div>
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+              ประเภทรถ
+            </label>
+            <select
+              v-model="filters.vehicleType"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @change="fetchVehicles"
+            >
+              <option value="">ทั้งหมด</option>
+              <option
+                v-for="vType in vehicleTypes"
+                :key="vType.VType_ID"
+                :value="vType.VType_LocalName"
+              >
+                {{ vType.VType_LocalName }}
+              </option>
+            </select>
           </div>
 
           <!-- Status Filter -->
@@ -206,13 +227,6 @@
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
                   <div class="flex gap-2">
-                    <button
-                      v-if="vehicle.Status === 'เข้า'"
-                      @click="openCheckoutModal(vehicle)"
-                      class="px-4 py-2 bg-[#3AAA35] text-white rounded-lg hover:bg-[#339A2E] active:scale-95 transition-all text-base font-semibold shadow-sm font-prompt"
-                    >
-                      บันทึกออก
-                    </button>
                     <button
                       v-if="canReprint"
                       @click="openReprintModal(vehicle)"
@@ -371,16 +385,13 @@
                   class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
                 >
                   <option value="">เลือกประเภทรถ</option>
-                  <option value="รถมอไซต์">รถมอไซต์</option>
-                  <option value="รถสามล้อ">รถสามล้อ</option>
-                  <option value="รถยนต์">รถยนต์</option>
-                  <option value="รถกระบะ">รถกระบะ</option>
-                  <option value="รถ 6 ล้อ">รถ 6 ล้อ</option>
-                  <option value="รถ 10 ล้อ">รถ 10 ล้อ</option>
-                  <option value="รถ 12 ล้อ">รถ 12 ล้อ</option>
-                  <option value="รถ 20 ล้อ">รถ 20 ล้อ</option>
-                  <option value="รถ 40 ล้อ">รถ 40 ล้อ</option>
-                  <option value="ไม่มีพานพาหนะ">ไม่มีพานพาหนะ</option>
+                  <option
+                    v-for="vType in vehicleTypes"
+                    :key="vType.VType_ID"
+                    :value="vType.VType_LocalName"
+                  >
+                    {{ vType.VType_LocalName }}
+                  </option>
                 </select>
               </div>
               <div class="col-span-2 md:col-span-1">
@@ -837,7 +848,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { vehiclesAPI, companiesAPI, wayinAPI, getBackendBaseUrl } from '../services/api';
+import { vehiclesAPI, vehicleTypesAPI, companiesAPI, wayinAPI, getBackendBaseUrl } from '../services/api';
 import DateRangeFilter from '../components/DateRangeFilter.vue';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
@@ -871,10 +882,12 @@ const reprintData = ref({
   barcodeUrl: ''
 });
 const visitTypes = ref([]);
+const vehicleTypes = ref([]);
 
 const filters = ref({
   search: '',
   status: '',
+  vehicleType: '',
   dateFrom: null,
   dateTo: null,
   companyId: null,
@@ -942,6 +955,7 @@ const fetchVehicles = async () => {
       userId: userId, // ส่ง userId ไปให้ Backend query IC_ID
       search: filters.value.search || undefined,
       status: filters.value.status || undefined,
+      vehicleType: filters.value.vehicleType || undefined,
       dateFrom: filters.value.dateFrom || undefined,
       dateTo: filters.value.dateTo || undefined,
       page: pagination.value.page,
@@ -1263,9 +1277,21 @@ const printSlip = () => {
   window.print();
 };
 
+const fetchVehicleTypes = async () => {
+  try {
+    const response = await vehicleTypesAPI.getAll(true);
+    if (response.data.success) {
+      vehicleTypes.value = response.data.data;
+    }
+  } catch (error) {
+    console.error('Error fetching vehicle types:', error);
+  }
+};
+
 onMounted(() => {
   fetchCompanies();
   fetchVehicles();
+  fetchVehicleTypes();
   if (canReprint.value) {
     fetchVisitTypes();
   }

@@ -10,17 +10,33 @@
             สถิติและการวิเคราะห์ข้อมูลคลังสินค้า
           </p>
         </div>
-        <!-- Period Filter Buttons - Tailwind Only -->
-        <div class="flex gap-1.5 bg-white p-1 rounded-xl shadow-sm">
-          <button
-            v-for="period in periods"
-            :key="period.value"
-            @click="selectedPeriod = period.value"
-            :class="selectedPeriod === period.value ? 'period-btn-active' : 'period-btn'"
-            class="px-4 py-2 rounded-lg text-sm font-semibold font-prompt transition-all"
+        <div class="flex gap-3">
+          <!-- Period Filter Buttons - Tailwind Only -->
+          <div class="flex gap-1.5 bg-white p-1 rounded-xl shadow-sm">
+            <button
+              v-for="period in periods"
+              :key="period.value"
+              @click="selectedPeriod = period.value"
+              :class="selectedPeriod === period.value ? 'period-btn-active' : 'period-btn'"
+              class="px-4 py-2 rounded-lg text-sm font-semibold font-prompt transition-all"
+            >
+              {{ period.label }}
+            </button>
+          </div>
+          <!-- Vehicle Type Filter -->
+          <select
+            v-model="selectedVehicleType"
+            class="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt bg-white shadow-sm"
           >
-            {{ period.label }}
-          </button>
+            <option value="">ประเภทรถทั้งหมด</option>
+            <option
+              v-for="vType in vehicleTypesList"
+              :key="vType.VType_ID"
+              :value="vType.VType_LocalName"
+            >
+              {{ vType.VType_LocalName }}
+            </option>
+          </select>
         </div>
       </div>
     </div>
@@ -150,7 +166,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-import { statisticsAPI } from '../services/api';
+import { statisticsAPI, vehicleTypesAPI } from '../services/api';
 
 // Register Chart.js components
 ChartJS.register(
@@ -173,6 +189,10 @@ const periods = [
   { value: 'month', label: 'เดือนนี้' },
   { value: 'year', label: 'ปีนี้' }
 ];
+
+// Vehicle type filter
+const selectedVehicleType = ref('');
+const vehicleTypesList = ref([]);
 
 // Extract user info from localStorage
 const userId = parseInt(localStorage.getItem('userId'));
@@ -583,18 +603,28 @@ const companiesChartOptions = {
   }
 };
 
+// Fetch vehicle types for dropdown
+const fetchVehicleTypes = async () => {
+  try {
+    const response = await vehicleTypesAPI.getAll(true);
+    vehicleTypesList.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching vehicle types:', error);
+  }
+};
+
 // Fetch all statistics
 const fetchStatistics = async () => {
   loading.value = true;
   try {
     // Fetch all data in parallel
     const [overviewRes, vehicleTypesRes, peakHoursRes, topCompaniesRes, trafficTrendRes, additionalRes] = await Promise.all([
-      statisticsAPI.getOverview(selectedPeriod.value, userId),
-      statisticsAPI.getVehicleTypes(selectedPeriod.value, userId),
-      statisticsAPI.getPeakHours(selectedPeriod.value, userId),
-      statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId),
-      statisticsAPI.getTrafficTrend(selectedPeriod.value, userId),
-      statisticsAPI.getAdditional(selectedPeriod.value, userId)
+      statisticsAPI.getOverview(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getVehicleTypes(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getPeakHours(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId, null, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getTrafficTrend(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getAdditional(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null)
     ]);
 
     overviewStats.value = overviewRes.data.data;
@@ -616,8 +646,14 @@ watch(selectedPeriod, () => {
   fetchStatistics();
 });
 
+// Watch vehicle type change
+watch(selectedVehicleType, () => {
+  fetchStatistics();
+});
+
 // Load data on mount
 onMounted(() => {
+  fetchVehicleTypes();
   fetchStatistics();
 });
 </script>

@@ -14,6 +14,60 @@ console.log('[API] API Base URL:', API_BASE_URL);
 // Export BACKEND_BASE_URL สำหรับใช้ใน component อื่นๆ (สำหรับ static files เช่น images)
 export const getBackendBaseUrl = () => BACKEND_BASE_URL;
 
+// ==================== CONFIG API ====================
+// Cache สำหรับเก็บ Server Config
+let serverConfigCache = null;
+
+export const configAPI = {
+  // ดึง Server Configuration จาก Backend
+  getConfig: async () => {
+    try {
+      const response = await apiClient.get('/config');
+      if (response.data.success) {
+        serverConfigCache = response.data.data;
+        console.log('[CONFIG] Server config loaded:', serverConfigCache);
+      }
+      return response;
+    } catch (error) {
+      console.error('[CONFIG] Failed to load server config:', error);
+      // Fallback ใช้ BACKEND_BASE_URL จาก .env
+      serverConfigCache = {
+        base_url: BACKEND_BASE_URL,
+        uploads_path: '/uploads'
+      };
+      return {
+        data: {
+          success: true,
+          data: serverConfigCache
+        }
+      };
+    }
+  },
+
+  // ดึง BASE_URL จาก Cache (ถ้ายังไม่มีจะ fetch ใหม่)
+  getBaseUrl: async () => {
+    if (!serverConfigCache) {
+      await configAPI.getConfig();
+    }
+    return serverConfigCache?.base_url || BACKEND_BASE_URL;
+  }
+};
+
+// Helper function: แปลง relative path เป็น full URL
+export const getFullImageUrl = (relativePath) => {
+  if (!relativePath) return '';
+
+  // ถ้าเป็น full URL อยู่แล้ว (http/https) ให้ใช้ตรงๆ
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath;
+  }
+
+  // ถ้าเป็น relative path ให้เติม BACKEND_BASE_URL
+  // ตัดเครื่องหมาย / ที่ซ้ำออก
+  const cleanPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${BACKEND_BASE_URL}${cleanPath}`;
+};
+
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -78,29 +132,35 @@ export const rolesAPI = {
 export const departmentsAPI = {
   getAll: () => apiClient.get('/settings/departments'),
   getById: (id) => apiClient.get(`/settings/departments/${id}`),
+  getTree: (companyId) => apiClient.get(`/settings/departments/tree?companyId=${companyId}`),
   create: (data) => apiClient.post('/settings/departments', data),
   update: (id, data) => apiClient.put(`/settings/departments/${id}`, data),
+  move: (id, newParentId) => apiClient.put(`/settings/departments/${id}/move`, { newParentId }),
   delete: (id) => apiClient.delete(`/settings/departments/${id}`),
+  getCompanyDepartments: () => apiClient.get('/settings/company-departments'),
+  linkToCompany: (departmentId, companyId) => apiClient.post('/settings/company-departments/link', { departmentId, companyId }),
 };
 
 // ==================== DASHBOARD API ====================
 export const dashboardAPI = {
-  getStats: (userId, companyId, dateFrom, dateTo) => {
+  getStats: (userId, companyId, dateFrom, dateTo, vehicleType) => {
     const params = new URLSearchParams();
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     const queryString = params.toString();
     return apiClient.get(`/dashboard/stats${queryString ? '?' + queryString : ''}`);
   },
-  getActivities: (limit = 10, userId, companyId, dateFrom, dateTo, search) => {
+  getActivities: (limit = 10, userId, companyId, dateFrom, dateTo, search, vehicleType) => {
     const params = new URLSearchParams({ limit });
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
     if (search) params.append('search', search);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/dashboard/activities?${params}`);
   },
   getTopCompanies: (limit = 5) => apiClient.get(`/dashboard/companies?limit=${limit}`),
@@ -120,6 +180,18 @@ export const vehiclesAPI = {
   checkout: (id, data) => apiClient.post(`/vehicles/${id}/checkout`, data),
 };
 
+// ==================== VEHICLE TYPES API ====================
+export const vehicleTypesAPI = {
+  getAll: (activeOnly = true) => {
+    const params = activeOnly !== undefined ? { activeOnly } : {};
+    return apiClient.get('/vehicle-types', { params });
+  },
+  getById: (id) => apiClient.get(`/vehicle-types/${id}`),
+  create: (data) => apiClient.post('/vehicle-types', data),
+  update: (id, data) => apiClient.put(`/vehicle-types/${id}`, data),
+  delete: (id) => apiClient.delete(`/vehicle-types/${id}`),
+};
+
 // ==================== REPORTS API ====================
 export const reportsAPI = {
   getAll: (params) => apiClient.get('/reports', { params }),
@@ -130,52 +202,58 @@ export const reportsAPI = {
 
 // ==================== STATISTICS API ====================
 export const statisticsAPI = {
-  getOverview: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+  getOverview: (period = 'week', userId, companyId, dateFrom, dateTo, vehicleType) => {
     const params = new URLSearchParams({ period });
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/statistics/overview?${params}`);
   },
-  getVehicleTypes: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+  getVehicleTypes: (period = 'week', userId, companyId, dateFrom, dateTo, vehicleType) => {
     const params = new URLSearchParams({ period });
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/statistics/vehicle-types?${params}`);
   },
-  getPeakHours: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+  getPeakHours: (period = 'week', userId, companyId, dateFrom, dateTo, vehicleType) => {
     const params = new URLSearchParams({ period });
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/statistics/peak-hours?${params}`);
   },
-  getTopCompanies: (period = 'week', limit = 5, userId, companyId, dateFrom, dateTo) => {
+  getTopCompanies: (period = 'week', limit = 5, userId, companyId, dateFrom, dateTo, vehicleType) => {
     const params = new URLSearchParams({ period, limit });
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/statistics/top-companies?${params}`);
   },
-  getTrafficTrend: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+  getTrafficTrend: (period = 'week', userId, companyId, dateFrom, dateTo, vehicleType) => {
     const params = new URLSearchParams({ period });
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/statistics/traffic-trend?${params}`);
   },
-  getAdditional: (period = 'week', userId, companyId, dateFrom, dateTo) => {
+  getAdditional: (period = 'week', userId, companyId, dateFrom, dateTo, vehicleType) => {
     const params = new URLSearchParams({ period });
     if (userId) params.append('userId', userId);
     if (companyId) params.append('companyId', companyId);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/statistics/additional?${params}`);
   },
 };

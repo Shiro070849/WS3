@@ -29,6 +29,7 @@ class VehicleController {
         dateTo: req.query.dateTo || null,
         companyId: filterCompanyId,
         userCompanyId: userCompanyId,
+        vehicleType: req.query.vehicleType || null,
       };
 
       const page = parseInt(req.query.page) || 1;

@@ -532,15 +532,63 @@ class SettingsService {
     }
   }
 
+  // Validate Hierarchy Rules
+  async validateDepartmentHierarchy(type, parentId, pool) {
+    // Rule 1: office type must have a parent
+    if (type === 'office' && !parentId) {
+      throw new Error('สำนัก (office) จำเป็นต้องอยู่ภายใต้สาขา (branch)');
+    }
+
+    // Rule 2: If parent is specified, validate parent type based on child type
+    if (parentId) {
+      const parentQuery = `SELECT ID_Type FROM [dbo].[InternalDepartment] WHERE ID_ID = @ParentId`;
+      const parentResult = await pool.request()
+        .input('ParentId', sql.Int, parentId)
+        .query(parentQuery);
+
+      if (parentResult.recordset.length === 0) {
+        throw new Error('Parent department not found');
+      }
+
+      const parentType = parentResult.recordset[0].ID_Type;
+
+      // Validate based on child type
+      if (type === 'branch') {
+        // branch can only have parent of type 'branch'
+        if (parentType !== 'branch') {
+          throw new Error('สาขา (branch) สามารถอยู่ภายใต้สาขาอื่นเท่านั้น');
+        }
+      } else if (type === 'office') {
+        // office must have parent of type 'branch'
+        if (parentType !== 'branch') {
+          throw new Error('สำนัก (office) ต้องอยู่ภายใต้สาขา (branch) เท่านั้น');
+        }
+      } else if (type === 'department') {
+        // department can have parent of type 'branch' or 'office'
+        if (parentType !== 'branch' && parentType !== 'office') {
+          throw new Error('แผนก (department) สามารถอยู่ภายใต้สาขา (branch) หรือสำนัก (office) เท่านั้น');
+        }
+      }
+    }
+
+    return true;
+  }
+
   // สร้างแผนกใหม่
   async createDepartment(data) {
     try {
       const pool = await dbService.connect();
+
+      // Validate hierarchy rules
+      await this.validateDepartmentHierarchy(data.type || 'department', data.parentId || null, pool);
+
       const query = `
         INSERT INTO [dbo].[InternalDepartment] (
           ID_Code,
           ID_LocalName,
           ID_EnglishName,
+          ID_Type,
+          Parent_ID_ID,
           ID_IsActive,
           ID_Remarks
         )
@@ -548,6 +596,8 @@ class SettingsService {
           @ID_Code,
           @ID_LocalName,
           @ID_EnglishName,
+          @ID_Type,
+          @Parent_ID_ID,
           @ID_IsActive,
           @ID_Remarks
         );
@@ -557,6 +607,8 @@ class SettingsService {
         .input('ID_Code', sql.NVarChar, data.code)
         .input('ID_LocalName', sql.NVarChar, data.localName)
         .input('ID_EnglishName', sql.NVarChar, data.englishName || null)
+        .input('ID_Type', sql.NVarChar, data.type || 'department')
+        .input('Parent_ID_ID', sql.Int, data.parentId || null)
         .input('ID_IsActive', sql.Bit, data.isActive !== undefined ? data.isActive : 1)
         .input('ID_Remarks', sql.NVarChar, data.remarks || null)
         .query(query);
@@ -571,12 +623,18 @@ class SettingsService {
   async updateDepartment(id, data) {
     try {
       const pool = await dbService.connect();
+
+      // Validate hierarchy rules
+      await this.validateDepartmentHierarchy(data.type || 'department', data.parentId || null, pool);
+
       const query = `
         UPDATE [dbo].[InternalDepartment]
         SET
           ID_Code = @ID_Code,
           ID_LocalName = @ID_LocalName,
           ID_EnglishName = @ID_EnglishName,
+          ID_Type = @ID_Type,
+          Parent_ID_ID = @Parent_ID_ID,
           ID_IsActive = @ID_IsActive,
           ID_Remarks = @ID_Remarks
         WHERE ID_ID = @ID_ID
@@ -586,12 +644,104 @@ class SettingsService {
         .input('ID_Code', sql.NVarChar, data.code)
         .input('ID_LocalName', sql.NVarChar, data.localName)
         .input('ID_EnglishName', sql.NVarChar, data.englishName || null)
+        .input('ID_Type', sql.NVarChar, data.type || 'department')
+        .input('Parent_ID_ID', sql.Int, data.parentId || null)
         .input('ID_IsActive', sql.Bit, data.isActive)
         .input('ID_Remarks', sql.NVarChar, data.remarks || null)
         .query(query);
       return { success: true };
     } catch (error) {
       console.error('Error updating department:', error);
+      throw error;
+    }
+  }
+
+  // เชื่อมแผนกกับบริษัท (Insert Junction Table)
+  async linkDepartmentToCompany(departmentId, companyId) {
+    try {
+      const pool = await dbService.connect();
+
+      // ตรวจสอบว่ามีการเชื่อมอยู่แล้วหรือไม่
+      const checkQuery = `
+        SELECT ICD_ID
+        FROM [dbo].[InternalCompanyDepartment]
+        WHERE IC_ID = @IC_ID AND ID_ID = @ID_ID
+      `;
+      const checkResult = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .input('ID_ID', sql.Int, departmentId)
+        .query(checkQuery);
+
+      if (checkResult.recordset.length > 0) {
+        console.log('⚠️ Department already linked to company');
+        return { success: true, alreadyExists: true };
+      }
+
+      // สร้างการเชื่อม
+      const insertQuery = `
+        INSERT INTO [dbo].[InternalCompanyDepartment] (
+          IC_ID,
+          ID_ID,
+          ICD_IsActive
+        )
+        VALUES (
+          @IC_ID,
+          @ID_ID,
+          1
+        );
+        SELECT SCOPE_IDENTITY() AS ICD_ID;
+      `;
+      const result = await pool.request()
+        .input('IC_ID', sql.Int, companyId)
+        .input('ID_ID', sql.Int, departmentId)
+        .query(insertQuery);
+
+      return { success: true, id: result.recordset[0].ICD_ID };
+    } catch (error) {
+      console.error('Error linking department to company:', error);
+      throw error;
+    }
+  }
+
+  // ย้ายแผนกไปอยู่ภายใต้ Parent อื่น
+  async moveDepartment(id, newParentId) {
+    try {
+      const pool = await dbService.connect();
+
+      // ตรวจสอบว่าไม่ใช่ Circular Reference (ไม่ให้ย้ายไปเป็นลูกของตัวเอง)
+      if (id === newParentId) {
+        throw new Error('Cannot move department to itself');
+      }
+
+      // ดึงข้อมูลแผนกที่จะย้าย เพื่อตรวจสอบ Type
+      const deptQuery = `SELECT ID_Type FROM [dbo].[InternalDepartment] WHERE ID_ID = @ID`;
+      const deptResult = await pool.request()
+        .input('ID', sql.Int, id)
+        .query(deptQuery);
+
+      if (deptResult.recordset.length === 0) {
+        throw new Error('Department not found');
+      }
+
+      const deptType = deptResult.recordset[0].ID_Type;
+
+      // Validate hierarchy rules before moving
+      await this.validateDepartmentHierarchy(deptType, newParentId, pool);
+
+      // Update Parent_ID_ID
+      const query = `
+        UPDATE [dbo].[InternalDepartment]
+        SET Parent_ID_ID = @Parent_ID_ID
+        WHERE ID_ID = @ID_ID
+      `;
+      await pool.request()
+        .input('ID_ID', sql.Int, id)
+        .input('Parent_ID_ID', sql.Int, newParentId)
+        .query(query);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error moving department:', error);
       throw error;
     }
   }
@@ -613,6 +763,92 @@ class SettingsService {
       console.error('Error deleting department:', error);
       throw error;
     }
+  }
+
+  // ==================== COMPANY DEPARTMENTS (JUNCTION TABLE) ====================
+
+  // ดึงความสัมพันธ์บริษัท-แผนก (InternalCompanyDepartment)
+  async getCompanyDepartments() {
+    try {
+      const pool = await dbService.connect();
+      const query = `
+        SELECT
+          ICD_ID,
+          IC_ID,
+          ID_ID,
+          ICD_IsActive
+        FROM [dbo].[InternalCompanyDepartment]
+        ORDER BY IC_ID, ID_ID
+      `;
+      const result = await pool.request().query(query);
+      return result.recordset;
+    } catch (error) {
+      console.error('Error getting company-department relations:', error);
+      throw error;
+    }
+  }
+
+  // ดึงรายการแผนกของบริษัท (Flat List)
+  async getDepartmentTree(companyId) {
+    try {
+      const pool = await dbService.connect();
+
+      // Query แบบธรรมดา ส่งกลับเป็น Flat List
+      const query = `
+        SELECT
+          d.ID_ID,
+          d.ID_Code,
+          d.ID_LocalName,
+          d.ID_EnglishName,
+          d.ID_Type,
+          d.Parent_ID_ID,
+          d.ID_IsActive,
+          d.ID_Remarks
+        FROM [dbo].[InternalDepartment] d
+        INNER JOIN [dbo].[InternalCompanyDepartment] cd ON d.ID_ID = cd.ID_ID
+        WHERE cd.IC_ID = @CompanyId
+          AND cd.ICD_IsActive = 1
+          AND d.ID_IsActive = 1
+        ORDER BY d.ID_Code;
+      `;
+
+      const result = await pool.request()
+        .input('CompanyId', sql.Int, companyId)
+        .query(query);
+
+      // แปลง Flat List เป็น Tree Structure
+      return this.buildTree(result.recordset);
+    } catch (error) {
+      console.error('Error getting department list:', error);
+      throw error;
+    }
+  }
+
+  // Helper Function: แปลง Flat List เป็น Tree Structure
+  buildTree(flatList) {
+    const map = {};
+    const tree = [];
+
+    // สร้าง map สำหรับ lookup
+    flatList.forEach(item => {
+      map[item.ID_ID] = { ...item, children: [] };
+    });
+
+    // สร้าง tree โดยเชื่อม parent-child
+    flatList.forEach(item => {
+      if (item.Parent_ID_ID === null) {
+        // Root level
+        tree.push(map[item.ID_ID]);
+      } else {
+        // Child level
+        const parent = map[item.Parent_ID_ID];
+        if (parent) {
+          parent.children.push(map[item.ID_ID]);
+        }
+      }
+    });
+
+    return tree;
   }
 
   // ==================== GENERAL SETTINGS ====================

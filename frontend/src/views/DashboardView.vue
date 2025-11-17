@@ -13,7 +13,7 @@
     <!-- Content -->
     <div class="w-full">
 
-      <!-- Filters Row: Date Range + Company -->
+      <!-- Filters Row: Date Range + Company + Vehicle Type -->
       <div class="filters-row">
         <div class="date-filter-wrapper">
           <DateRangeFilter
@@ -37,6 +37,23 @@
               :value="company.IC_ID"
             >
               {{ company.IC_LocalName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="vehicle-type-filter-wrapper">
+          <select
+            v-model="filters.vehicleType"
+            class="company-select-inline"
+            @change="handleVehicleTypeFilter"
+          >
+            <option value="">ประเภทรถทั้งหมด</option>
+            <option
+              v-for="vType in vehicleTypes"
+              :key="vType.VType_ID"
+              :value="vType.VType_LocalName"
+            >
+              {{ vType.VType_LocalName }}
             </option>
           </select>
         </div>
@@ -170,7 +187,7 @@ import { ref, onMounted } from 'vue';
 import BaseCard from '../components/base/BaseCard.vue';
 import BaseTable from '../components/base/BaseTable.vue';
 import DateRangeFilter from '../components/DateRangeFilter.vue';
-import { dashboardAPI, companiesAPI } from '../services/api';
+import { dashboardAPI, companiesAPI, vehicleTypesAPI } from '../services/api';
 
 const stats = ref({
   wayInToday: 0,
@@ -182,6 +199,7 @@ const stats = ref({
 const activities = ref([]);
 const loading = ref(false);
 const companies = ref([]);
+const vehicleTypes = ref([]);
 
 // ดึงข้อมูล user จาก localStorage
 const userId = parseInt(localStorage.getItem('userId'));
@@ -195,6 +213,7 @@ const filters = ref({
   dateFrom: null,
   dateTo: null,
   companyId: null,
+  vehicleType: '',
 });
 
 const columns = [
@@ -215,12 +234,27 @@ const fetchCompanies = async () => {
   }
 };
 
+const fetchVehicleTypes = async () => {
+  try {
+    const response = await vehicleTypesAPI.getAll(true);
+    vehicleTypes.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching vehicle types:', error);
+  }
+};
+
 const fetchStats = async () => {
   try {
     // ส่ง userId และ companyId ไป Backend
     const filterCompanyId = filters.value.companyId;
 
-    const response = await dashboardAPI.getStats(userId, filterCompanyId, filters.value.dateFrom, filters.value.dateTo);
+    const response = await dashboardAPI.getStats(
+      userId,
+      filterCompanyId,
+      filters.value.dateFrom,
+      filters.value.dateTo,
+      filters.value.vehicleType
+    );
     stats.value = response.data.data;
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -239,7 +273,8 @@ const fetchActivities = async () => {
       filterCompanyId,
       filters.value.dateFrom,
       filters.value.dateTo,
-      filters.value.search
+      filters.value.search,
+      filters.value.vehicleType
     );
     activities.value = response.data.data;
   } catch (error) {
@@ -257,6 +292,11 @@ const handleDateFilter = ({ dateFrom, dateTo }) => {
 };
 
 const handleCompanyFilter = () => {
+  fetchStats();
+  fetchActivities();
+};
+
+const handleVehicleTypeFilter = () => {
   fetchStats();
   fetchActivities();
 };
@@ -286,6 +326,7 @@ const formatDateTime = (dateTime) => {
 
 onMounted(() => {
   fetchCompanies();
+  fetchVehicleTypes();
   fetchStats();
   fetchActivities();
 });
@@ -378,7 +419,8 @@ onMounted(() => {
   flex: 1;
 }
 
-.company-filter-wrapper {
+.company-filter-wrapper,
+.vehicle-type-filter-wrapper {
   min-width: 200px;
   max-width: 250px;
 }
@@ -485,7 +527,8 @@ onMounted(() => {
     gap: 1rem;
   }
 
-  .company-filter-wrapper {
+  .company-filter-wrapper,
+  .vehicle-type-filter-wrapper {
     min-width: 100%;
     max-width: 100%;
   }

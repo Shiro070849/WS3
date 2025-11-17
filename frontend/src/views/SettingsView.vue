@@ -151,8 +151,8 @@
           <BaseCard>
             <div class="flex justify-between items-center mb-6">
               <div>
-                <h2 class="text-xl font-semibold text-[#1a202c]">รายการแผนก</h2>
-                <p class="text-base text-gray-500 mt-1">จัดการข้อมูลแผนกในระบบ</p>
+                <h2 class="text-xl font-semibold text-[#1a202c]">โครงสร้างแผนก</h2>
+                <p class="text-base text-gray-500 mt-1">จัดการโครงสร้างแผนกแบบ Tree</p>
               </div>
               <BaseButton @click="openDepartmentModal" variant="primary">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -162,29 +162,40 @@
               </BaseButton>
             </div>
 
-            <BaseTable :columns="departmentColumns" :data="departments" :loading="departmentLoading">
-              <template #cell-ID_IsActive="{ value }">
-                <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
-                  {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
-                </span>
-              </template>
+            <!-- Company Tree List -->
+            <div v-if="companyLoading" class="flex justify-center items-center py-12">
+              <svg class="animate-spin h-8 w-8 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span class="ml-3 text-gray-600 font-prompt">กำลังโหลดบริษัท...</span>
+            </div>
 
-              <template #actions="{ row }">
-                <div class="flex gap-2 justify-end">
-                  <button @click="editDepartment(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
-                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button @click="deleteDepartment(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
-                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </template>
-            </BaseTable>
+            <div v-else-if="!companies || companies.length === 0" class="text-center py-12 text-gray-500 font-prompt">
+              <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <p>ไม่มีข้อมูลบริษัท</p>
+            </div>
+
+            <div v-else class="space-y-4">
+              <CompanyTreeNode
+                v-for="company in companies"
+                :key="company.IC_ID"
+                :company="company"
+                @add-child="handleAddChild"
+                @edit="handleEditDepartment"
+                @move="handleMoveDepartment"
+                @delete="handleDeleteDepartment"
+                @add-department="handleAddDepartmentForCompany"
+              />
+            </div>
           </BaseCard>
+        </template>
+
+        <!-- TAB: จัดการประเภทรถ -->
+        <template #vehicleTypes>
+          <VehicleTypeSettings />
         </template>
       </BaseTabs>
     </div>
@@ -265,6 +276,58 @@
         <BaseInput v-model="departmentForm.code" label="รหัสแผนก" placeholder="เช่น IT, HR, CS" required />
         <BaseInput v-model="departmentForm.localName" label="ชื่อแผนก (ไทย)" placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ" required />
         <BaseInput v-model="departmentForm.englishName" label="ชื่อแผนก (อังกฤษ)" placeholder="เช่น Information Technology" />
+
+        <!-- Type Selection -->
+        <div>
+          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            ประเภท <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="departmentForm.type"
+            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            required
+          >
+            <option value="branch">สาขา (Branch)</option>
+            <option value="office">สำนัก (Office)</option>
+            <option value="department">แผนก (Department)</option>
+          </select>
+        </div>
+
+        <!-- Parent Selection -->
+        <div>
+          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            แผนกหลัก (Parent)
+            <span v-if="departmentForm.type === 'office'" class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="departmentForm.parentId"
+            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            :required="departmentForm.type === 'office'"
+          >
+            <option :value="null" v-if="departmentForm.type !== 'office'">ไม่มี (Root Level)</option>
+            <option v-for="dept in availableParents" :key="dept.ID_ID" :value="dept.ID_ID">
+              {{ dept.ID_LocalName }} ({{ dept.ID_Code }})
+            </option>
+          </select>
+          <!-- Dynamic Help Text based on Type -->
+          <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-xs text-blue-800 font-prompt flex items-start gap-2">
+              <svg class="w-4 h-4 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span v-if="departmentForm.type === 'branch'">
+                <strong>กฎสาขา:</strong> สามารถเป็น Root (ไม่มี Parent) หรือ อยู่ภายใต้สาขาอื่นได้
+              </span>
+              <span v-else-if="departmentForm.type === 'office'">
+                <strong>กฎสำนัก:</strong> ต้องอยู่ภายใต้สาขาเท่านั้น (จำเป็นต้องเลือก Parent)
+              </span>
+              <span v-else-if="departmentForm.type === 'department'">
+                <strong>กฎแผนก:</strong> สามารถเป็น Root (ไม่มี Parent) หรือ อยู่ภายใต้สาขา/สำนักได้
+              </span>
+            </p>
+          </div>
+        </div>
+
         <div>
           <label class="flex items-center">
             <input v-model="departmentForm.isActive" type="checkbox" class="w-4 h-4 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3]" />
@@ -362,6 +425,57 @@
         </div>
       </template>
     </BaseModal>
+
+    <!-- MODAL: ย้ายแผนก -->
+    <BaseModal :show="moveModal.show" title="ย้ายแผนก" @close="closeMoveModal" size="md">
+      <!-- แสดงข้อมูลแผนกที่จะย้าย -->
+      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-center gap-3">
+          <svg class="w-10 h-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <div>
+            <p class="text-lg font-semibold text-gray-800 font-prompt">{{ moveModal.departmentName }}</p>
+            <p class="text-sm text-gray-600 font-prompt">กำลังย้ายแผนกนี้</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning Message -->
+      <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <p class="text-sm text-amber-800 font-prompt">การย้ายแผนกจะเปลี่ยนโครงสร้างองค์กร</p>
+      </div>
+
+      <!-- Parent Selection -->
+      <div>
+        <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          ย้ายไปอยู่ภายใต้ Parent ใหม่ <span class="text-red-500">*</span>
+        </label>
+        <select
+          v-model="newParentId"
+          class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+          required
+        >
+          <option :value="null">ไม่มี (Root Level)</option>
+          <option v-for="dept in availableParentsForMove" :key="dept.ID_ID" :value="dept.ID_ID">
+            {{ dept.ID_LocalName }} ({{ dept.ID_Code }})
+          </option>
+        </select>
+        <p class="text-xs text-gray-500 mt-1 font-prompt">เลือกแผนกที่จะเป็น Parent ใหม่</p>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="closeMoveModal">ยกเลิก</BaseButton>
+          <BaseButton variant="primary" @click="saveMove" :loading="departmentSaving">
+            ย้ายแผนก
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -376,8 +490,14 @@ import BaseModal from '../components/base/BaseModal.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import AppearanceSettings from '../components/settings/AppearanceSettings.vue';
 import SecuritySettings from '../components/settings/SecuritySettings.vue';
+import VehicleTypeSettings from '../components/settings/VehicleTypeSettings.vue';
+import CompanyTreeNode from '../components/settings/CompanyTreeNode.vue';
 import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../services/api';
 import { useTheme } from '@/composables/useTheme';
+import { useNotification } from '@/composables/useNotification';
+
+// ==================== Notification ====================
+const { success, error, warning, info } = useNotification();
 
 // ==================== Company Selection ====================
 const accessibleCompanies = ref([]);
@@ -440,7 +560,7 @@ const checkIsMainAdmin = () => {
 
 const tabs = computed(() => {
   if (isMainAdmin.value) {
-    // Super Admin: Show General, Appearance, Security, Companies, Users, Departments
+    // Super Admin: Show General, Appearance, Security, Companies, Users, Departments, Vehicle Types
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
@@ -448,6 +568,7 @@ const tabs = computed(() => {
       { key: 'companies', label: 'จัดการบริษัท', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
       { key: 'users', label: 'จัดการผู้ใช้งาน', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
       { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+      { key: 'vehicleTypes', label: 'จัดการประเภทรถ', icon: 'M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2' },
     ];
   } else {
     // Company Admin: Show General, Appearance, Security only
@@ -743,78 +864,289 @@ const changePassword = async () => {
 
 // ==================== แผนก (Departments) ====================
 const departments = ref([]);
-const departmentLoading = ref(false);
 const departmentSaving = ref(false);
-const departmentModal = ref({ show: false, isEdit: false, title: '', id: null });
-const departmentForm = ref({ code: '', localName: '', englishName: '', isActive: true, remarks: '' });
+const departmentModal = ref({ show: false, isEdit: false, title: '', id: null, isAddChild: false, parentId: null });
+const departmentForm = ref({
+  code: '',
+  localName: '',
+  englishName: '',
+  type: 'department',
+  parentId: null,
+  isActive: true,
+  remarks: '',
+  companyIds: [] // เชื่อมกับบริษัทไหนบ้าง
+});
+const companyDepartments = ref([]); // Junction table data
+const moveModal = ref({ show: false, departmentId: null, departmentName: '', currentParentId: null });
+const newParentId = ref(null);
 
-const departmentColumns = [
-  { key: 'ID_Code', label: 'รหัส' },
-  { key: 'ID_LocalName', label: 'ชื่อแผนก (ไทย)' },
-  { key: 'ID_EnglishName', label: 'ชื่อแผนก (EN)' },
-  { key: 'ID_IsActive', label: 'สถานะ' },
-  { key: 'ID_Remarks', label: 'หมายเหตุ' },
-];
-
+// ดึงข้อมูลแผนกแบบ Flat List (สำหรับ dropdown)
 const fetchDepartments = async () => {
-  departmentLoading.value = true;
   try {
     const response = await departmentsAPI.getAll();
     departments.value = response.data.data;
   } catch (error) {
     console.error('Error:', error);
     alert('ไม่สามารถโหลดข้อมูลแผนกได้');
-  } finally {
-    departmentLoading.value = false;
   }
 };
 
-const openDepartmentModal = () => {
-  departmentModal.value = { show: true, isEdit: false, title: 'เพิ่มแผนกใหม่', id: null };
-  departmentForm.value = { code: '', localName: '', englishName: '', isActive: true, remarks: '' };
+// NOTE: fetchDepartmentTree removed - each CompanyTreeNode now fetches its own tree
+
+const fetchCompanyDepartments = async () => {
+  try {
+    // Fetch junction table data
+    const response = await departmentsAPI.getCompanyDepartments();
+    companyDepartments.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching company-department relations:', error);
+    alert('ไม่สามารถโหลดความสัมพันธ์บริษัท-แผนกได้');
+  }
 };
 
-const editDepartment = (row) => {
-  departmentModal.value = { show: true, isEdit: true, title: 'แก้ไขแผนก', id: row.ID_ID };
-  departmentForm.value = { code: row.ID_Code, localName: row.ID_LocalName, englishName: row.ID_EnglishName, isActive: row.ID_IsActive, remarks: row.ID_Remarks || '' };
+// เปิด Modal เพิ่มแผนกใหม่ (Root Level)
+const openDepartmentModal = () => {
+  // Reset saving state
+  departmentSaving.value = false;
+
+  departmentModal.value = { show: true, isEdit: false, title: 'เพิ่มแผนกใหม่', id: null, isAddChild: false, parentId: null };
+  departmentForm.value = {
+    code: '',
+    localName: '',
+    englishName: '',
+    type: 'department',
+    parentId: null,
+    isActive: true,
+    remarks: '',
+    companyIds: companies.value.map(c => c.IC_ID) // Default: ทุกบริษัท (เพราะไม่มี dropdown แล้ว)
+  };
+};
+
+// เปิด Modal เพิ่มแผนกสำหรับบริษัทที่เลือก (จาก CompanyTreeNode)
+const handleAddDepartmentForCompany = (company) => {
+  // Reset saving state
+  departmentSaving.value = false;
+
+  departmentModal.value = { show: true, isEdit: false, title: `เพิ่มแผนกใหม่ - ${company.IC_LocalName}`, id: null, isAddChild: false, parentId: null };
+  departmentForm.value = {
+    code: '',
+    localName: '',
+    englishName: '',
+    type: 'department',
+    parentId: null,
+    isActive: true,
+    remarks: '',
+    companyIds: [company.IC_ID] // Default: บริษัทที่คลิก
+  };
+};
+
+// เปิด Modal เพิ่มแผนกลูก (Add Child)
+const handleAddChild = (payload) => {
+  const { node: parentNode, company } = payload;
+
+  // Reset saving state
+  departmentSaving.value = false;
+
+  departmentModal.value = {
+    show: true,
+    isEdit: false,
+    title: `เพิ่มแผนกภายใต้ "${parentNode.ID_LocalName}"`,
+    id: null,
+    isAddChild: true,
+    parentId: parentNode.ID_ID
+  };
+  departmentForm.value = {
+    code: '',
+    localName: '',
+    englishName: '',
+    type: 'department',
+    parentId: parentNode.ID_ID,
+    isActive: true,
+    remarks: '',
+    companyIds: [company.IC_ID]
+  };
+};
+
+// เปิด Modal แก้ไขแผนก
+const handleEditDepartment = (payload) => {
+  const { node, company } = payload;
+
+  // Reset saving state
+  departmentSaving.value = false;
+
+  departmentModal.value = { show: true, isEdit: true, title: 'แก้ไขแผนก', id: node.ID_ID, isAddChild: false, parentId: node.Parent_ID_ID };
+  departmentForm.value = {
+    code: node.ID_Code,
+    localName: node.ID_LocalName,
+    englishName: node.ID_EnglishName,
+    type: node.ID_Type || 'department',
+    parentId: node.Parent_ID_ID,
+    isActive: node.ID_IsActive,
+    remarks: node.ID_Remarks || '',
+    companyIds: [company.IC_ID] // ใช้ company จาก payload
+  };
 };
 
 const closeDepartmentModal = () => {
   departmentModal.value.show = false;
 };
 
+// บันทึกแผนก (สร้างใหม่ หรือ แก้ไข)
 const saveDepartment = async () => {
+  // Frontend Validation: office type must have parent
+  if (departmentForm.value.type === 'office' && !departmentForm.value.parentId) {
+    warning('สำนักจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
+    return;
+  }
+
   departmentSaving.value = true;
   try {
-    const payload = { code: departmentForm.value.code, localName: departmentForm.value.localName, englishName: departmentForm.value.englishName, isActive: departmentForm.value.isActive, remarks: departmentForm.value.remarks };
+    const payload = {
+      code: departmentForm.value.code,
+      localName: departmentForm.value.localName,
+      englishName: departmentForm.value.englishName,
+      type: departmentForm.value.type,
+      parentId: departmentForm.value.parentId,
+      isActive: departmentForm.value.isActive,
+      remarks: departmentForm.value.remarks
+    };
+
     if (departmentModal.value.isEdit) {
       await departmentsAPI.update(departmentModal.value.id, payload);
-      alert('บันทึกข้อมูลสำเร็จ');
+      success('บันทึกข้อมูลสำเร็จ');
     } else {
-      await departmentsAPI.create(payload);
-      alert('สร้างแผนกใหม่สำเร็จ');
+      // สร้างแผนกใหม่
+      const result = await departmentsAPI.create(payload);
+      const newDepartmentId = result.data.data.ID_ID;
+
+      // เชื่อมกับบริษัทที่เลือกใน companyIds
+      if (departmentForm.value.companyIds && departmentForm.value.companyIds.length > 0) {
+        for (const companyId of departmentForm.value.companyIds) {
+          await departmentsAPI.linkToCompany(newDepartmentId, companyId);
+        }
+      }
+
+      success('สร้างแผนกใหม่สำเร็จ');
     }
+
     closeDepartmentModal();
-    fetchDepartments();
-  } catch (error) {
-    console.error('Error:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    window.location.reload(); // Reload page to refresh all company trees
+  } catch (err) {
+    console.error('Error in saveDepartment:', err);
+    error(err.response?.data?.message || err.message);
   } finally {
     departmentSaving.value = false;
   }
 };
 
-const deleteDepartment = async (row) => {
-  if (!confirm(`ต้องการลบแผนก "${row.ID_LocalName}" ใช่หรือไม่?`)) return;
+// ย้ายแผนก (เปิด Modal)
+const handleMoveDepartment = (payload) => {
+  const { node, company } = payload;
+  moveModal.value = {
+    show: true,
+    departmentId: node.ID_ID,
+    departmentName: node.ID_LocalName,
+    currentParentId: node.Parent_ID_ID,
+    companyId: company.IC_ID
+  };
+  newParentId.value = node.Parent_ID_ID;
+};
+
+// ปิด Move Modal
+const closeMoveModal = () => {
+  moveModal.value.show = false;
+  newParentId.value = null;
+};
+
+// บันทึกการย้าย
+const saveMove = async () => {
   try {
-    await departmentsAPI.delete(row.ID_ID);
-    alert('ลบแผนกสำเร็จ');
-    fetchDepartments();
-  } catch (error) {
-    console.error('Error:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    await departmentsAPI.move(moveModal.value.departmentId, newParentId.value);
+    success('ย้ายแผนกสำเร็จ');
+    closeMoveModal();
+    window.location.reload(); // Reload page to refresh all company trees
+  } catch (err) {
+    console.error('Error:', err);
+    error(err.response?.data?.message || err.message);
   }
 };
+
+// ลบแผนก
+const handleDeleteDepartment = async (payload) => {
+  const { node, company } = payload;
+
+  // ตรวจสอบว่ามี children หรือไม่
+  if (node.children && node.children.length > 0) {
+    warning(`ไม่สามารถลบแผนก "${node.ID_LocalName}" ได้ เนื่องจากมีแผนกย่อยอยู่ภายใต้ (${node.children.length} แผนก) กรุณาลบแผนกย่อยก่อน หรือย้ายแผนกย่อยไปที่อื่น`);
+    return;
+  }
+
+  if (!confirm(`ต้องการลบแผนก "${node.ID_LocalName}" ใช่หรือไม่?`)) return;
+
+  try {
+    await departmentsAPI.delete(node.ID_ID);
+    success('ลบแผนกสำเร็จ');
+    // Trigger refresh for this company (will implement refresh mechanism)
+    window.location.reload(); // Temporary: reload page
+  } catch (err) {
+    console.error('Error:', err);
+    error(err.response?.data?.message || err.message);
+  }
+};
+
+// Dropdown สำหรับเลือก Parent (filter ตาม hierarchy rules)
+const availableParents = computed(() => {
+  let filtered = departments.value.filter(d => d.ID_IsActive);
+
+  // ถ้าเป็นการแก้ไข: ไม่ให้เลือกตัวเองเป็น Parent
+  if (departmentModal.value.isEdit) {
+    filtered = filtered.filter(d => d.ID_ID !== departmentModal.value.id);
+  }
+
+  // Filter ตาม Type Hierarchy Rules
+  const selectedType = departmentForm.value.type;
+
+  if (selectedType === 'branch') {
+    // branch: can have parent=NULL or parent=branch
+    filtered = filtered.filter(d => d.ID_Type === 'branch');
+  } else if (selectedType === 'office') {
+    // office: must have parent=branch (required)
+    filtered = filtered.filter(d => d.ID_Type === 'branch');
+  } else if (selectedType === 'department') {
+    // department: can have parent=branch or parent=office or parent=NULL
+    filtered = filtered.filter(d => d.ID_Type === 'branch' || d.ID_Type === 'office');
+  }
+
+  return filtered;
+});
+
+// Dropdown สำหรับเลือก Parent ในการย้าย (filter ตาม hierarchy rules)
+const availableParentsForMove = computed(() => {
+  let filtered = departments.value.filter(d =>
+    d.ID_ID !== moveModal.value.departmentId && // ไม่ให้เลือกตัวเอง
+    d.ID_IsActive
+  );
+
+  // หา Type ของแผนกที่จะย้าย
+  const movingDept = departments.value.find(d => d.ID_ID === moveModal.value.departmentId);
+  if (!movingDept) return filtered;
+
+  const deptType = movingDept.ID_Type;
+
+  // Filter ตาม Type Hierarchy Rules
+  if (deptType === 'branch') {
+    // branch: can have parent=NULL or parent=branch
+    filtered = filtered.filter(d => d.ID_Type === 'branch');
+  } else if (deptType === 'office') {
+    // office: must have parent=branch (required)
+    filtered = filtered.filter(d => d.ID_Type === 'branch');
+  } else if (deptType === 'department') {
+    // department: can have parent=branch or parent=office or parent=NULL
+    filtered = filtered.filter(d => d.ID_Type === 'branch' || d.ID_Type === 'office');
+  }
+
+  return filtered;
+});
 
 // ==================== Load Data on Mount ====================
 onMounted(() => {
@@ -823,6 +1155,7 @@ onMounted(() => {
   fetchCompanies();
   fetchUsers();
   fetchDepartments();
+  fetchCompanyDepartments();
   document.addEventListener('click', handleClickOutside);
 });
 
@@ -898,6 +1231,106 @@ onBeforeUnmount(() => {
 }
 
 /* 2. Page Title - moved to theme-variables.css for theming support */
+
+/* 2.3 Company Cards */
+.company-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.company-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+}
+
+.company-departments {
+  animation: expandDown 0.3s ease-out;
+}
+
+/* 2.5 Department Cards */
+.department-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.department-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.department-card.department-expanded {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+}
+
+.department-details {
+  animation: expandDown 0.25s ease-out;
+}
+
+@keyframes expandDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Action Buttons */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.action-btn-view {
+  background: #E0F2FE;
+  color: #0284C7;
+}
+
+.action-btn-view:hover {
+  background: #0EA5E9;
+  color: white;
+  transform: scale(1.08);
+}
+
+.action-btn-edit {
+  background: #D1FAE5;
+  color: #059669;
+}
+
+.action-btn-edit:hover {
+  background: #10B981;
+  color: white;
+  transform: scale(1.08);
+}
+
+.action-btn-delete {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.action-btn-delete:hover {
+  background: #EF4444;
+  color: white;
+  transform: scale(1.08);
+}
 
 /* 3. Custom Dropdown (Complex component) */
 .select {

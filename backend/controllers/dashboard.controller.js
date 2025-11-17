@@ -9,6 +9,7 @@ class DashboardController {
       const filterCompanyId = req.query.companyId ? parseInt(req.query.companyId) : null;
       const dateFrom = req.query.dateFrom || null;
       const dateTo = req.query.dateTo || null;
+      const vehicleType = req.query.vehicleType || null;
 
       // ดึง IC_ID ของ user จาก database
       let userCompanyId = null;
@@ -21,7 +22,7 @@ class DashboardController {
         userCompanyId = userResult.recordset[0]?.IC_ID || null;
       }
 
-      const stats = await dashboardService.getTodayStats(userCompanyId, filterCompanyId, dateFrom, dateTo);
+      const stats = await dashboardService.getTodayStats(userCompanyId, filterCompanyId, dateFrom, dateTo, vehicleType);
 
       res.status(200).json({
         success: true,
@@ -46,6 +47,7 @@ class DashboardController {
       const dateFrom = req.query.dateFrom || null;
       const dateTo = req.query.dateTo || null;
       const search = req.query.search || null;
+      const vehicleType = req.query.vehicleType || null;
 
       // ดึง IC_ID ของ user จาก database
       let userCompanyId = null;
@@ -58,7 +60,7 @@ class DashboardController {
         userCompanyId = userResult.recordset[0]?.IC_ID || null;
       }
 
-      const activities = await dashboardService.getRecentActivities(limit, userCompanyId, filterCompanyId, dateFrom, dateTo, search);
+      const activities = await dashboardService.getRecentActivities(limit, userCompanyId, filterCompanyId, dateFrom, dateTo, search, vehicleType);
 
       res.status(200).json({
         success: true,

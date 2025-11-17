@@ -43,6 +43,8 @@ module.exports = (app) => {
 
   // ==================== DEPARTMENTS ====================
 
+  // ดึงโครงสร้างแผนกแบบ Tree
+  app.get('/api/settings/departments/tree', settingsController.getDepartmentTree);
   // ดึงรายการแผนกทั้งหมด
   app.get('/api/settings/departments', settingsController.getAllDepartments);
   // ดึงข้อมูลแผนกตาม ID
@@ -51,8 +53,17 @@ module.exports = (app) => {
   app.post('/api/settings/departments', settingsController.createDepartment);
   // แก้ไขข้อมูลแผนก
   app.put('/api/settings/departments/:id', settingsController.updateDepartment);
+  // ย้ายแผนกไปอยู่ภายใต้ Parent อื่น
+  app.put('/api/settings/departments/:id/move', settingsController.moveDepartment);
   // ลบแผนก (Soft Delete)
   app.delete('/api/settings/departments/:id', settingsController.deleteDepartment);
+
+  // ==================== COMPANY DEPARTMENTS (JUNCTION TABLE) ====================
+
+  // ดึงความสัมพันธ์บริษัท-แผนก (InternalCompanyDepartment)
+  app.get('/api/settings/company-departments', settingsController.getCompanyDepartments);
+  // เชื่อมแผนกกับบริษัท
+  app.post('/api/settings/company-departments/link', settingsController.linkDepartmentToCompany);
 
   // ==================== GENERAL SETTINGS ====================
 

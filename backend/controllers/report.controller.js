@@ -10,6 +10,7 @@ exports.getReports = async (req, res) => {
       endDate: req.query.endDate,
       companyId: req.query.companyId,
       status: req.query.status,
+      vehicleType: req.query.vehicleType,
     };
 
     const result = await ReportService.getReports(filters);
@@ -40,6 +41,7 @@ exports.exportExcel = async (req, res) => {
       endDate: req.query.endDate,
       companyId: req.query.companyId,
       status: req.query.status,
+      vehicleType: req.query.vehicleType,
     };
 
     const buffer = await ReportService.exportExcel(filters);
@@ -72,6 +74,7 @@ exports.exportPDF = async (req, res) => {
       endDate: req.query.endDate,
       companyId: req.query.companyId,
       status: req.query.status,
+      vehicleType: req.query.vehicleType,
     };
 
     const buffer = await ReportService.exportPDF(filters);
@@ -102,7 +105,8 @@ exports.getStatistics = async (req, res) => {
     const filters = {
       startDate: req.query.startDate,
       endDate: req.query.endDate,
-      companyId: req.query.companyId, // เพิ่ม companyId filter
+      companyId: req.query.companyId,
+      vehicleType: req.query.vehicleType,
     };
 
     const stats = await ReportService.getStatistics(filters);

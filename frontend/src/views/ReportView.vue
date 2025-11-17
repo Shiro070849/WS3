@@ -15,7 +15,7 @@
         <h3 class="text-lg font-bold text-gray-900 mb-5 font-prompt">
           ตัวกรอง
         </h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           <!-- วันที่เริ่มต้น -->
           <div>
             <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
@@ -25,6 +25,7 @@
               v-model="filters.startDate"
               type="date"
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @change="fetchReport"
             />
           </div>
 
@@ -37,6 +38,7 @@
               v-model="filters.endDate"
               type="date"
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @change="fetchReport"
             />
           </div>
 
@@ -48,10 +50,37 @@
             <select
               v-model="filters.companyId"
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @change="fetchReport"
             >
               <option value="">ทั้งหมด</option>
-              <option value="1">บริษัท รักชัยห้องเย็น จำกัด</option>
-              <option value="2">บริษัท มหาราช จำกัด</option>
+              <option
+                v-for="company in companies"
+                :key="company.IC_ID"
+                :value="company.IC_ID"
+              >
+                {{ company.IC_LocalName }}
+              </option>
+            </select>
+          </div>
+
+          <!-- ประเภทรถ -->
+          <div>
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+              ประเภทรถ
+            </label>
+            <select
+              v-model="filters.vehicleType"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @change="fetchReport"
+            >
+              <option value="">ทั้งหมด</option>
+              <option
+                v-for="vType in vehicleTypes"
+                :key="vType.VType_ID"
+                :value="vType.VType_LocalName"
+              >
+                {{ vType.VType_LocalName }}
+              </option>
             </select>
           </div>
 
@@ -63,6 +92,7 @@
             <select
               v-model="filters.status"
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @change="fetchReport"
             >
               <option value="">ทั้งหมด</option>
               <option value="in">เข้า</option>
@@ -259,17 +289,20 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { reportsAPI, getBackendBaseUrl } from '../services/api';
+import { reportsAPI, getBackendBaseUrl, vehicleTypesAPI, companiesAPI } from '../services/api';
 
 // ==================== STATE ====================
 const loading = ref(false);
 const reports = ref([]);
+const vehicleTypes = ref([]);
+const companies = ref([]);
 
 const filters = ref({
   startDate: '',
   endDate: '',
   companyId: '',
   status: '',
+  vehicleType: '',
 });
 
 const summary = ref({
@@ -281,6 +314,25 @@ const summary = ref({
 
 // ==================== FUNCTIONS ====================
 
+const fetchVehicleTypes = async () => {
+  try {
+    const response = await vehicleTypesAPI.getAll(true);
+    vehicleTypes.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching vehicle types:', error);
+  }
+};
+
+const fetchCompanies = async () => {
+  try {
+    const response = await companiesAPI.getAll();
+    // Filter only active companies
+    companies.value = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+  } catch (error) {
+    console.error('Error fetching companies:', error);
+  }
+};
+
 const fetchReport = async () => {
   loading.value = true;
   try {
@@ -289,6 +341,7 @@ const fetchReport = async () => {
       endDate: filters.value.endDate || undefined,
       companyId: filters.value.companyId || undefined,
       status: filters.value.status || undefined,
+      vehicleType: filters.value.vehicleType || undefined,
     };
 
     const response = await reportsAPI.getAll(params);
@@ -323,6 +376,7 @@ const exportExcel = async () => {
       ...(filters.value.endDate && { endDate: filters.value.endDate }),
       ...(filters.value.companyId && { companyId: filters.value.companyId }),
       ...(filters.value.status && { status: filters.value.status }),
+      ...(filters.value.vehicleType && { vehicleType: filters.value.vehicleType }),
     });
 
     // สร้าง URL สำหรับ download (ใช้ environment variable)
@@ -350,6 +404,7 @@ const exportPDF = async () => {
       ...(filters.value.endDate && { endDate: filters.value.endDate }),
       ...(filters.value.companyId && { companyId: filters.value.companyId }),
       ...(filters.value.status && { status: filters.value.status }),
+      ...(filters.value.vehicleType && { vehicleType: filters.value.vehicleType }),
     });
 
     // สร้าง URL สำหรับ download (ใช้ environment variable)
@@ -401,6 +456,8 @@ onMounted(() => {
     filters.value.companyId = companyId;
   }
 
+  fetchCompanies();
+  fetchVehicleTypes();
   fetchReport();
 });
 </script>

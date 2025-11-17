@@ -201,7 +201,7 @@ import BaseCard from '../base/BaseCard.vue';
 import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import LivePreview from './LivePreview.vue';
-import { systemSettingsAPI, getBackendBaseUrl } from '@/services/api';
+import { systemSettingsAPI, getFullImageUrl } from '@/services/api';
 import { useTheme } from '@/composables/useTheme';
 
 const props = defineProps({
@@ -232,20 +232,9 @@ const formData = ref({
 
 const originalData = ref({});
 
-// Helper function: สร้าง Full URL สำหรับรูปภาพ (ใช้ environment variable)
-const getImageUrl = (url) => {
-  if (!url) return '';
-  // ถ้า URL เป็น full URL (http/https) ให้ใช้ตรงๆ
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  // ถ้าเป็น relative path ให้เติม backend base URL จาก .env
-  return `${getBackendBaseUrl()}${url}`;
-};
-
-// Computed properties สำหรับแสดงรูป
-const logoPreviewUrl = computed(() => getImageUrl(formData.value.logo_url));
-const faviconPreviewUrl = computed(() => getImageUrl(formData.value.favicon_url));
+// Computed properties สำหรับแสดงรูป (ใช้ getFullImageUrl จาก api.js)
+const logoPreviewUrl = computed(() => getFullImageUrl(formData.value.logo_url));
+const faviconPreviewUrl = computed(() => getFullImageUrl(formData.value.favicon_url));
 
 // ดึงข้อมูล
 const fetchSettings = async () => {

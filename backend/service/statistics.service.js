@@ -38,7 +38,7 @@ class StatisticsService {
   }
 
   // Helper function: สร้าง WHERE clause สำหรับกรอง company และ date range
-  buildWhereClause(companyId, startDate, endDate) {
+  buildWhereClause(companyId, startDate, endDate, vehicleType) {
     const conditions = [];
 
     if (startDate && endDate) {
@@ -50,19 +50,26 @@ class StatisticsService {
       conditions.push(`WI.IC_ID = ${parseInt(companyId)}`);
     }
 
+    if (vehicleType) {
+      conditions.push(`WI.WI_VehicleType = N'${vehicleType}'`);
+    }
+
     return conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
   }
 
   // 1. ดึงสถิติภาพรวม
-  async getOverviewStats(period = 'week', companyId = null) {
+  async getOverviewStats(period = 'week', companyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
-      // สร้าง company filter
+      // สร้าง company และ vehicleType filter
       let companyFilter = '';
       if (companyId) {
         companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      }
+      if (vehicleType) {
+        companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
       }
 
       // สถิติช่วงเวลาปัจจุบัน
@@ -146,15 +153,18 @@ class StatisticsService {
   }
 
   // 2. ดึงข้อมูลประเภทรถ
-  async getVehicleTypeStats(period = 'week', companyId = null) {
+  async getVehicleTypeStats(period = 'week', companyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
-      // สร้าง company filter
+      // สร้าง company และ vehicleType filter
       let companyFilter = '';
       if (companyId) {
         companyFilter = `AND IC_ID = ${parseInt(companyId)}`;
+      }
+      if (vehicleType) {
+        companyFilter += ` AND WI_VehicleType = N'${vehicleType}'`;
       }
 
       const result = await pool.request()
@@ -194,15 +204,18 @@ class StatisticsService {
   }
 
   // 3. ดึงข้อมูลช่วงเวลาเร่งด่วน
-  async getPeakHoursStats(period = 'week', companyId = null) {
+  async getPeakHoursStats(period = 'week', companyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
-      // สร้าง company filter
+      // สร้าง company และ vehicleType filter
       let companyFilter = '';
       if (companyId) {
         companyFilter = `AND IC_ID = ${parseInt(companyId)}`;
+      }
+      if (vehicleType) {
+        companyFilter += ` AND WI_VehicleType = N'${vehicleType}'`;
       }
 
       const result = await pool.request()
@@ -233,15 +246,18 @@ class StatisticsService {
   }
 
   // 4. ดึงข้อมูลบริษัทที่ใช้บริการบ่อยที่สุด
-  async getTopCompaniesStats(period = 'week', limit = 5, companyId = null) {
+  async getTopCompaniesStats(period = 'week', limit = 5, companyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
-      // สร้าง company filter
+      // สร้าง company และ vehicleType filter
       let companyFilter = '';
       if (companyId) {
         companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      }
+      if (vehicleType) {
+        companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
       }
 
       const result = await pool.request()
@@ -273,15 +289,18 @@ class StatisticsService {
   }
 
   // 5. ดึงข้อมูลแนวโน้มการเข้า-ออก (สำหรับกราฟ)
-  async getTrafficTrendStats(period = 'week', companyId = null) {
+  async getTrafficTrendStats(period = 'week', companyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
-      // สร้าง company filter
+      // สร้าง company และ vehicleType filter
       let companyFilter = '';
       if (companyId) {
         companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      }
+      if (vehicleType) {
+        companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
       }
 
       // ดึงข้อมูลแบ่งตามวัน
@@ -329,15 +348,18 @@ class StatisticsService {
   }
 
   // 6. ดึงสถิติเพิ่มเติม
-  async getAdditionalStats(period = 'week', companyId = null) {
+  async getAdditionalStats(period = 'week', companyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
-      // สร้าง company filter
+      // สร้าง company และ vehicleType filter
       let companyFilter = '';
       if (companyId) {
         companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      }
+      if (vehicleType) {
+        companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
       }
 
       // คำนวณเวลาเฉลี่ยที่อยู่ในคลัง
