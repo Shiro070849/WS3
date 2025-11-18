@@ -260,7 +260,7 @@ class SettingsController {
 
   async createUser(req, res) {
     try {
-      const { code, name1, name2, email, username, password, active, pinCode, remarks, companyId } = req.body;
+      const { code, name1, name2, email, username, password, active, pinCode, remarks, companyId, roleId } = req.body;
 
       // Validate required fields
       if (!code || !name1 || !username || !password) {
@@ -278,6 +278,14 @@ class SettingsController {
         });
       }
 
+      // Validate roleId
+      if (!roleId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Role ID is required'
+        });
+      }
+
       const result = await settingsService.createUser({
         code,
         name1,
@@ -288,7 +296,8 @@ class SettingsController {
         active,
         pinCode,
         remarks,
-        companyId
+        companyId,
+        roleId
       });
 
       res.status(201).json({
@@ -309,7 +318,7 @@ class SettingsController {
   async updateUser(req, res) {
     try {
       const id = req.params.id;
-      const { code, name1, name2, email, username, active, pinCode, remarks, companyId } = req.body;
+      const { code, name1, name2, email, username, active, pinCode, remarks, companyId, roleId } = req.body;
 
       // Validate required fields
       if (!code || !name1 || !username) {
@@ -328,7 +337,8 @@ class SettingsController {
         active,
         pinCode,
         remarks,
-        companyId
+        companyId,
+        roleId
       });
 
       res.status(200).json({

@@ -237,7 +237,7 @@ class SettingsService {
 
   // ==================== USERS ====================
 
-  // ดึงรายการ User ทั้งหมด (พร้อมชื่อบริษัท)
+  // ดึงรายการ User ทั้งหมด (พร้อมชื่อบริษัทและ Role)
   async getAllUsers() {
     try {
       const pool = await dbService.connect();
@@ -254,9 +254,13 @@ class SettingsService {
           SU.SU_PinCode,
           SU.SU_Remarks,
           SU.IC_ID,
-          IC.IC_LocalName AS CompanyName
+          SU.SR_ID,
+          IC.IC_LocalName AS CompanyName,
+          SR.SR_Name,
+          SR.SR_Code
         FROM [dbo].[SystemUser] SU
         LEFT JOIN [dbo].[InternalCompany] IC ON SU.IC_ID = IC.IC_ID
+        LEFT JOIN [dbo].[SystemRole] SR ON SU.SR_ID = SR.SR_ID
         ORDER BY SU.SU_Code ASC
       `;
       const result = await pool.request().query(query);
@@ -312,7 +316,8 @@ class SettingsService {
           SU_PinCode,
           SU_Remarks,
           IC_ID,
-          SR_ID
+          SR_ID,
+          SU_LogOn
         )
         VALUES (
           @SU_Code,
@@ -325,7 +330,8 @@ class SettingsService {
           @SU_PinCode,
           @SU_Remarks,
           @IC_ID,
-          @SR_ID
+          @SR_ID,
+          GETDATE()
         );
         SELECT SCOPE_IDENTITY() AS SU_ID;
       `;

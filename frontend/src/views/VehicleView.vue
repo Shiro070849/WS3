@@ -10,38 +10,18 @@
 
     <!-- Main Content - Tailwind Layout -->
     <div class="w-full">
-      <!-- Filters Row: Date Range + Company -->
-      <div class="filters-row">
-        <div class="date-filter-wrapper">
-          <DateRangeFilter
-            v-model:dateFrom="filters.dateFrom"
-            v-model:dateTo="filters.dateTo"
-            @filter="handleDateFilter"
-          />
-        </div>
-
-        <div class="company-filter-wrapper" v-if="isSuperAdmin">
-          <select
-            id="companyFilter"
-            v-model="filters.companyId"
-            class="company-select-inline"
-            @change="handleCompanyFilter"
-          >
-            <option :value="null">ทุกบริษัท</option>
-            <option
-              v-for="company in companies"
-              :key="company.IC_ID"
-              :value="company.IC_ID"
-            >
-              {{ company.IC_LocalName }}
-            </option>
-          </select>
-        </div>
+      <!-- Date Range Filter (แยกบรรทัด) -->
+      <div class="mb-4">
+        <DateRangeFilter
+          v-model:dateFrom="filters.dateFrom"
+          v-model:dateTo="filters.dateTo"
+          @filter="handleDateFilter"
+        />
       </div>
 
       <!-- Filter Card - Tailwind Only -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
           <!-- Search -->
           <div class="md:col-span-2">
             <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
@@ -54,6 +34,27 @@
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @keyup.enter="fetchVehicles"
             />
+          </div>
+
+          <!-- Company Filter (Super Admin only) -->
+          <div v-if="isSuperAdmin">
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+              บริษัท
+            </label>
+            <select
+              v-model="filters.companyId"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @change="handleCompanyFilter"
+            >
+              <option :value="null">ทุกบริษัท</option>
+              <option
+                v-for="company in companies"
+                :key="company.IC_ID"
+                :value="company.IC_ID"
+              >
+                {{ company.IC_LocalName }}
+              </option>
+            </select>
           </div>
 
           <!-- Vehicle Type Filter -->
@@ -573,7 +574,7 @@
                     v-if="reprintData.vehicle.IC_LogoPath"
                     :src="`${getBackendBaseUrl()}${reprintData.vehicle.IC_LogoPath}`"
                     alt="Company Logo"
-                    style="height: 64px !important;"
+                    style="height: 48px !important;"
                     @error="(e) => { console.error('[REPRINT] Logo load error:', e); e.target.style.display = 'none'; }"
                   />
                   <div v-else class="text-gray-600 font-semibold" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
@@ -729,7 +730,7 @@
             v-if="reprintData.vehicle.IC_LogoPath"
             :src="`${getBackendBaseUrl()}${reprintData.vehicle.IC_LogoPath}`"
             alt="Company Logo"
-            style="height: 64px !important;"
+            style="height: 48px !important;"
           />
           <div v-else class="text-gray-700 font-semibold" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
         </div>

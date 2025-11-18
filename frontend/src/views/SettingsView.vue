@@ -149,12 +149,12 @@
         <!-- TAB: จัดการแผนก -->
         <template #departments>
           <BaseCard>
-            <div class="flex justify-between items-center mb-6">
+            <div class="mb-6 flex justify-between items-center">
               <div>
                 <h2 class="text-xl font-semibold text-[#1a202c]">โครงสร้างแผนก</h2>
-                <p class="text-base text-gray-500 mt-1">จัดการโครงสร้างแผนกแบบ Tree</p>
+                <p class="text-base text-gray-500 mt-1">จัดการโครงสร้างแผนกแบบ Tree ตามบริษัท</p>
               </div>
-              <BaseButton @click="openDepartmentModal" variant="primary">
+              <BaseButton variant="primary" @click="openDepartmentModal">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -273,6 +273,30 @@
     <!-- MODAL: แผนก -->
     <BaseModal :show="departmentModal.show" :title="departmentModal.title" @close="closeDepartmentModal" size="lg">
       <div class="space-y-4">
+        <!-- Company Selection -->
+        <div>
+          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            บริษัท <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="departmentForm.companyIds[0]"
+            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            required
+            :disabled="departmentModal.isEdit || departmentModal.isAddChild"
+          >
+            <option value="">เลือกบริษัท</option>
+            <option v-for="company in companies" :key="company.IC_ID" :value="company.IC_ID">
+              {{ company.IC_LocalName }} ({{ company.IC_Code }})
+            </option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1" v-if="!departmentModal.isEdit && !departmentModal.isAddChild">
+            เลือกบริษัทที่ต้องการเพิ่มแผนก
+          </p>
+          <p class="text-xs text-gray-500 mt-1" v-else>
+            ไม่สามารถเปลี่ยนบริษัทได้เมื่อแก้ไข
+          </p>
+        </div>
+
         <BaseInput v-model="departmentForm.code" label="รหัสแผนก" placeholder="เช่น IT, HR, CS" required />
         <BaseInput v-model="departmentForm.localName" label="ชื่อแผนก (ไทย)" placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ" required />
         <BaseInput v-model="departmentForm.englishName" label="ชื่อแผนก (อังกฤษ)" placeholder="เช่น Information Technology" />
@@ -299,7 +323,20 @@
             แผนกหลัก (Parent)
             <span v-if="departmentForm.type === 'office'" class="text-red-500">*</span>
           </label>
+
+          <!-- Warning: ต้องเลือกบริษัทก่อน -->
+          <div v-if="!departmentForm.companyIds || !departmentForm.companyIds[0]" class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p class="text-sm text-amber-800 font-prompt flex items-center gap-2">
+              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              กรุณาเลือกบริษัทก่อนเพื่อดูรายการแผนกหลักที่สามารถเลือกได้
+            </p>
+          </div>
+
+          <!-- Dropdown (แสดงเมื่อเลือกบริษัทแล้ว) -->
           <select
+            v-else
             v-model="departmentForm.parentId"
             class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
             :required="departmentForm.type === 'office'"
@@ -309,8 +346,9 @@
               {{ dept.ID_LocalName }} ({{ dept.ID_Code }})
             </option>
           </select>
-          <!-- Dynamic Help Text based on Type -->
-          <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+
+          <!-- Dynamic Help Text based on Type (แสดงเมื่อเลือกบริษัทแล้ว) -->
+          <div v-if="departmentForm.companyIds && departmentForm.companyIds[0]" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p class="text-xs text-blue-800 font-prompt flex items-start gap-2">
               <svg class="w-4 h-4 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -904,7 +942,7 @@ const fetchCompanyDepartments = async () => {
   }
 };
 
-// เปิด Modal เพิ่มแผนกใหม่ (Root Level)
+// เปิด Modal เพิ่มแผนกทั่วไป (จากปุ่ม "เพิ่มแผนก" ที่ header)
 const openDepartmentModal = () => {
   // Reset saving state
   departmentSaving.value = false;
@@ -918,7 +956,7 @@ const openDepartmentModal = () => {
     parentId: null,
     isActive: true,
     remarks: '',
-    companyIds: companies.value.map(c => c.IC_ID) // Default: ทุกบริษัท (เพราะไม่มี dropdown แล้ว)
+    companyIds: [] // ยังไม่ได้เลือกบริษัท
   };
 };
 
@@ -1094,13 +1132,27 @@ const handleDeleteDepartment = async (payload) => {
   }
 };
 
-// Dropdown สำหรับเลือก Parent (filter ตาม hierarchy rules)
+// Dropdown สำหรับเลือก Parent (filter ตาม hierarchy rules และบริษัท)
 const availableParents = computed(() => {
   let filtered = departments.value.filter(d => d.ID_IsActive);
 
   // ถ้าเป็นการแก้ไข: ไม่ให้เลือกตัวเองเป็น Parent
   if (departmentModal.value.isEdit) {
     filtered = filtered.filter(d => d.ID_ID !== departmentModal.value.id);
+  }
+
+  // Filter ตามบริษัท: แสดงเฉพาะแผนกที่อยู่ในบริษัทเดียวกัน
+  if (departmentForm.value.companyIds && departmentForm.value.companyIds.length > 0) {
+    // ดึง companyId แรก (สมมุติว่าเพิ่มแผนกให้กับบริษัทเดียวครั้งละบริษัท)
+    const targetCompanyId = departmentForm.value.companyIds[0];
+
+    // หา ID ของแผนกที่อยู่ในบริษัทนี้
+    const departmentIdsInCompany = companyDepartments.value
+      .filter(cd => cd.IC_ID === targetCompanyId && cd.ICD_IsActive)
+      .map(cd => cd.ID_ID);
+
+    // Filter เฉพาะแผนกที่อยู่ในบริษัทนี้
+    filtered = filtered.filter(d => departmentIdsInCompany.includes(d.ID_ID));
   }
 
   // Filter ตาม Type Hierarchy Rules
@@ -1120,12 +1172,25 @@ const availableParents = computed(() => {
   return filtered;
 });
 
-// Dropdown สำหรับเลือก Parent ในการย้าย (filter ตาม hierarchy rules)
+// Dropdown สำหรับเลือก Parent ในการย้าย (filter ตาม hierarchy rules และบริษัท)
 const availableParentsForMove = computed(() => {
   let filtered = departments.value.filter(d =>
     d.ID_ID !== moveModal.value.departmentId && // ไม่ให้เลือกตัวเอง
     d.ID_IsActive
   );
+
+  // Filter ตามบริษัท: แสดงเฉพาะแผนกที่อยู่ในบริษัทเดียวกัน
+  if (moveModal.value.companyId) {
+    const targetCompanyId = moveModal.value.companyId;
+
+    // หา ID ของแผนกที่อยู่ในบริษัทนี้
+    const departmentIdsInCompany = companyDepartments.value
+      .filter(cd => cd.IC_ID === targetCompanyId && cd.ICD_IsActive)
+      .map(cd => cd.ID_ID);
+
+    // Filter เฉพาะแผนกที่อยู่ในบริษัทนี้
+    filtered = filtered.filter(d => departmentIdsInCompany.includes(d.ID_ID));
+  }
 
   // หา Type ของแผนกที่จะย้าย
   const movingDept = departments.value.find(d => d.ID_ID === moveModal.value.departmentId);

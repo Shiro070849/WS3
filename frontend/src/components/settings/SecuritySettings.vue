@@ -6,49 +6,213 @@
         <p class="text-sm text-gray-500">จัดการการตั้งค่าความปลอดภัยของระบบ</p>
       </div>
 
-      <!-- จัดการ Admin ของบริษัท -->
-      <div class="border-t pt-6">
-        <div class="flex justify-between items-center mb-4">
-          <div>
-            <h3 class="text-lg font-semibold text-[#1a202c]">จัดการ Admin ของบริษัท</h3>
-            <p class="text-sm text-gray-500 mt-1">เพิ่ม แก้ไข หรือเปลี่ยนรหัสผ่าน Admin</p>
-          </div>
-          <BaseButton @click="openAdminModal" variant="primary" size="sm">
-            <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      <!-- Tabs Navigation -->
+      <div class="border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            @click="activeTab = 'company'"
+            :class="[
+              activeTab === 'company'
+                ? 'border-[#0090D3] text-[#0090D3]'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors'
+            ]"
+          >
+            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
-            เพิ่ม Admin
-          </BaseButton>
-        </div>
+            จัดการบริษัท
+          </button>
 
-        <BaseTable :columns="adminColumns" :data="admins" :loading="adminLoading">
-          <template #cell-SU_Active="{ value }">
-            <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
-              {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
-            </span>
-          </template>
+          <button
+            @click="activeTab = 'users'"
+            :class="[
+              activeTab === 'users'
+                ? 'border-[#0090D3] text-[#0090D3]'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors'
+            ]"
+          >
+            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            จัดการผู้ใช้งาน
+          </button>
 
-          <template #actions="{ row }">
-            <div class="flex gap-2 justify-end">
-              <button @click="openPasswordModal(row)" class="text-amber-600 hover:text-amber-800 transition-colors" title="เปลี่ยนรหัสผ่าน">
-                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-              </button>
-              <button @click="editAdmin(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
-                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button @click="deleteAdmin(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
-                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          </template>
-        </BaseTable>
+          <button
+            @click="activeTab = 'departments'"
+            :class="[
+              activeTab === 'departments'
+                ? 'border-[#0090D3] text-[#0090D3]'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors'
+            ]"
+          >
+            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            จัดการแผนก
+          </button>
+
+          <button
+            @click="activeTab = 'security'"
+            :class="[
+              activeTab === 'security'
+                ? 'border-[#0090D3] text-[#0090D3]'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors'
+            ]"
+          >
+            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            ความปลอดภัย
+          </button>
+        </nav>
       </div>
+
+      <!-- Tab Content: จัดการบริษัท -->
+      <div v-show="activeTab === 'company'">
+        <div class="pt-6">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h3 class="text-lg font-semibold text-[#1a202c]">ข้อมูลบริษัท</h3>
+              <p class="text-sm text-gray-500 mt-1">ดูและแก้ไขข้อมูลบริษัทของคุณ</p>
+            </div>
+          </div>
+
+          <div v-if="companyData" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">รหัสบริษัท</label>
+              <input v-model="companyData.IC_Code" type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อบริษัท (ไทย)</label>
+              <input v-model="companyData.IC_LocalName" type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อบริษัท (อังกฤษ)</label>
+              <input v-model="companyData.IC_EnglishName" type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">หมายเหตุ</label>
+              <textarea v-model="companyData.IC_Remarks" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent"></textarea>
+            </div>
+            <div>
+              <label class="flex items-center">
+                <input v-model="companyData.IC_IsActive" type="checkbox" class="w-4 h-4 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3]" />
+                <span class="ml-2 text-sm text-gray-700">ใช้งาน</span>
+              </label>
+            </div>
+            <div class="flex justify-end pt-4">
+              <BaseButton variant="primary" @click="saveCompanyData" :loading="companySaving">
+                บันทึกข้อมูล
+              </BaseButton>
+            </div>
+          </div>
+          <div v-else class="text-center py-12 text-gray-500">
+            ไม่พบข้อมูลบริษัท
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: จัดการผู้ใช้งาน -->
+      <div v-show="activeTab === 'users'">
+        <div class="pt-6">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h3 class="text-lg font-semibold text-[#1a202c]">รายการผู้ใช้งาน</h3>
+              <p class="text-sm text-gray-500 mt-1">จัดการข้อมูลผู้ใช้งานในบริษัทของคุณ (Administrator, SGS, SGU)</p>
+            </div>
+            <BaseButton @click="openSecurityGuardModal" variant="primary">
+              <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              เพิ่มผู้ใช้งาน
+            </BaseButton>
+          </div>
+
+          <BaseTable :columns="securityGuardColumns" :data="securityGuards" :loading="securityGuardLoading">
+            <template #cell-SU_Active="{ value }">
+              <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
+                {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
+              </span>
+            </template>
+
+            <template #actions="{ row }">
+              <div class="flex gap-2 justify-end">
+                <button @click="openSecurityGuardPasswordModal(row)" class="text-amber-600 hover:text-amber-800 transition-colors" title="เปลี่ยนรหัสผ่าน">
+                  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                </button>
+                <button @click="editSecurityGuard(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
+                  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button @click="deleteSecurityGuard(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
+                  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </template>
+          </BaseTable>
+        </div>
+      </div>
+
+      <!-- Tab Content: จัดการแผนก -->
+      <div v-show="activeTab === 'departments'">
+        <div class="pt-6">
+          <div class="mb-6 flex justify-between items-center">
+            <div>
+              <h3 class="text-lg font-semibold text-[#1a202c]">โครงสร้างแผนก</h3>
+              <p class="text-sm text-gray-500 mt-1">จัดการโครงสร้างแผนกของบริษัทคุณ</p>
+            </div>
+            <BaseButton variant="primary" @click="openDepartmentModalForCompany">
+              <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              เพิ่มแผนก
+            </BaseButton>
+          </div>
+
+          <div v-if="departmentLoading" class="flex justify-center items-center py-12">
+            <svg class="animate-spin h-8 w-8 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="ml-3 text-gray-600 font-prompt">กำลังโหลดแผนก...</span>
+          </div>
+
+          <div v-else-if="!companyData" class="text-center py-12 text-gray-500 font-prompt">
+            <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <p>ไม่มีข้อมูลบริษัท</p>
+          </div>
+
+          <div v-else>
+            <CompanyTreeNode
+              :company="companyData"
+              @add-child="handleAddChild"
+              @edit="handleEditDepartment"
+              @move="handleMoveDepartment"
+              @delete="handleDeleteDepartment"
+              @add-department="openDepartmentModalForCompany"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: ความปลอดภัย (Security Settings Only) -->
+      <div v-show="activeTab === 'security'">
+      <div class="pt-6 space-y-6">
+        <div>
+          <h3 class="text-lg font-semibold text-[#1a202c] mb-1">การตั้งค่าความปลอดภัย</h3>
+          <p class="text-sm text-gray-500">กำหนดนโยบายรหัสผ่านและความปลอดภัยของระบบ</p>
+        </div>
 
       <!-- Session Timeout -->
       <div>
@@ -187,6 +351,8 @@
           บันทึกการตั้งค่า
         </BaseButton>
       </div>
+      </div>
+      </div>
     </div>
 
     <!-- Modals ถูกย้ายไปใช้ Teleport ด้านล่าง -->
@@ -281,18 +447,16 @@
               <BaseInput v-model="adminForm.email" type="email" placeholder="email@example.com" />
             </div>
 
-            <!-- Role -->
+            <!-- Role (Fixed to Administrator) -->
             <div>
               <label class="block text-sm font-semibold text-gray-800 mb-2">บทบาท (Role)</label>
-              <select
-                v-model="adminForm.roleId"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
-              >
-                <option :value="null">-- เลือกบทบาท --</option>
-                <option v-for="role in roles" :key="role.SR_ID" :value="role.SR_ID">
-                  {{ role.SR_Name }} ({{ role.SR_Code }})
-                </option>
-              </select>
+              <div class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">Administrator (ADM)</span>
+                  <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">ค่าเริ่มต้น</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">บทบาทสำหรับผู้ดูแลระบบของบริษัท (ไม่สามารถเปลี่ยนได้)</p>
+              </div>
             </div>
 
             <!-- สถานะ -->
@@ -461,6 +625,259 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Modal: เพิ่ม/แก้ไข ผู้ใช้งาน (Security Guard/Administrator) -->
+    <Teleport to="body">
+      <div v-if="securityGuardModal.show" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);" @click.self="securityGuardModal.show = false">
+        <div class="browser-modal">
+          <!-- Browser Tabs Header -->
+          <div class="tabs-head">
+            <div class="tabs">
+              <div class="tab-open">
+                <span>{{ securityGuardModal.title }}</span>
+                <button @click="securityGuardModal.show = false" class="close-tab">✕</button>
+              </div>
+            </div>
+            <div class="window-opt">
+              <button>−</button>
+              <button>□</button>
+              <button @click="securityGuardModal.show = false" class="window-close">✕</button>
+            </div>
+          </div>
+
+          <!-- Browser URL Bar -->
+          <div class="head-browser">
+            <button disabled>←</button>
+            <button disabled>→</button>
+            <div class="url-bar">
+              <span class="url-text">{{ securityGuardModal.isEdit ? 'user/edit' : 'user/create' }}</span>
+              <button class="star">★</button>
+            </div>
+            <button>⋮</button>
+          </div>
+
+          <!-- Content Area -->
+          <div class="browser-content">
+            <!-- รหัส -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">รหัส <span class="text-red-500">*</span></label>
+              <BaseInput v-model="securityGuardForm.code" placeholder="เช่น ADM001, SGS001, SGU001" />
+            </div>
+
+            <!-- ชื่อเต็ม -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">ชื่อเต็ม <span class="text-red-500">*</span></label>
+              <BaseInput v-model="securityGuardForm.name1" placeholder="เช่น Simpletech, MRG Administrator, Ruxchai Administrator" />
+            </div>
+
+            <!-- ชื่อย่อ -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">ชื่อย่อ</label>
+              <BaseInput v-model="securityGuardForm.name2" placeholder="เช่น SPT, MRG Admin (Optional)" />
+            </div>
+
+            <!-- Username -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">Username <span class="text-red-500">*</span></label>
+              <BaseInput v-model="securityGuardForm.username" placeholder="username" />
+            </div>
+
+            <!-- Password -->
+            <div v-if="!securityGuardModal.isEdit">
+              <label class="block text-sm font-semibold text-gray-800 mb-2">Password <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <BaseInput
+                  v-model="securityGuardForm.password"
+                  :type="showSecurityGuardPassword ? 'text' : 'password'"
+                  placeholder="รหัสผ่าน"
+                />
+                <button
+                  @click="showSecurityGuardPassword = !showSecurityGuardPassword"
+                  type="button"
+                  class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <svg v-if="!showSecurityGuardPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">Email</label>
+              <BaseInput v-model="securityGuardForm.email" type="email" placeholder="email@example.com" />
+            </div>
+
+            <!-- Role Selector -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">บทบาท (Role) <span class="text-red-500">*</span></label>
+              <select
+                v-model="securityGuardForm.roleId"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
+              >
+                <option :value="SYSTEM_ROLES.ADMINISTRATOR">Administrator (ADM) - ผู้ดูแลระบบบริษัท</option>
+                <option :value="SYSTEM_ROLES.SGS">Security Guard Supervisor (SGS) - หัวหน้ารปภ.</option>
+                <option :value="SYSTEM_ROLES.SGU">Security Guard User (SGU) - รปภ.</option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">เลือกบทบาทของผู้ใช้งานในระบบ</p>
+            </div>
+
+            <!-- สถานะ -->
+            <div class="pt-2">
+              <label class="flex items-center cursor-pointer group">
+                <input
+                  v-model="securityGuardForm.active"
+                  type="checkbox"
+                  class="w-5 h-5 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3] focus:ring-2 transition-all"
+                />
+                <span class="ml-3 text-sm font-medium text-gray-800 group-hover:text-[#0090D3] transition-colors">เปิดใช้งาน</span>
+              </label>
+            </div>
+
+            <!-- หมายเหตุ -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">หมายเหตุ</label>
+              <textarea
+                v-model="securityGuardForm.remarks"
+                rows="3"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
+                placeholder="หมายเหตุเพิ่มเติม"
+              ></textarea>
+            </div>
+
+            <!-- ปุ่ม -->
+            <div class="flex justify-end gap-4 px-6 py-4 border-t bg-gray-50">
+              <BaseButton variant="secondary" @click="securityGuardModal.show = false" class="min-w-[100px]">ยกเลิก</BaseButton>
+              <BaseButton variant="primary" @click="saveSecurityGuard" class="min-w-[100px]">บันทึก</BaseButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal: เปลี่ยนรหัสผ่านผู้ใช้งาน -->
+    <Teleport to="body">
+      <div v-if="securityGuardPasswordModal.show" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);" @click.self="securityGuardPasswordModal.show = false">
+        <div class="browser-modal">
+          <!-- Browser Tabs Header -->
+          <div class="tabs-head">
+            <div class="tabs">
+              <div class="tab-open">
+                <span>{{ securityGuardPasswordModal.title }}</span>
+                <button @click="securityGuardPasswordModal.show = false" class="close-tab">✕</button>
+              </div>
+            </div>
+            <div class="window-opt">
+              <button>−</button>
+              <button>□</button>
+              <button @click="securityGuardPasswordModal.show = false" class="window-close">✕</button>
+            </div>
+          </div>
+
+          <!-- Browser URL Bar -->
+          <div class="head-browser">
+            <button disabled>←</button>
+            <button disabled>→</button>
+            <div class="url-bar">
+              <span class="url-text">password/change</span>
+              <button class="star">★</button>
+            </div>
+            <button>⋮</button>
+          </div>
+
+          <!-- Content Area -->
+          <div class="browser-content">
+            <!-- ข้อมูล User -->
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl mb-4 border border-blue-100 shadow-sm">
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div class="text-gray-700 font-medium">ชื่อ:</div>
+                <div class="font-bold text-gray-900">{{ securityGuardPasswordForm.name }}</div>
+                <div class="text-gray-700 font-medium">Username:</div>
+                <div class="font-bold text-gray-900">{{ securityGuardPasswordForm.username }}</div>
+                <div class="text-gray-700 font-medium">บริษัท:</div>
+                <div class="font-bold text-gray-900">{{ securityGuardPasswordForm.companyName }}</div>
+              </div>
+            </div>
+
+            <!-- คำเตือน -->
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-5 mb-4 rounded-lg shadow-sm">
+              <div class="flex">
+                <svg class="w-6 h-6 text-amber-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <div>
+                  <p class="text-sm text-amber-800 font-bold">คำเตือน</p>
+                  <p class="text-sm text-amber-700 mt-1 leading-relaxed">การเปลี่ยนรหัสผ่านจะมีผลทันที และระบบจะบันทึกประวัติการเปลี่ยนแปลง</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- รหัสผ่านใหม่ -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">รหัสผ่านใหม่ <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <BaseInput
+                  v-model="securityGuardPasswordForm.newPassword"
+                  :type="showNewPassword ? 'text' : 'password'"
+                  placeholder="กรอกรหัสผ่านใหม่"
+                />
+                <button
+                  @click="showNewPassword = !showNewPassword"
+                  type="button"
+                  class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <svg v-if="!showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- ยืนยันรหัสผ่านใหม่ -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-800 mb-2">ยืนยันรหัสผ่านใหม่ <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <BaseInput
+                  v-model="securityGuardPasswordForm.confirmPassword"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
+                />
+                <button
+                  @click="showConfirmPassword = !showConfirmPassword"
+                  type="button"
+                  class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <svg v-if="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- ปุ่ม -->
+            <div class="flex justify-end gap-4 px-6 py-4 border-t bg-gray-50">
+              <BaseButton variant="secondary" @click="securityGuardPasswordModal.show = false" class="min-w-[100px]">ยกเลิก</BaseButton>
+              <BaseButton variant="primary" @click="saveSecurityGuardPassword" class="min-w-[100px]">
+                เปลี่ยนรหัสผ่าน
+              </BaseButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </BaseCard>
 </template>
 
@@ -470,7 +887,9 @@ import BaseCard from '../base/BaseCard.vue';
 import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import BaseTable from '../base/BaseTable.vue';
-import { systemSettingsAPI, usersAPI, rolesAPI } from '@/services/api';
+import { systemSettingsAPI, usersAPI, companiesAPI, departmentsAPI } from '@/services/api';
+import { SYSTEM_ROLES } from '@/constants/roles';
+import CompanyTreeNode from './CompanyTreeNode.vue';
 
 const props = defineProps({
   companyId: {
@@ -478,6 +897,281 @@ const props = defineProps({
     required: true
   }
 });
+
+// Active tab state
+const activeTab = ref('company');
+
+// ==================== Company Management ====================
+const companyData = ref(null);
+const companySaving = ref(false);
+
+const fetchCompanyData = async () => {
+  try {
+    const response = await companiesAPI.getById(props.companyId);
+    companyData.value = response.data.data;
+  } catch (error) {
+    console.error('[SecuritySettings] Error fetching company data:', error);
+  }
+};
+
+const saveCompanyData = async () => {
+  try {
+    companySaving.value = true;
+    await companiesAPI.update(props.companyId, {
+      code: companyData.value.IC_Code,
+      localName: companyData.value.IC_LocalName,
+      englishName: companyData.value.IC_EnglishName,
+      isActive: companyData.value.IC_IsActive,
+      remarks: companyData.value.IC_Remarks
+    });
+    alert('บันทึกข้อมูลบริษัทสำเร็จ');
+    fetchCompanyData();
+  } catch (error) {
+    console.error('[SecuritySettings] Error saving company:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  } finally {
+    companySaving.value = false;
+  }
+};
+
+// ==================== Security Guard Management ====================
+const securityGuards = ref([]);
+const securityGuardLoading = ref(false);
+const securityGuardModal = ref({ show: false, isEdit: false, title: '', id: null });
+const securityGuardForm = ref({
+  code: '', name1: '', name2: '', username: '', password: '',
+  email: '', active: true, remarks: '', roleId: null
+});
+const securityGuardPasswordModal = ref({ show: false, title: '', id: null });
+const securityGuardPasswordForm = ref({
+  name: '', username: '', companyName: '', newPassword: '', confirmPassword: ''
+});
+const showSecurityGuardPassword = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
+
+const securityGuardColumns = [
+  { key: 'SU_Code', label: 'รหัส' },
+  { key: 'SU_Name1', label: 'ชื่อ' },
+  { key: 'SR_Name', label: 'Role' },
+  { key: 'SU_Username', label: 'Username' },
+  { key: 'SU_Email', label: 'Email' },
+  { key: 'SU_Active', label: 'สถานะ' }
+];
+
+const fetchSecurityGuards = async () => {
+  securityGuardLoading.value = true;
+  try {
+    const response = await usersAPI.getAll();
+    if (response.data.success) {
+      // Filter: แสดงเฉพาะผู้ใช้ในบริษัทนี้ (ADMINISTRATOR, SGS, SGU)
+      securityGuards.value = response.data.data.filter(user =>
+        user.IC_ID === props.companyId &&
+        (user.SR_ID === SYSTEM_ROLES.ADMINISTRATOR || user.SR_ID === SYSTEM_ROLES.SGS || user.SR_ID === SYSTEM_ROLES.SGU)
+      );
+    }
+  } catch (error) {
+    console.error('[SecuritySettings] Error fetching security guards:', error);
+  } finally {
+    securityGuardLoading.value = false;
+  }
+};
+
+const openSecurityGuardModal = () => {
+  securityGuardModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งาน', id: null };
+  securityGuardForm.value = {
+    code: '', name1: '', name2: '', username: '', password: '',
+    email: '', active: true, remarks: '', roleId: SYSTEM_ROLES.ADMINISTRATOR
+  };
+};
+
+const editSecurityGuard = (row) => {
+  securityGuardModal.value = { show: true, isEdit: true, title: 'แก้ไขผู้ใช้งาน', id: row.SU_ID };
+  securityGuardForm.value = {
+    code: row.SU_Code,
+    name1: row.SU_Name1,
+    name2: row.SU_Name2 || '',
+    username: row.SU_Username,
+    password: '',
+    email: row.SU_Email || '',
+    active: row.SU_Active,
+    remarks: row.SU_Remarks || '',
+    roleId: row.SR_ID
+  };
+};
+
+const saveSecurityGuard = async () => {
+  try {
+    const data = {
+      code: securityGuardForm.value.code,
+      name1: securityGuardForm.value.name1,
+      name2: securityGuardForm.value.name2,
+      username: securityGuardForm.value.username,
+      password: securityGuardForm.value.password,
+      email: securityGuardForm.value.email,
+      active: securityGuardForm.value.active,
+      remarks: securityGuardForm.value.remarks,
+      companyId: props.companyId,
+      roleId: securityGuardForm.value.roleId
+    };
+
+    if (securityGuardModal.value.isEdit) {
+      await usersAPI.update(securityGuardModal.value.id, data);
+      alert('แก้ไขข้อมูลสำเร็จ');
+    } else {
+      await usersAPI.create(data);
+      alert('เพิ่ม Security Guard สำเร็จ');
+    }
+
+    securityGuardModal.value.show = false;
+    fetchSecurityGuards();
+  } catch (error) {
+    console.error('[SecuritySettings] Error saving security guard:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+const deleteSecurityGuard = async (row) => {
+  if (!confirm(`ต้องการลบ "${row.SU_Name1}" ใช่หรือไม่?`)) return;
+
+  try {
+    await usersAPI.delete(row.SU_ID);
+    alert('ลบสำเร็จ');
+    fetchSecurityGuards();
+  } catch (error) {
+    console.error('[SecuritySettings] Error deleting security guard:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+const openSecurityGuardPasswordModal = (row) => {
+  securityGuardPasswordModal.value = { show: true, title: 'เปลี่ยนรหัสผ่าน', id: row.SU_ID };
+  securityGuardPasswordForm.value = {
+    name: row.SU_Name1,
+    username: row.SU_Username,
+    companyName: companyData.value?.IC_LocalName || '',
+    newPassword: '',
+    confirmPassword: ''
+  };
+};
+
+const saveSecurityGuardPassword = async () => {
+  // Validation
+  if (!securityGuardPasswordForm.value.newPassword) {
+    alert('กรุณากรอกรหัสผ่านใหม่');
+    return;
+  }
+
+  if (securityGuardPasswordForm.value.newPassword !== securityGuardPasswordForm.value.confirmPassword) {
+    alert('รหัสผ่านไม่ตรงกัน');
+    return;
+  }
+
+  if (securityGuardPasswordForm.value.newPassword.length < 6) {
+    alert('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+    return;
+  }
+
+  try {
+    await usersAPI.resetPassword(securityGuardPasswordModal.value.id, {
+      newPassword: securityGuardPasswordForm.value.newPassword
+    });
+    alert('เปลี่ยนรหัสผ่านสำเร็จ');
+    securityGuardPasswordModal.value.show = false;
+  } catch (error) {
+    console.error('[SecuritySettings] Error changing password:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+// ==================== Department Management ====================
+const departments = ref([]);
+const departmentLoading = ref(false);
+const departmentModal = ref({ show: false, isEdit: false, title: '', id: null, isAddChild: false, parentId: null });
+const departmentForm = ref({
+  code: '', localName: '', englishName: '', type: 'department',
+  parentId: null, isActive: true, remarks: '', companyIds: []
+});
+const companyDepartments = ref([]);
+
+const fetchDepartments = async () => {
+  try {
+    const response = await departmentsAPI.getAll();
+    departments.value = response.data.data;
+  } catch (error) {
+    console.error('[SecuritySettings] Error fetching departments:', error);
+  }
+};
+
+const fetchCompanyDepartments = async () => {
+  try {
+    const response = await departmentsAPI.getCompanyDepartments();
+    companyDepartments.value = response.data.data;
+  } catch (error) {
+    console.error('[SecuritySettings] Error fetching company-department relations:', error);
+  }
+};
+
+const openDepartmentModalForCompany = () => {
+  departmentModal.value = { show: true, isEdit: false, title: 'เพิ่มแผนกใหม่', id: null, isAddChild: false, parentId: null };
+  departmentForm.value = {
+    code: '', localName: '', englishName: '', type: 'department',
+    parentId: null, isActive: true, remarks: '', companyIds: [props.companyId]
+  };
+};
+
+const handleAddChild = (payload) => {
+  const { node: parentNode, company } = payload;
+  departmentModal.value = {
+    show: true, isEdit: false,
+    title: `เพิ่มแผนกภายใต้ "${parentNode.ID_LocalName}"`,
+    id: null, isAddChild: true, parentId: parentNode.ID_ID
+  };
+  departmentForm.value = {
+    code: '', localName: '', englishName: '', type: 'department',
+    parentId: parentNode.ID_ID, isActive: true, remarks: '',
+    companyIds: [props.companyId]
+  };
+};
+
+const handleEditDepartment = (payload) => {
+  const { node, company } = payload;
+  departmentModal.value = { show: true, isEdit: true, title: 'แก้ไขแผนก', id: node.ID_ID, isAddChild: false, parentId: node.Parent_ID_ID };
+  departmentForm.value = {
+    code: node.ID_Code,
+    localName: node.ID_LocalName,
+    englishName: node.ID_EnglishName,
+    type: node.ID_Type || 'department',
+    parentId: node.Parent_ID_ID,
+    isActive: node.ID_IsActive,
+    remarks: node.ID_Remarks || '',
+    companyIds: [props.companyId]
+  };
+};
+
+const handleMoveDepartment = (payload) => {
+  // Implement move department logic
+  console.log('Move department:', payload);
+};
+
+const handleDeleteDepartment = async (payload) => {
+  const { node } = payload;
+  if (node.children && node.children.length > 0) {
+    alert(`ไม่สามารถลบแผนก "${node.ID_LocalName}" ได้ เนื่องจากมีแผนกย่อยอยู่ภายใต้`);
+    return;
+  }
+
+  if (!confirm(`ต้องการลบแผนก "${node.ID_LocalName}" ใช่หรือไม่?`)) return;
+
+  try {
+    await departmentsAPI.delete(node.ID_ID);
+    alert('ลบแผนกสำเร็จ');
+    window.location.reload();
+  } catch (error) {
+    console.error('[SecuritySettings] Error deleting department:', error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
 
 const settings = ref({
   sessionTimeout: 1440,
@@ -502,8 +1196,6 @@ const adminForm = ref({
   code: '', name1: '', name2: '', username: '', password: '',
   email: '', active: true, remarks: '', roleId: null
 });
-const roles = ref([]);
-
 const passwordModal = ref({ show: false, title: 'เปลี่ยนรหัสผ่าน', id: null });
 const passwordForm = ref({
   name: '', username: '', companyName: '', newPassword: '', confirmPassword: ''
@@ -520,50 +1212,31 @@ const adminColumns = [
   { key: 'SU_Active', label: 'สถานะ' }
 ];
 
-// Fetch roles for dropdown
-const fetchRoles = async () => {
-  try {
-    const response = await rolesAPI.getAll();
-    if (response.data.success) {
-      roles.value = response.data.data;
-      console.log('[SecuritySettings] Roles fetched:', roles.value.length);
-    }
-  } catch (error) {
-    console.error('[SecuritySettings] Error fetching roles:', error);
-  }
-};
-
-// Fetch admins by companyId (only company admins, excludes Super Admin)
+// Fetch Administrators only (ดึงเฉพาะ Administrator ของบริษัท)
 const fetchAdmins = async () => {
   adminLoading.value = true;
   try {
-    console.log('[SecuritySettings] Fetching admins for companyId:', props.companyId);
+    console.log('[SecuritySettings] Fetching administrators for companyId:', props.companyId);
     const response = await usersAPI.getAll();
 
     if (response.data.success) {
-      // Filter: Only show Company Admins (IC_ID matches company)
-      // Exclude Super Admin (IC_ID = NULL)
       const allUsers = response.data.data;
-      admins.value = allUsers.filter(user => {
-        // Only show admins that belong to this specific company
-        // Pattern matching: Check multiple patterns (case-insensitive)
-        const code = (user.SU_Code || '').toUpperCase();
-        const name = (user.SU_Name1 || '').toLowerCase();
 
-        const isAdmin = code.includes('ADM') ||
-                       code.includes('ADMIN') ||
-                       name.includes('admin') ||
-                       name.includes('administrator') ||
-                       name.includes('ผู้ดูแล');
+      // Filter: แสดงเฉพาะ Administrator ที่อยู่ในบริษัทนี้
+      // - IC_ID ตรงกับบริษัทปัจจุบัน
+      // - SR_ID = ADMINISTRATOR
+      admins.value = allUsers.filter(user =>
+        user.IC_ID === props.companyId &&
+        user.SR_ID === SYSTEM_ROLES.ADMINISTRATOR
+      );
 
-        return user.IC_ID === props.companyId && isAdmin;
-      });
-
-      console.log('[SecuritySettings] Company Admins fetched:', admins.value.length);
-      console.log('[SecuritySettings] Admins:', admins.value.map(a => `${a.SU_Code} (IC_ID=${a.IC_ID})`));
+      console.log('[SecuritySettings] Administrators fetched:', admins.value.length);
+      console.log('[SecuritySettings] Admins:', admins.value.map(u =>
+        `${u.SU_Code} (IC_ID=${u.IC_ID}, SR_ID=${u.SR_ID}, Role=${u.SR_Name || 'N/A'})`
+      ));
     }
   } catch (error) {
-    console.error('[SecuritySettings] Error fetching admins:', error);
+    console.error('[SecuritySettings] Error fetching administrators:', error);
   } finally {
     adminLoading.value = false;
   }
@@ -573,7 +1246,7 @@ const openAdminModal = () => {
   adminModal.value = {
     show: true,
     isEdit: false,
-    title: 'เพิ่ม Admin',
+    title: 'เพิ่ม Administrator',
     id: null
   };
   adminForm.value = {
@@ -585,7 +1258,7 @@ const openAdminModal = () => {
     email: '',
     active: true,
     remarks: '',
-    roleId: null
+    roleId: SYSTEM_ROLES.ADMINISTRATOR
   };
 };
 
@@ -593,7 +1266,7 @@ const editAdmin = (row) => {
   adminModal.value = {
     show: true,
     isEdit: true,
-    title: 'แก้ไข Admin',
+    title: 'แก้ไข Administrator',
     id: row.SU_ID
   };
   adminForm.value = {
@@ -605,7 +1278,7 @@ const editAdmin = (row) => {
     email: row.SU_Email || '',
     active: row.SU_Active,
     remarks: row.SU_Remarks || '',
-    roleId: row.SR_ID || null
+    roleId: SYSTEM_ROLES.ADMINISTRATOR
   };
 };
 
@@ -615,20 +1288,44 @@ const closeAdminModal = () => {
 
 const saveAdmin = async () => {
   try {
-    // Validation
-    if (!adminForm.value.code || !adminForm.value.name1 || !adminForm.value.username) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+    // === Validation: Required Fields ===
+    if (!adminForm.value.code?.trim()) {
+      alert('กรุณากรอกรหัส');
+      return;
+    }
+    if (!adminForm.value.name1?.trim()) {
+      alert('กรุณากรอกชื่อ');
+      return;
+    }
+    if (!adminForm.value.username?.trim()) {
+      alert('กรุณากรอก Username');
       return;
     }
 
-    // Password validation for new admin
+    // === Validation: Code Format ===
+    if (adminForm.value.code.trim().length < 3) {
+      alert('รหัสต้องมีความยาวอย่างน้อย 3 ตัวอักษร');
+      return;
+    }
+
+    // === Validation: Username Format ===
+    if (adminForm.value.username.trim().length < 3) {
+      alert('Username ต้องมีความยาวอย่างน้อย 3 ตัวอักษร');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(adminForm.value.username.trim())) {
+      alert('Username สามารถใช้ได้เฉพาะตัวอักษร A-Z, a-z, 0-9 และ _ เท่านั้น');
+      return;
+    }
+
+    // === Validation: Password (for new admin) ===
     if (!adminModal.value.isEdit && !adminForm.value.password) {
       alert('กรุณากรอกรหัสผ่าน');
       return;
     }
 
+    // === Validation: Password Strength ===
     if (adminForm.value.password) {
-      // Validate password
       if (adminForm.value.password.length < 8 || adminForm.value.password.length > 50) {
         alert('รหัสผ่านต้องมีความยาว 8-50 ตัวอักษร');
         return;
@@ -647,46 +1344,68 @@ const saveAdmin = async () => {
       }
     }
 
+    // === Validation: Email Format ===
+    if (adminForm.value.email && adminForm.value.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(adminForm.value.email.trim())) {
+        alert('รูปแบบ Email ไม่ถูกต้อง');
+        return;
+      }
+    }
+
+    // === Prepare Data ===
     const data = {
-      code: adminForm.value.code,
-      name1: adminForm.value.name1,
-      name2: adminForm.value.name2,
-      username: adminForm.value.username,
+      code: adminForm.value.code.trim(),
+      name1: adminForm.value.name1.trim(),
+      name2: adminForm.value.name2?.trim() || '',
+      username: adminForm.value.username.trim(),
       password: adminForm.value.password,
-      email: adminForm.value.email,
+      email: adminForm.value.email?.trim() || '',
       active: adminForm.value.active,
-      remarks: adminForm.value.remarks,
+      remarks: adminForm.value.remarks?.trim() || '',
       companyId: props.companyId,
-      roleId: adminForm.value.roleId
+      roleId: SYSTEM_ROLES.ADMINISTRATOR
     };
 
+    // === Save to Backend ===
     if (adminModal.value.isEdit) {
       await usersAPI.update(adminModal.value.id, data);
-      alert('แก้ไขข้อมูล Admin สำเร็จ');
+      alert('แก้ไขข้อมูล Administrator สำเร็จ');
+      console.log('[SecuritySettings] Administrator updated:', data.code);
     } else {
       await usersAPI.create(data);
-      alert('เพิ่ม Admin สำเร็จ');
+      alert('เพิ่ม Administrator สำเร็จ');
+      console.log('[SecuritySettings] Administrator created:', data.code);
     }
 
     closeAdminModal();
     fetchAdmins();
   } catch (error) {
-    console.error('Error saving admin:', error);
-    alert('เกิดข้อผิดพลาดในการบันทึก: ' + (error.response?.data?.message || error.message));
+    console.error('[SecuritySettings] Error saving administrator:', error);
+
+    // Better error messages
+    let errorMessage = 'เกิดข้อผิดพลาดในการบันทึก';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    alert(errorMessage);
   }
 };
 
 const deleteAdmin = async (row) => {
-  if (!confirm(`คุณต้องการลบ Admin "${row.SU_Name1}" ใช่หรือไม่?`)) {
+  if (!confirm(`คุณต้องการลบ Administrator "${row.SU_Name1}" ใช่หรือไม่?`)) {
     return;
   }
 
   try {
     await usersAPI.delete(row.SU_ID);
-    alert('ลบ Admin สำเร็จ');
+    alert('ลบ Administrator สำเร็จ');
     fetchAdmins();
   } catch (error) {
-    console.error('Error deleting admin:', error);
+    console.error('Error deleting administrator:', error);
     alert('เกิดข้อผิดพลาดในการลบ');
   }
 };
@@ -804,16 +1523,23 @@ const saveSettings = async () => {
   }
 };
 
-// Watch companyId changes to reload admins
+// Watch companyId changes to reload all data
 watch(() => props.companyId, () => {
   fetchAdmins();
   loadSettings();
+  fetchCompanyData();
+  fetchSecurityGuards();
+  fetchDepartments();
+  fetchCompanyDepartments();
 });
 
 onMounted(() => {
   loadSettings();
   fetchAdmins();
-  fetchRoles();
+  fetchCompanyData();
+  fetchSecurityGuards();
+  fetchDepartments();
+  fetchCompanyDepartments();
 });
 </script>
 

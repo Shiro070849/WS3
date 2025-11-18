@@ -85,7 +85,7 @@ const props = defineProps({
 
 const emit = defineEmits(['add-child', 'edit', 'move', 'delete', 'add-department']);
 
-const isExpanded = ref(true); // เปิดทุกบริษัทโดย default
+const isExpanded = ref(false); // ปิดไว้ตั้งแต่เริ่มต้น ให้ผู้ใช้กดเปิดเอง
 const loading = ref(false);
 const departmentTree = ref([]);
 
@@ -114,8 +114,7 @@ const fetchDepartments = async () => {
   }
 };
 
-// Auto-fetch เมื่อ mount (เพราะ default = expanded)
-fetchDepartments();
+// ไม่ Auto-fetch เมื่อ mount เพราะ default = collapsed ให้ผู้ใช้กดเปิดเอง
 
 // Event Handlers - เพิ่ม company context ก่อน emit ขึ้นไป
 const handleAddChild = (node) => {
