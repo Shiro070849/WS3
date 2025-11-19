@@ -35,7 +35,7 @@
 
       <!-- Actions -->
       <div class="node-actions">
-        <button @click="$emit('edit', node)" class="action-btn action-view" title="ดู">
+        <button @click="$emit('view', node)" class="action-btn action-view" title="ดู">
           <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -73,6 +73,7 @@
         :level="level + 1"
         :index="index"
         @add-child="$emit('add-child', $event)"
+        @view="$emit('view', $event)"
         @edit="$emit('edit', $event)"
         @move="$emit('move', $event)"
         @delete="$emit('delete', $event)"
@@ -99,7 +100,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['add-child', 'edit', 'move', 'delete']);
+defineEmits(['add-child', 'view', 'edit', 'move', 'delete']);
 
 // Expand/Collapse State
 const isExpanded = ref(true); // เปิดทุก node โดย default

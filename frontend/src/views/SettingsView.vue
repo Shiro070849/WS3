@@ -1031,7 +1031,13 @@ const closeDepartmentModal = () => {
 
 // บันทึกแผนก (สร้างใหม่ หรือ แก้ไข)
 const saveDepartment = async () => {
-  // Frontend Validation: office type must have parent
+  // Validation 1: ต้องเลือกบริษัท (สำหรับการสร้างใหม่)
+  if (!departmentModal.value.isEdit && (!departmentForm.value.companyIds || !departmentForm.value.companyIds[0])) {
+    warning('กรุณาเลือกบริษัท');
+    return;
+  }
+
+  // Validation 2: office type must have parent
   if (departmentForm.value.type === 'office' && !departmentForm.value.parentId) {
     warning('สำนักจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
     return;
@@ -1050,20 +1056,14 @@ const saveDepartment = async () => {
     };
 
     if (departmentModal.value.isEdit) {
+      // แก้ไขแผนก - ไม่ต้องส่ง companyId
       await departmentsAPI.update(departmentModal.value.id, payload);
       success('บันทึกข้อมูลสำเร็จ');
     } else {
-      // สร้างแผนกใหม่
+      // สร้างแผนกใหม่ - ส่ง companyId ใน payload เพื่อให้ backend ทำ transaction
+      payload.companyId = departmentForm.value.companyIds[0];
+
       const result = await departmentsAPI.create(payload);
-      const newDepartmentId = result.data.data.ID_ID;
-
-      // เชื่อมกับบริษัทที่เลือกใน companyIds
-      if (departmentForm.value.companyIds && departmentForm.value.companyIds.length > 0) {
-        for (const companyId of departmentForm.value.companyIds) {
-          await departmentsAPI.linkToCompany(newDepartmentId, companyId);
-        }
-      }
-
       success('สร้างแผนกใหม่สำเร็จ');
     }
 

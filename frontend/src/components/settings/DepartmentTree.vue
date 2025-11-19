@@ -11,6 +11,7 @@
         :level="0"
         :index="index"
         @add-child="$emit('add-child', $event)"
+        @view="$emit('view', $event)"
         @edit="$emit('edit', $event)"
         @move="$emit('move', $event)"
         @delete="$emit('delete', $event)"
@@ -38,7 +39,7 @@ defineProps({
   }
 });
 
-defineEmits(['add-child', 'edit', 'move', 'delete']);
+defineEmits(['add-child', 'view', 'edit', 'move', 'delete']);
 </script>
 
 <style scoped>

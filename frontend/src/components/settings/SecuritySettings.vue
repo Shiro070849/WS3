@@ -197,6 +197,7 @@
             <CompanyTreeNode
               :company="companyData"
               @add-child="handleAddChild"
+              @view="handleViewDepartment"
               @edit="handleEditDepartment"
               @move="handleMoveDepartment"
               @delete="handleDeleteDepartment"
@@ -878,6 +879,46 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Department Modal -->
+    <BaseModal :show="departmentModal.show" :title="departmentModal.title" @close="departmentModal.show = false" size="lg">
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <BaseInput v-model="departmentForm.code" label="รหัสแผนก" placeholder="เช่น AD, EN" required :disabled="departmentModal.isReadOnly" />
+          <div>
+            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+              ประเภท <span class="text-red-500">*</span>
+            </label>
+            <select v-model="departmentForm.type" :disabled="departmentModal.isReadOnly" class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt disabled:bg-gray-100 disabled:cursor-not-allowed">
+              <option value="branch">สาขา (Branch)</option>
+              <option value="office">สำนัก (Office)</option>
+              <option value="department">ฝ่าย/แผนก (Department)</option>
+            </select>
+          </div>
+        </div>
+
+        <BaseInput v-model="departmentForm.localName" label="ชื่อแผนก (ไทย)" placeholder="เช่น ฝ่ายธุรการ" required :disabled="departmentModal.isReadOnly" />
+        <BaseInput v-model="departmentForm.englishName" label="ชื่อแผนก (อังกฤษ)" placeholder="เช่น Administration" :disabled="departmentModal.isReadOnly" />
+
+        <div>
+          <label class="flex items-center">
+            <input v-model="departmentForm.isActive" type="checkbox" :disabled="departmentModal.isReadOnly" class="w-4 h-4 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3] disabled:cursor-not-allowed" />
+            <span class="ml-2 text-sm text-gray-700">ใช้งาน</span>
+          </label>
+        </div>
+
+        <BaseInput v-model="departmentForm.remarks" label="หมายเหตุ" placeholder="หมายเหตุเพิ่มเติม" :disabled="departmentModal.isReadOnly" />
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="departmentModal.show = false">{{ departmentModal.isReadOnly ? 'ปิด' : 'ยกเลิก' }}</BaseButton>
+          <BaseButton v-if="!departmentModal.isReadOnly" variant="primary" @click="saveDepartment" :loading="departmentSaving">
+            {{ departmentModal.isEdit ? 'บันทึก' : 'สร้าง' }}
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </BaseCard>
 </template>
 
@@ -887,6 +928,7 @@ import BaseCard from '../base/BaseCard.vue';
 import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import BaseTable from '../base/BaseTable.vue';
+import BaseModal from '../base/BaseModal.vue';
 import { systemSettingsAPI, usersAPI, companiesAPI, departmentsAPI } from '@/services/api';
 import { SYSTEM_ROLES } from '@/constants/roles';
 import CompanyTreeNode from './CompanyTreeNode.vue';
@@ -1087,7 +1129,7 @@ const saveSecurityGuardPassword = async () => {
 // ==================== Department Management ====================
 const departments = ref([]);
 const departmentLoading = ref(false);
-const departmentModal = ref({ show: false, isEdit: false, title: '', id: null, isAddChild: false, parentId: null });
+const departmentModal = ref({ show: false, isEdit: false, isReadOnly: false, title: '', id: null, isAddChild: false, parentId: null });
 const departmentForm = ref({
   code: '', localName: '', englishName: '', type: 'department',
   parentId: null, isActive: true, remarks: '', companyIds: []
@@ -1113,7 +1155,7 @@ const fetchCompanyDepartments = async () => {
 };
 
 const openDepartmentModalForCompany = () => {
-  departmentModal.value = { show: true, isEdit: false, title: 'เพิ่มแผนกใหม่', id: null, isAddChild: false, parentId: null };
+  departmentModal.value = { show: true, isEdit: false, isReadOnly: false, title: 'เพิ่มแผนกใหม่', id: null, isAddChild: false, parentId: null };
   departmentForm.value = {
     code: '', localName: '', englishName: '', type: 'department',
     parentId: null, isActive: true, remarks: '', companyIds: [props.companyId]
@@ -1123,7 +1165,7 @@ const openDepartmentModalForCompany = () => {
 const handleAddChild = (payload) => {
   const { node: parentNode, company } = payload;
   departmentModal.value = {
-    show: true, isEdit: false,
+    show: true, isEdit: false, isReadOnly: false,
     title: `เพิ่มแผนกภายใต้ "${parentNode.ID_LocalName}"`,
     id: null, isAddChild: true, parentId: parentNode.ID_ID
   };
@@ -1134,9 +1176,24 @@ const handleAddChild = (payload) => {
   };
 };
 
+const handleViewDepartment = (payload) => {
+  const { node, company } = payload;
+  departmentModal.value = { show: true, isEdit: false, isReadOnly: true, title: 'ดูข้อมูลแผนก', id: node.ID_ID, isAddChild: false, parentId: node.Parent_ID_ID };
+  departmentForm.value = {
+    code: node.ID_Code,
+    localName: node.ID_LocalName,
+    englishName: node.ID_EnglishName,
+    type: node.ID_Type || 'department',
+    parentId: node.Parent_ID_ID,
+    isActive: node.ID_IsActive,
+    remarks: node.ID_Remarks || '',
+    companyIds: [props.companyId]
+  };
+};
+
 const handleEditDepartment = (payload) => {
   const { node, company } = payload;
-  departmentModal.value = { show: true, isEdit: true, title: 'แก้ไขแผนก', id: node.ID_ID, isAddChild: false, parentId: node.Parent_ID_ID };
+  departmentModal.value = { show: true, isEdit: true, isReadOnly: false, title: 'แก้ไขแผนก', id: node.ID_ID, isAddChild: false, parentId: node.Parent_ID_ID };
   departmentForm.value = {
     code: node.ID_Code,
     localName: node.ID_LocalName,
@@ -1170,6 +1227,54 @@ const handleDeleteDepartment = async (payload) => {
   } catch (error) {
     console.error('[SecuritySettings] Error deleting department:', error);
     alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+const departmentSaving = ref(false);
+
+const saveDepartment = async () => {
+  // Validation 1: ต้องมีรหัสและชื่อแผนก
+  if (!departmentForm.value.code || !departmentForm.value.localName) {
+    alert('กรุณากรอกรหัสและชื่อแผนก');
+    return;
+  }
+
+  // Validation 2: office type must have parent
+  if (departmentForm.value.type === 'office' && !departmentForm.value.parentId) {
+    alert('สำนักจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
+    return;
+  }
+
+  departmentSaving.value = true;
+  try {
+    const payload = {
+      code: departmentForm.value.code,
+      localName: departmentForm.value.localName,
+      englishName: departmentForm.value.englishName,
+      type: departmentForm.value.type,
+      parentId: departmentForm.value.parentId,
+      isActive: departmentForm.value.isActive,
+      remarks: departmentForm.value.remarks
+    };
+
+    if (departmentModal.value.isEdit) {
+      // แก้ไขแผนก - ไม่ต้องส่ง companyId
+      await departmentsAPI.update(departmentModal.value.id, payload);
+      alert('บันทึกข้อมูลสำเร็จ');
+    } else {
+      // สร้างแผนกใหม่ - ส่ง companyId ใน payload เพื่อให้ backend ทำ transaction
+      payload.companyId = props.companyId;
+      await departmentsAPI.create(payload);
+      alert('สร้างแผนกใหม่สำเร็จ');
+    }
+
+    departmentModal.value.show = false;
+    window.location.reload(); // Reload page to refresh all company trees
+  } catch (err) {
+    console.error('[SecuritySettings] Error in saveDepartment:', err);
+    alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+  } finally {
+    departmentSaving.value = false;
   }
 };
 

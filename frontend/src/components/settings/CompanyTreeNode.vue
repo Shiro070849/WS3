@@ -63,6 +63,7 @@
         v-else
         :treeData="departmentTree"
         @add-child="handleAddChild"
+        @view="handleView"
         @edit="handleEdit"
         @move="handleMove"
         @delete="handleDelete"
@@ -83,7 +84,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['add-child', 'edit', 'move', 'delete', 'add-department']);
+const emit = defineEmits(['add-child', 'view', 'edit', 'move', 'delete', 'add-department']);
 
 const isExpanded = ref(false); // ปิดไว้ตั้งแต่เริ่มต้น ให้ผู้ใช้กดเปิดเอง
 const loading = ref(false);
@@ -119,6 +120,10 @@ const fetchDepartments = async () => {
 // Event Handlers - เพิ่ม company context ก่อน emit ขึ้นไป
 const handleAddChild = (node) => {
   emit('add-child', { node, company: props.company });
+};
+
+const handleView = (node) => {
+  emit('view', { node, company: props.company });
 };
 
 const handleEdit = (node) => {

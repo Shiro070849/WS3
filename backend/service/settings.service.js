@@ -580,15 +580,22 @@ class SettingsService {
     return true;
   }
 
-  // สร้างแผนกใหม่
+  // สร้างแผนกใหม่ (พร้อม Transaction สำหรับเชื่อมกับบริษัท)
   async createDepartment(data) {
+    const pool = await dbService.connect();
+    const transaction = new sql.Transaction(pool);
+
     try {
-      const pool = await dbService.connect();
+      // เริ่ม Transaction
+      await transaction.begin();
+
+      console.log(`[CREATE DEPT] Starting transaction - Creating department and linking to company ${data.companyId}`);
 
       // Validate hierarchy rules
       await this.validateDepartmentHierarchy(data.type || 'department', data.parentId || null, pool);
 
-      const query = `
+      // Step 1: INSERT แผนกใหม่ใน InternalDepartment
+      const insertDeptQuery = `
         INSERT INTO [dbo].[InternalDepartment] (
           ID_Code,
           ID_LocalName,
@@ -609,7 +616,9 @@ class SettingsService {
         );
         SELECT SCOPE_IDENTITY() AS ID_ID;
       `;
-      const result = await pool.request()
+
+      const request1 = new sql.Request(transaction);
+      const deptResult = await request1
         .input('ID_Code', sql.NVarChar, data.code)
         .input('ID_LocalName', sql.NVarChar, data.localName)
         .input('ID_EnglishName', sql.NVarChar, data.englishName || null)
@@ -617,10 +626,47 @@ class SettingsService {
         .input('Parent_ID_ID', sql.Int, data.parentId || null)
         .input('ID_IsActive', sql.Bit, data.isActive !== undefined ? data.isActive : 1)
         .input('ID_Remarks', sql.NVarChar, data.remarks || null)
-        .query(query);
-      return result.recordset[0];
+        .query(insertDeptQuery);
+
+      const newDepartmentId = deptResult.recordset[0].ID_ID;
+      console.log(`[CREATE DEPT] ✅ Department created with ID: ${newDepartmentId}`);
+
+      // Step 2: INSERT ลง InternalCompanyDepartment (เชื่อมแผนกกับบริษัท)
+      const linkQuery = `
+        INSERT INTO [dbo].[InternalCompanyDepartment] (
+          IC_ID,
+          ID_ID,
+          ICD_IsActive
+        )
+        VALUES (
+          @IC_ID,
+          @ID_ID,
+          1
+        );
+      `;
+
+      const request2 = new sql.Request(transaction);
+      await request2
+        .input('IC_ID', sql.Int, data.companyId)
+        .input('ID_ID', sql.Int, newDepartmentId)
+        .query(linkQuery);
+
+      console.log(`[CREATE DEPT] ✅ Department ${newDepartmentId} linked to company ${data.companyId}`);
+
+      // Commit Transaction
+      await transaction.commit();
+      console.log(`[CREATE DEPT] ✅ Transaction committed successfully`);
+
+      return { ID_ID: newDepartmentId };
     } catch (error) {
-      console.error('Error creating department:', error);
+      // Rollback Transaction ถ้าเกิด Error
+      console.error('[CREATE DEPT] ❌ Error creating department, rolling back transaction:', error);
+      try {
+        await transaction.rollback();
+        console.log('[CREATE DEPT] ⚠️ Transaction rolled back');
+      } catch (rollbackError) {
+        console.error('[CREATE DEPT] ❌ Error rolling back transaction:', rollbackError);
+      }
       throw error;
     }
   }

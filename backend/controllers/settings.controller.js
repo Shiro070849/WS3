@@ -458,7 +458,7 @@ class SettingsController {
 
   async createDepartment(req, res) {
     try {
-      const { code, localName, englishName, isActive, remarks } = req.body;
+      const { code, localName, englishName, type, parentId, isActive, remarks, companyId } = req.body;
 
       // Validate required fields
       if (!code || !localName) {
@@ -468,12 +468,31 @@ class SettingsController {
         });
       }
 
+      // Validate companyId (required for creating department)
+      if (!companyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Company ID is required'
+        });
+      }
+
+      // Backend Validation: office type must have parent
+      if (type === 'office' && !parentId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Office type must have a parent branch'
+        });
+      }
+
       const result = await settingsService.createDepartment({
         code,
         localName,
         englishName,
+        type,
+        parentId,
         isActive,
-        remarks
+        remarks,
+        companyId
       });
 
       res.status(201).json({
