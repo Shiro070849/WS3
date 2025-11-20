@@ -113,25 +113,27 @@
             ค้นหา
           </button>
           <button
-            @click="exportExcel"
-            class="px-5 py-2.5 text-base font-semibold bg-[#3AAA35] text-white rounded-lg hover:bg-[#339A2E] active:scale-95 transition-all shadow-sm font-prompt"
+            @click="openExportModal"
+            class="px-5 py-2.5 text-base font-semibold bg-gradient-to-r from-[#3AAA35] to-[#339A2E] text-white rounded-lg hover:shadow-lg active:scale-95 transition-all shadow-sm font-prompt"
           >
             <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
-            ส่งออก Excel
-          </button>
-          <button
-            @click="exportPDF"
-            class="px-5 py-2.5 text-base font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all shadow-sm font-prompt"
-          >
-            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-            </svg>
-            ส่งออก PDF
+            ส่งออกรายงาน
           </button>
         </div>
       </div>
+
+      <!-- Export Modal -->
+      <ExportModal
+        :show="showExportModal"
+        :current-filters="filters"
+        :companies="companies"
+        :vehicle-types="vehicleTypes"
+        :total-records="summary.total"
+        @close="closeExportModal"
+        @export="handleExport"
+      />
 
       <!-- Summary Stats - Tailwind Grid -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -290,12 +292,17 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { reportsAPI, getBackendBaseUrl, vehicleTypesAPI, companiesAPI } from '../services/api';
+import ExportModal from '../components/ExportModal.vue';
+import { useToast } from '@/composables/useToast';
+
+const toast = useToast();
 
 // ==================== STATE ====================
 const loading = ref(false);
 const reports = ref([]);
 const vehicleTypes = ref([]);
 const companies = ref([]);
+const showExportModal = ref(false);
 
 const filters = ref({
   startDate: '',
@@ -363,65 +370,84 @@ const fetchReport = async () => {
     summary.value = response.data.summary;
   } catch (error) {
     console.error('Error fetching reports:', error);
-    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลรายงานได้');
   } finally {
     loading.value = false;
   }
 };
 
-const exportExcel = async () => {
-  try {
-    const params = new URLSearchParams({
-      ...(filters.value.startDate && { startDate: filters.value.startDate }),
-      ...(filters.value.endDate && { endDate: filters.value.endDate }),
-      ...(filters.value.companyId && { companyId: filters.value.companyId }),
-      ...(filters.value.status && { status: filters.value.status }),
-      ...(filters.value.vehicleType && { vehicleType: filters.value.vehicleType }),
-    });
-
-    // สร้าง URL สำหรับ download (ใช้ environment variable)
-    const url = `${getBackendBaseUrl()}/api/reports/export/excel?${params.toString()}`;
-
-    // สร้าง link element และ click เพื่อ download
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `รายงานยานพาหนะ_${new Date().toISOString().split('T')[0]}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    alert('กำลังดาวน์โหลดไฟล์ Excel...');
-  } catch (error) {
-    console.error('Error exporting Excel:', error);
-    alert('เกิดข้อผิดพลาดในการส่งออก Excel');
-  }
+// ==================== EXPORT MODAL ====================
+const openExportModal = () => {
+  showExportModal.value = true;
 };
 
-const exportPDF = async () => {
+const closeExportModal = () => {
+  showExportModal.value = false;
+};
+
+const handleExport = async (exportData) => {
   try {
+    const { format, filters: exportFilters, options } = exportData;
+
     const params = new URLSearchParams({
-      ...(filters.value.startDate && { startDate: filters.value.startDate }),
-      ...(filters.value.endDate && { endDate: filters.value.endDate }),
-      ...(filters.value.companyId && { companyId: filters.value.companyId }),
-      ...(filters.value.status && { status: filters.value.status }),
-      ...(filters.value.vehicleType && { vehicleType: filters.value.vehicleType }),
+      ...(exportFilters.startDate && { startDate: exportFilters.startDate }),
+      ...(exportFilters.endDate && { endDate: exportFilters.endDate }),
+      ...(exportFilters.companyId && { companyId: exportFilters.companyId }),
+      ...(exportFilters.status && { status: exportFilters.status }),
+      ...(exportFilters.vehicleType && { vehicleType: exportFilters.vehicleType }),
+      ...(options.includeSubtotal && { subtotal: 'true' }),
+      ...(options.showLogo && { logo: 'true' }),
+      ...(options.includeSummary && { summary: 'true' }),
     });
 
-    // สร้าง URL สำหรับ download (ใช้ environment variable)
-    const url = `${getBackendBaseUrl()}/api/reports/export/pdf?${params.toString()}`;
+    // สร้าง URL ตาม format
+    const endpoint = format === 'excel' ? 'excel' : 'pdf';
+    const url = `${getBackendBaseUrl()}/api/reports/export/${endpoint}?${params.toString()}`;
+    const extension = format === 'excel' ? 'xlsx' : 'pdf';
+    const filename = `รายงานยานพาหนะ_${new Date().toISOString().split('T')[0]}.${extension}`;
 
-    // สร้าง link element และ click เพื่อ download
+    // แสดง loading toast
+    toast.info('กำลังประมวลผล', `กำลังสร้างไฟล์ ${format.toUpperCase()}...`);
+
+    // ใช้ fetch เพื่อดาวน์โหลดไฟล์
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      // ถ้า response ไม่ ok ให้ลองอ่าน error message
+      let errorMessage = 'ไม่สามารถส่งออกรายงานได้';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        // ถ้าไม่สามารถ parse JSON ได้
+        errorMessage = `เกิดข้อผิดพลาด (${response.status})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // แปลง response เป็น blob
+    const blob = await response.blob();
+
+    // สร้าง blob URL และดาวน์โหลด
+    const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.download = `รายงานยานพาหนะ_${new Date().toISOString().split('T')[0]}.pdf`;
+    link.href = blobUrl;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    alert('กำลังดาวน์โหลดไฟล์ PDF...');
+    // ล้าง blob URL หลังจากดาวน์โหลดเสร็จ
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+
+    // แสดง success toast
+    toast.success('ดาวน์โหลดสำเร็จ', `ไฟล์ ${format.toUpperCase()} ถูกดาวน์โหลดเรียบร้อย`);
+
+    // ปิด modal หลังดาวน์โหลดสำเร็จ
+    closeExportModal();
   } catch (error) {
-    console.error('Error exporting PDF:', error);
-    alert('เกิดข้อผิดพลาดในการส่งออก PDF');
+    console.error('Error exporting:', error);
+    toast.error('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถส่งออกรายงานได้');
   }
 };
 

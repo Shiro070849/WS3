@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import DepartmentTree from './DepartmentTree.vue';
 import { departmentsAPI } from '@/services/api';
 

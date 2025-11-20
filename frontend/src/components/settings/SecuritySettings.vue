@@ -959,6 +959,9 @@ import BaseModal from '../base/BaseModal.vue';
 import { systemSettingsAPI, usersAPI, companiesAPI, departmentsAPI } from '@/services/api';
 import { SYSTEM_ROLES } from '@/constants/roles';
 import CompanyTreeNode from './CompanyTreeNode.vue';
+import { useToast } from '@/composables/useToast';
+
+const toast = useToast();
 
 const props = defineProps({
   companyId: {
@@ -993,11 +996,11 @@ const saveCompanyData = async () => {
       isActive: companyData.value.IC_IsActive,
       remarks: companyData.value.IC_Remarks
     });
-    alert('บันทึกข้อมูลบริษัทสำเร็จ');
+    toast.success('สำเร็จ', 'บันทึกข้อมูลบริษัทสำเร็จ');
     fetchCompanyData();
   } catch (error) {
     console.error('[SecuritySettings] Error saving company:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   } finally {
     companySaving.value = false;
   }
@@ -1086,17 +1089,17 @@ const saveSecurityGuard = async () => {
 
     if (securityGuardModal.value.isEdit) {
       await usersAPI.update(securityGuardModal.value.id, data);
-      alert('แก้ไขข้อมูลสำเร็จ');
+      toast.success('สำเร็จ', 'แก้ไขข้อมูลสำเร็จ');
     } else {
       await usersAPI.create(data);
-      alert('เพิ่ม Security Guard สำเร็จ');
+      toast.success('สำเร็จ', 'เพิ่ม Security Guard สำเร็จ');
     }
 
     securityGuardModal.value.show = false;
     fetchSecurityGuards();
   } catch (error) {
     console.error('[SecuritySettings] Error saving security guard:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   }
 };
 
@@ -1105,11 +1108,11 @@ const deleteSecurityGuard = async (row) => {
 
   try {
     await usersAPI.delete(row.SU_ID);
-    alert('ลบสำเร็จ');
+    toast.success('สำเร็จ', 'ลบสำเร็จ');
     fetchSecurityGuards();
   } catch (error) {
     console.error('[SecuritySettings] Error deleting security guard:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   }
 };
 
@@ -1127,17 +1130,17 @@ const openSecurityGuardPasswordModal = (row) => {
 const saveSecurityGuardPassword = async () => {
   // Validation
   if (!securityGuardPasswordForm.value.newPassword) {
-    alert('กรุณากรอกรหัสผ่านใหม่');
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกรหัสผ่านใหม่');
     return;
   }
 
   if (securityGuardPasswordForm.value.newPassword !== securityGuardPasswordForm.value.confirmPassword) {
-    alert('รหัสผ่านไม่ตรงกัน');
+    toast.warning('รหัสผ่านไม่ตรงกัน', 'กรุณากรอกใหม่');
     return;
   }
 
   if (securityGuardPasswordForm.value.newPassword.length < 6) {
-    alert('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+    toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
     return;
   }
 
@@ -1145,11 +1148,11 @@ const saveSecurityGuardPassword = async () => {
     await usersAPI.resetPassword(securityGuardPasswordModal.value.id, {
       newPassword: securityGuardPasswordForm.value.newPassword
     });
-    alert('เปลี่ยนรหัสผ่านสำเร็จ');
+    toast.success('สำเร็จ', 'เปลี่ยนรหัสผ่านสำเร็จ');
     securityGuardPasswordModal.value.show = false;
   } catch (error) {
     console.error('[SecuritySettings] Error changing password:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   }
 };
 
@@ -1246,7 +1249,7 @@ const handleMoveDepartment = (payload) => {
 const handleDeleteDepartment = async (payload) => {
   const { node } = payload;
   if (node.children && node.children.length > 0) {
-    alert(`ไม่สามารถลบแผนก "${node.ID_LocalName}" ได้ เนื่องจากมีแผนกย่อยอยู่ภายใต้`);
+    toast.warning('มีแผนกย่อยอยู่ภายใต้', `ไม่สามารถลบแผนก "${node.ID_LocalName}" ได้`);
     return;
   }
 
@@ -1254,11 +1257,11 @@ const handleDeleteDepartment = async (payload) => {
 
   try {
     await departmentsAPI.delete(node.ID_ID);
-    alert('ลบแผนกสำเร็จ');
+    toast.success('สำเร็จ', 'ลบแผนกสำเร็จ');
     window.location.reload();
   } catch (error) {
     console.error('[SecuritySettings] Error deleting department:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   }
 };
 
@@ -1306,13 +1309,13 @@ const departmentSaving = ref(false);
 const saveDepartment = async () => {
   // Validation 1: ต้องมีรหัสและชื่อแผนก
   if (!departmentForm.value.code || !departmentForm.value.localName) {
-    alert('กรุณากรอกรหัสและชื่อแผนก');
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกรหัสและชื่อแผนก');
     return;
   }
 
   // Validation 2: office type must have parent
   if (departmentForm.value.type === 'office' && !departmentForm.value.parentId) {
-    alert('สำนักจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
+    toast.warning('ข้อมูลไม่ครบ', 'สำนักจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
     return;
   }
 
@@ -1331,19 +1334,19 @@ const saveDepartment = async () => {
     if (departmentModal.value.isEdit) {
       // แก้ไขแผนก - ไม่ต้องส่ง companyId
       await departmentsAPI.update(departmentModal.value.id, payload);
-      alert('บันทึกข้อมูลสำเร็จ');
+      toast.success('สำเร็จ', 'บันทึกข้อมูลสำเร็จ');
     } else {
       // สร้างแผนกใหม่ - ส่ง companyId ใน payload เพื่อให้ backend ทำ transaction
       payload.companyId = props.companyId;
       await departmentsAPI.create(payload);
-      alert('สร้างแผนกใหม่สำเร็จ');
+      toast.success('สำเร็จ', 'สร้างแผนกใหม่สำเร็จ');
     }
 
     departmentModal.value.show = false;
     window.location.reload(); // Reload page to refresh all company trees
   } catch (err) {
     console.error('[SecuritySettings] Error in saveDepartment:', err);
-    alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    toast.error('เกิดข้อผิดพลาด', err.response?.data?.message || err.message);
   } finally {
     departmentSaving.value = false;
   }
@@ -1466,56 +1469,56 @@ const saveAdmin = async () => {
   try {
     // === Validation: Required Fields ===
     if (!adminForm.value.code?.trim()) {
-      alert('กรุณากรอกรหัส');
+      toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกรหัส');
       return;
     }
     if (!adminForm.value.name1?.trim()) {
-      alert('กรุณากรอกชื่อ');
+      toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อ');
       return;
     }
     if (!adminForm.value.username?.trim()) {
-      alert('กรุณากรอก Username');
+      toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอก Username');
       return;
     }
 
     // === Validation: Code Format ===
     if (adminForm.value.code.trim().length < 3) {
-      alert('รหัสต้องมีความยาวอย่างน้อย 3 ตัวอักษร');
+      toast.warning('รหัสไม่ถูกต้อง', 'รหัสต้องมีความยาวอย่างน้อย 3 ตัวอักษร');
       return;
     }
 
     // === Validation: Username Format ===
     if (adminForm.value.username.trim().length < 3) {
-      alert('Username ต้องมีความยาวอย่างน้อย 3 ตัวอักษร');
+      toast.warning('Username ไม่ถูกต้อง', 'Username ต้องมีความยาวอย่างน้อย 3 ตัวอักษร');
       return;
     }
     if (!/^[a-zA-Z0-9_]+$/.test(adminForm.value.username.trim())) {
-      alert('Username สามารถใช้ได้เฉพาะตัวอักษร A-Z, a-z, 0-9 และ _ เท่านั้น');
+      toast.warning('Username ไม่ถูกต้อง', 'Username สามารถใช้ได้เฉพาะตัวอักษร A-Z, a-z, 0-9 และ _ เท่านั้น');
       return;
     }
 
     // === Validation: Password (for new admin) ===
     if (!adminModal.value.isEdit && !adminForm.value.password) {
-      alert('กรุณากรอกรหัสผ่าน');
+      toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกรหัสผ่าน');
       return;
     }
 
     // === Validation: Password Strength ===
     if (adminForm.value.password) {
       if (adminForm.value.password.length < 8 || adminForm.value.password.length > 50) {
-        alert('รหัสผ่านต้องมีความยาว 8-50 ตัวอักษร');
+        toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีความยาว 8-50 ตัวอักษร');
         return;
       }
       if (!/[A-Z]/.test(adminForm.value.password)) {
-        alert('รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว (A-Z)');
+        toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว (A-Z)');
         return;
       }
       if (!/[a-z]/.test(adminForm.value.password)) {
-        alert('รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว (a-z)');
+        toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว (a-z)');
         return;
       }
       if (!/[0-9]/.test(adminForm.value.password)) {
-        alert('รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว (0-9)');
+        toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว (0-9)');
         return;
       }
     }
@@ -1524,7 +1527,7 @@ const saveAdmin = async () => {
     if (adminForm.value.email && adminForm.value.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(adminForm.value.email.trim())) {
-        alert('รูปแบบ Email ไม่ถูกต้อง');
+        toast.warning('Email ไม่ถูกต้อง', 'รูปแบบ Email ไม่ถูกต้อง');
         return;
       }
     }
@@ -1546,11 +1549,11 @@ const saveAdmin = async () => {
     // === Save to Backend ===
     if (adminModal.value.isEdit) {
       await usersAPI.update(adminModal.value.id, data);
-      alert('แก้ไขข้อมูล Administrator สำเร็จ');
+      toast.success('สำเร็จ', 'แก้ไขข้อมูล Administrator สำเร็จ');
       console.log('[SecuritySettings] Administrator updated:', data.code);
     } else {
       await usersAPI.create(data);
-      alert('เพิ่ม Administrator สำเร็จ');
+      toast.success('สำเร็จ', 'เพิ่ม Administrator สำเร็จ');
       console.log('[SecuritySettings] Administrator created:', data.code);
     }
 
@@ -1567,7 +1570,7 @@ const saveAdmin = async () => {
       errorMessage = error.message;
     }
 
-    alert(errorMessage);
+    toast.error('เกิดข้อผิดพลาด', errorMessage);
   }
 };
 
@@ -1578,11 +1581,11 @@ const deleteAdmin = async (row) => {
 
   try {
     await usersAPI.delete(row.SU_ID);
-    alert('ลบ Administrator สำเร็จ');
+    toast.success('สำเร็จ', 'ลบ Administrator สำเร็จ');
     fetchAdmins();
   } catch (error) {
     console.error('Error deleting administrator:', error);
-    alert('เกิดข้อผิดพลาดในการลบ');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถลบได้');
   }
 };
 
@@ -1611,32 +1614,32 @@ const changePassword = async () => {
   try {
     // Validation
     if (!passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
-      alert('กรุณากรอกรหัสผ่านให้ครบถ้วน');
+      toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกรหัสผ่านให้ครบถ้วน');
       return;
     }
 
     if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-      alert('รหัสผ่านไม่ตรงกัน');
+      toast.warning('รหัสผ่านไม่ตรงกัน', 'กรุณากรอกใหม่');
       return;
     }
 
     if (passwordForm.value.newPassword.length < 8 || passwordForm.value.newPassword.length > 50) {
-      alert('รหัสผ่านต้องมีความยาว 8-50 ตัวอักษร');
+      toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีความยาว 8-50 ตัวอักษร');
       return;
     }
 
     if (!/[A-Z]/.test(passwordForm.value.newPassword)) {
-      alert('รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว (A-Z)');
+      toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว (A-Z)');
       return;
     }
 
     if (!/[a-z]/.test(passwordForm.value.newPassword)) {
-      alert('รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว (a-z)');
+      toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว (a-z)');
       return;
     }
 
     if (!/[0-9]/.test(passwordForm.value.newPassword)) {
-      alert('รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว (0-9)');
+      toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว (0-9)');
       return;
     }
 
@@ -1645,11 +1648,11 @@ const changePassword = async () => {
       password: passwordForm.value.newPassword
     });
 
-    alert('เปลี่ยนรหัสผ่านสำเร็จ');
+    toast.success('สำเร็จ', 'เปลี่ยนรหัสผ่านสำเร็จ');
     closePasswordModal();
   } catch (error) {
     console.error('Error changing password:', error);
-    alert('เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   } finally {
     passwordChanging.value = false;
   }
@@ -1689,11 +1692,11 @@ const saveSettings = async () => {
     saving.value = true;
     const response = await systemSettingsAPI.updateSecurity(settings.value, props.companyId);
     if (response.data.success) {
-      alert('บันทึกการตั้งค่าความปลอดภัยสำเร็จ');
+      toast.success('สำเร็จ', 'บันทึกการตั้งค่าความปลอดภัยสำเร็จ');
     }
   } catch (error) {
     console.error('Error saving security settings:', error);
-    alert('เกิดข้อผิดพลาดในการบันทึก');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกได้');
   } finally {
     saving.value = false;
   }

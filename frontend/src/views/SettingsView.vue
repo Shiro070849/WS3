@@ -533,9 +533,11 @@ import CompanyTreeNode from '../components/settings/CompanyTreeNode.vue';
 import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../services/api';
 import { useTheme } from '@/composables/useTheme';
 import { useNotification } from '@/composables/useNotification';
+import { useToast } from '@/composables/useToast';
 
 // ==================== Notification ====================
 const { success, error, warning, info } = useNotification();
+const toast = useToast();
 
 // ==================== Company Selection ====================
 const accessibleCompanies = ref([]);
@@ -560,7 +562,7 @@ const fetchAccessibleCompanies = async () => {
     }
   } catch (error) {
     console.error('[ERROR] Error fetching accessible companies:', error);
-    alert('ไม่สามารถโหลดรายการบริษัทได้');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดรายการบริษัทได้');
   }
 };
 
@@ -640,7 +642,7 @@ const fetchCompanies = async () => {
     companies.value = response.data.data;
   } catch (error) {
     console.error('Error:', error);
-    alert('ไม่สามารถโหลดข้อมูลบริษัทได้');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลบริษัทได้');
   } finally {
     companyLoading.value = false;
   }
@@ -666,16 +668,16 @@ const saveCompany = async () => {
     const payload = { code: companyForm.value.code, localName: companyForm.value.localName, englishName: companyForm.value.englishName, isActive: companyForm.value.isActive, remarks: companyForm.value.remarks };
     if (companyModal.value.isEdit) {
       await companiesAPI.update(companyModal.value.id, payload);
-      alert('บันทึกข้อมูลสำเร็จ');
+      toast.success('สำเร็จ', 'บันทึกข้อมูลสำเร็จ');
     } else {
       await companiesAPI.create(payload);
-      alert('สร้างบริษัทใหม่สำเร็จ');
+      toast.success('สำเร็จ', 'สร้างบริษัทใหม่สำเร็จ');
     }
     closeCompanyModal();
     fetchCompanies();
   } catch (error) {
     console.error('Error:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   } finally {
     companySaving.value = false;
   }
@@ -685,11 +687,11 @@ const deleteCompany = async (row) => {
   if (!confirm(`ต้องการลบบริษัท "${row.IC_LocalName}" ใช่หรือไม่?`)) return;
   try {
     await companiesAPI.delete(row.IC_ID);
-    alert('ลบบริษัทสำเร็จ');
+    toast.success('สำเร็จ', 'ลบบริษัทสำเร็จ');
     fetchCompanies();
   } catch (error) {
     console.error('Error:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   }
 };
 
@@ -728,7 +730,7 @@ const fetchUsers = async () => {
     users.value = response.data.data;
   } catch (error) {
     console.error('Error:', error);
-    alert('ไม่สามารถโหลดข้อมูลผู้ใช้งานได้');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้');
   } finally {
     userLoading.value = false;
   }
@@ -763,7 +765,7 @@ const closeUserModal = () => {
 const saveUser = async () => {
   // Validation: ถ้าเป็น Super Admin ต้องเลือกบริษัท
   if (isMainAdmin.value && !userForm.value.companyId) {
-    alert('กรุณาเลือกบริษัท');
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกบริษัท');
     return;
   }
 
@@ -782,17 +784,17 @@ const saveUser = async () => {
 
     if (userModal.value.isEdit) {
       await usersAPI.update(userModal.value.id, payload);
-      alert('บันทึกข้อมูลสำเร็จ');
+      toast.success('สำเร็จ', 'บันทึกข้อมูลสำเร็จ');
     } else {
       payload.password = userForm.value.password;
       await usersAPI.create(payload);
-      alert('สร้างผู้ใช้งานใหม่สำเร็จ');
+      toast.success('สำเร็จ', 'สร้างผู้ใช้งานใหม่สำเร็จ');
     }
     closeUserModal();
     fetchUsers();
   } catch (error) {
     console.error('Error:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   } finally {
     userSaving.value = false;
   }
@@ -802,11 +804,11 @@ const deleteUser = async (row) => {
   if (!confirm(`ต้องการลบผู้ใช้งาน "${row.SU_Name1}" ใช่หรือไม่?`)) return;
   try {
     await usersAPI.delete(row.SU_ID);
-    alert('ลบผู้ใช้งานสำเร็จ');
+    toast.success('สำเร็จ', 'ลบผู้ใช้งานสำเร็จ');
     fetchUsers();
   } catch (error) {
     console.error('Error:', error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
   }
 };
 
@@ -837,23 +839,23 @@ const closePasswordModal = () => {
 const changePassword = async () => {
   // Validation 1: ตรวจสอบว่ากรอกครบหรือไม่
   if (!passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
-    alert('กรุณากรอกรหัสผ่านให้ครบถ้วน');
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกรหัสผ่านให้ครบถ้วน');
     return;
   }
 
   // Validation 2: ตรวจสอบว่ารหัสผ่านตรงกันหรือไม่
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    alert('รหัสผ่านไม่ตรงกัน กรุณากรอกใหม่');
+    toast.warning('รหัสผ่านไม่ตรงกัน', 'กรุณากรอกใหม่');
     return;
   }
 
   // Validation 3: ความยาว (8-50 ตัวอักษร)
   if (passwordForm.value.newPassword.length < 8) {
-    alert('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
+    toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
     return;
   }
   if (passwordForm.value.newPassword.length > 50) {
-    alert('รหัสผ่านต้องไม่เกิน 50 ตัวอักษร');
+    toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องไม่เกิน 50 ตัวอักษร');
     return;
   }
 
@@ -863,15 +865,15 @@ const changePassword = async () => {
   const hasNumber = /[0-9]/.test(passwordForm.value.newPassword);
 
   if (!hasUpperCase) {
-    alert('รหัสผ่านต้องมีตัวพิมพ์ใหญ่ (A-Z) อย่างน้อย 1 ตัว');
+    toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่ (A-Z) อย่างน้อย 1 ตัว');
     return;
   }
   if (!hasLowerCase) {
-    alert('รหัสผ่านต้องมีตัวพิมพ์เล็ก (a-z) อย่างน้อย 1 ตัว');
+    toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวพิมพ์เล็ก (a-z) อย่างน้อย 1 ตัว');
     return;
   }
   if (!hasNumber) {
-    alert('รหัสผ่านต้องมีตัวเลข (0-9) อย่างน้อย 1 ตัว');
+    toast.warning('รหัสผ่านไม่ถูกต้อง', 'รหัสผ่านต้องมีตัวเลข (0-9) อย่างน้อย 1 ตัว');
     return;
   }
 
@@ -888,13 +890,13 @@ const changePassword = async () => {
       password: passwordForm.value.newPassword
     });
 
-    alert(`เปลี่ยนรหัสผ่านสำเร็จ!\n\nผู้ใช้งาน: ${passwordForm.value.username}\nจะต้อง Login ใหม่ด้วยรหัสผ่านใหม่`);
+    toast.success('สำเร็จ', `เปลี่ยนรหัสผ่านสำเร็จ - ผู้ใช้งาน: ${passwordForm.value.username} จะต้อง Login ใหม่`);
     closePasswordModal();
     fetchUsers();
   } catch (error) {
     console.error('Error changing password:', error);
     const errorMessage = error.response?.data?.message || error.message || 'เกิดข้อผิดพลาด';
-    alert(`เกิดข้อผิดพลาด: ${errorMessage}`);
+    toast.error('เกิดข้อผิดพลาด', errorMessage);
   } finally {
     passwordChanging.value = false;
   }
@@ -925,7 +927,7 @@ const fetchDepartments = async () => {
     departments.value = response.data.data;
   } catch (error) {
     console.error('Error:', error);
-    alert('ไม่สามารถโหลดข้อมูลแผนกได้');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลแผนกได้');
   }
 };
 
@@ -938,7 +940,7 @@ const fetchCompanyDepartments = async () => {
     companyDepartments.value = response.data.data;
   } catch (error) {
     console.error('Error fetching company-department relations:', error);
-    alert('ไม่สามารถโหลดความสัมพันธ์บริษัท-แผนกได้');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดความสัมพันธ์บริษัท-แผนกได้');
   }
 };
 

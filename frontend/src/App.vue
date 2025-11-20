@@ -16,6 +16,9 @@
 
     <!-- Global Notification Modal -->
     <NotificationModal />
+
+    <!-- Global Toast Container -->
+    <ToastContainer />
   </div>
 </template>
 
@@ -24,13 +27,15 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from '@/components/SidebarMenu.vue'
 import NotificationModal from '@/components/base/NotificationModal.vue'
+import ToastContainer from '@/components/common/ToastContainer.vue'
 import { useTheme } from '@/composables/useTheme'
 
 export default {
   name: 'App',
   components: {
     Sidebar,
-    NotificationModal
+    NotificationModal,
+    ToastContainer
   },
   setup() {
     const isCollapsed = ref(false)

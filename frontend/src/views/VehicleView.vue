@@ -854,6 +854,9 @@ import DateRangeFilter from '../components/DateRangeFilter.vue';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
 import { REPRINT_CONFIG, isQRUrlType, shouldShowFooterWarning } from '../constants/visitTypes';
+import { useToast } from '@/composables/useToast';
+
+const toast = useToast();
 
 // ==================== STATE ====================
 const vehicles = ref([]);
@@ -969,7 +972,7 @@ const fetchVehicles = async () => {
     pagination.value = response.data.pagination;
   } catch (error) {
     console.error('Error fetching vehicles:', error);
-    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้');
   } finally {
     loading.value = false;
   }
@@ -1053,7 +1056,7 @@ const closeModal = () => {
 
 const saveVehicle = async () => {
   if (!formData.value.licensePlate) {
-    alert('กรุณากรอกทะเบียนรถ');
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกทะเบียนรถ');
     return;
   }
 
@@ -1080,17 +1083,17 @@ const saveVehicle = async () => {
 
     if (modalMode.value === 'add') {
       await vehiclesAPI.create(data);
-      alert('เพิ่มรถสำเร็จ');
+      toast.success('สำเร็จ', 'เพิ่มรถสำเร็จ');
     } else {
       await vehiclesAPI.update(formData.value.id, data);
-      alert('แก้ไขข้อมูลสำเร็จ');
+      toast.success('สำเร็จ', 'แก้ไขข้อมูลสำเร็จ');
     }
 
     closeModal();
     fetchVehicles();
   } catch (error) {
     console.error('Error saving vehicle:', error);
-    alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้');
   }
 };
 
@@ -1103,11 +1106,11 @@ const confirmDelete = (vehicle) => {
 const deleteVehicle = async (id) => {
   try {
     await vehiclesAPI.delete(id);
-    alert('ลบข้อมูลสำเร็จ');
+    toast.success('สำเร็จ', 'ลบข้อมูลสำเร็จ');
     fetchVehicles();
   } catch (error) {
     console.error('Error deleting vehicle:', error);
-    alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้');
   }
 };
 
@@ -1130,12 +1133,12 @@ const saveCheckout = async () => {
       remarks: checkoutData.value.remarks,
       systemUserId: 1,
     });
-    alert('บันทึกรถออกสำเร็จ');
+    toast.success('สำเร็จ', 'บันทึกรถออกสำเร็จ');
     closeCheckoutModal();
     fetchVehicles();
   } catch (error) {
     console.error('Error checking out vehicle:', error);
-    alert(error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกรถออก');
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || 'ไม่สามารถบันทึกรถออกได้');
   }
 };
 
@@ -1226,7 +1229,7 @@ const closeReprintModal = () => {
 const updateVisitType = async () => {
   try {
     if (!reprintData.value.visitTypeId) {
-      alert('กรุณาเลือกประเภทการเข้า');
+      toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกประเภทการเข้า');
       return;
     }
 
@@ -1245,7 +1248,7 @@ const updateVisitType = async () => {
       remarks: vehicle.WI_Remarks
     });
 
-    alert('อัพเดทประเภทการเข้าสำเร็จ');
+    toast.success('สำเร็จ', 'อัพเดทประเภทการเข้าสำเร็จ');
 
     // อัพเดทข้อมูลใน reprintData เพื่อให้แสดงผลถูกต้อง
     reprintData.value.vehicle.VT_ID = reprintData.value.visitTypeId;
@@ -1270,7 +1273,7 @@ const updateVisitType = async () => {
     fetchVehicles();
   } catch (error) {
     console.error('Error updating visit type:', error);
-    alert('เกิดข้อผิดพลาดในการอัพเดท');
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถอัพเดทได้');
   }
 };
 

@@ -31,7 +31,8 @@
       "Bash(backend/uploads/images/.gitkeep)",
       "Bash(backend/uploads/logos/.gitkeep)",
       "Bash(git rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

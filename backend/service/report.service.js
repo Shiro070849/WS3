@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const config = require("../config/Mssql.config");
+const dbService = require("./db.service");
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
@@ -9,7 +9,7 @@ class ReportService {
    */
   static async getReports(filters = {}) {
     try {
-      const pool = await sql.connect(config.sql);
+      const pool = await dbService.connect();
 
       let query = `
         SELECT
@@ -291,7 +291,7 @@ class ReportService {
    */
   static async getStatistics(filters = {}) {
     try {
-      const pool = await sql.connect(config);
+      const pool = await dbService.connect();
 
       let query = `
         SELECT
