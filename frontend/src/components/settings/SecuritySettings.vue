@@ -897,6 +897,33 @@
           </div>
         </div>
 
+        <!-- Parent Department Selection (แสดงเมื่อ type = office หรือ department) -->
+        <div v-if="departmentForm.type !== 'branch'">
+          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            แผนกหลัก (Parent) <span v-if="departmentForm.type === 'office'" class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="departmentForm.parentId"
+            :disabled="departmentModal.isReadOnly || departmentModal.isAddChild"
+            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option :value="null">-- เลือกแผนกหลัก --</option>
+            <option
+              v-for="dept in availableParentDepartments"
+              :key="dept.ID_ID"
+              :value="dept.ID_ID"
+            >
+              {{ dept.ID_LocalName }} ({{ dept.ID_Code }}) - {{ dept.ID_Type === 'branch' ? 'สาขา' : 'สำนัก' }}
+            </option>
+          </select>
+          <p v-if="departmentForm.type === 'office'" class="text-xs text-gray-500 mt-1">
+            สำนักต้องอยู่ภายใต้สาขา (Branch)
+          </p>
+          <p v-if="departmentForm.type === 'department'" class="text-xs text-gray-500 mt-1">
+            ฝ่ายสามารถอยู่ภายใต้สาขา (Branch) หรือสำนัก (Office)
+          </p>
+        </div>
+
         <BaseInput v-model="departmentForm.localName" label="ชื่อแผนก (ไทย)" placeholder="เช่น ฝ่ายธุรการ" required :disabled="departmentModal.isReadOnly" />
         <BaseInput v-model="departmentForm.englishName" label="ชื่อแผนก (อังกฤษ)" placeholder="เช่น Administration" :disabled="departmentModal.isReadOnly" />
 
@@ -1135,6 +1162,7 @@ const departmentForm = ref({
   parentId: null, isActive: true, remarks: '', companyIds: []
 });
 const companyDepartments = ref([]);
+const availableParentDepartments = ref([]);
 
 const fetchDepartments = async () => {
   try {
@@ -1154,15 +1182,16 @@ const fetchCompanyDepartments = async () => {
   }
 };
 
-const openDepartmentModalForCompany = () => {
+const openDepartmentModalForCompany = async () => {
   departmentModal.value = { show: true, isEdit: false, isReadOnly: false, title: 'เพิ่มแผนกใหม่', id: null, isAddChild: false, parentId: null };
   departmentForm.value = {
     code: '', localName: '', englishName: '', type: 'department',
     parentId: null, isActive: true, remarks: '', companyIds: [props.companyId]
   };
+  await fetchAvailableParentDepartments();
 };
 
-const handleAddChild = (payload) => {
+const handleAddChild = async (payload) => {
   const { node: parentNode, company } = payload;
   departmentModal.value = {
     show: true, isEdit: false, isReadOnly: false,
@@ -1174,9 +1203,10 @@ const handleAddChild = (payload) => {
     parentId: parentNode.ID_ID, isActive: true, remarks: '',
     companyIds: [props.companyId]
   };
+  await fetchAvailableParentDepartments();
 };
 
-const handleViewDepartment = (payload) => {
+const handleViewDepartment = async (payload) => {
   const { node, company } = payload;
   departmentModal.value = { show: true, isEdit: false, isReadOnly: true, title: 'ดูข้อมูลแผนก', id: node.ID_ID, isAddChild: false, parentId: node.Parent_ID_ID };
   departmentForm.value = {
@@ -1189,9 +1219,10 @@ const handleViewDepartment = (payload) => {
     remarks: node.ID_Remarks || '',
     companyIds: [props.companyId]
   };
+  await fetchAvailableParentDepartments();
 };
 
-const handleEditDepartment = (payload) => {
+const handleEditDepartment = async (payload) => {
   const { node, company } = payload;
   departmentModal.value = { show: true, isEdit: true, isReadOnly: false, title: 'แก้ไขแผนก', id: node.ID_ID, isAddChild: false, parentId: node.Parent_ID_ID };
   departmentForm.value = {
@@ -1204,6 +1235,7 @@ const handleEditDepartment = (payload) => {
     remarks: node.ID_Remarks || '',
     companyIds: [props.companyId]
   };
+  await fetchAvailableParentDepartments();
 };
 
 const handleMoveDepartment = (payload) => {
@@ -1227,6 +1259,45 @@ const handleDeleteDepartment = async (payload) => {
   } catch (error) {
     console.error('[SecuritySettings] Error deleting department:', error);
     alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+// Fetch available parent departments based on type
+const fetchAvailableParentDepartments = async () => {
+  try {
+    const response = await departmentsAPI.getTree(props.companyId);
+    const allDepts = response.data.data || [];
+
+    // Flatten the tree to get all departments
+    const flattenDepartments = (nodes) => {
+      let result = [];
+      for (const node of nodes) {
+        result.push(node);
+        if (node.children && node.children.length > 0) {
+          result = result.concat(flattenDepartments(node.children));
+        }
+      }
+      return result;
+    };
+
+    const flatDepts = flattenDepartments(allDepts);
+
+    // Filter based on department type
+    if (departmentForm.value.type === 'office') {
+      // Office can only have branch as parent
+      availableParentDepartments.value = flatDepts.filter(d => d.ID_Type === 'branch');
+    } else if (departmentForm.value.type === 'department') {
+      // Department can have branch or office as parent
+      availableParentDepartments.value = flatDepts.filter(d => d.ID_Type === 'branch' || d.ID_Type === 'office');
+    } else {
+      // Branch doesn't need parent
+      availableParentDepartments.value = [];
+    }
+
+    console.log(`[fetchAvailableParentDepartments] Type: ${departmentForm.value.type}, Available parents: ${availableParentDepartments.value.length}`);
+  } catch (error) {
+    console.error('[fetchAvailableParentDepartments] Error:', error);
+    availableParentDepartments.value = [];
   }
 };
 
@@ -1636,6 +1707,13 @@ watch(() => props.companyId, () => {
   fetchSecurityGuards();
   fetchDepartments();
   fetchCompanyDepartments();
+});
+
+// Watch department type changes to refresh available parent departments
+watch(() => departmentForm.value.type, () => {
+  if (departmentModal.value.show) {
+    fetchAvailableParentDepartments();
+  }
 });
 
 onMounted(() => {

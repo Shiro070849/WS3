@@ -39,3 +39,8 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Uploaded files (keep folder structure but ignore content)
+backend/uploads/**/*
+frontend/uploads/**/*
+!backend/uploads/**/.gitkeep

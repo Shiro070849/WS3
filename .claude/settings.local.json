@@ -26,7 +26,12 @@
       "Bash(node index.js:*)",
       "Bash(node -c:*)",
       "Bash(del nul)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(backend/uploads/.gitkeep)",
+      "Bash(backend/uploads/images/.gitkeep)",
+      "Bash(backend/uploads/logos/.gitkeep)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
