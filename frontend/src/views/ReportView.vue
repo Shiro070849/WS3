@@ -201,7 +201,7 @@
           <h2 class="text-lg font-bold text-gray-900 font-prompt">
             รายการข้อมูล
             <span class="ml-2 text-base font-normal text-gray-500">
-              ({{ reports.length }} รายการ)
+              ({{ summary.total }} รายการ)
             </span>
           </h2>
         </div>
@@ -239,9 +239,9 @@
                   ไม่พบข้อมูล
                 </td>
               </tr>
-              <tr v-else v-for="(report, index) in reports" :key="report.id" class="hover:bg-blue-50/30 transition-colors border-b border-gray-200">
+              <tr v-else v-for="(report, index) in paginatedReports" :key="report.id" class="hover:bg-blue-50/30 transition-colors border-b border-gray-200">
                 <td class="px-6 py-5 whitespace-nowrap text-base text-gray-700 font-medium font-prompt">
-                  {{ index + 1 }}
+                  {{ (pagination.page - 1) * pagination.limit + index + 1 }}
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
                   <div class="text-base font-bold text-gray-900 font-prompt">
@@ -284,18 +284,86 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination -->
+        <div v-if="pagination.totalPages > 1" class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <div class="flex items-center justify-between">
+            <div class="text-base text-gray-600 font-prompt">
+              แสดง {{ (pagination.page - 1) * pagination.limit + 1 }}-{{ Math.min(pagination.page * pagination.limit, summary.total) }} จาก {{ summary.total }} รายการ
+            </div>
+            <div class="flex gap-2 items-center">
+              <!-- Previous Button -->
+              <button
+                @click="changePage(pagination.page - 1)"
+                :disabled="pagination.page === 1"
+                class="px-4 py-2 text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] disabled:opacity-40 disabled:cursor-not-allowed transition-all font-prompt"
+              >
+                ← ก่อนหน้า
+              </button>
+
+              <!-- Page Numbers -->
+              <div class="flex gap-1">
+                <!-- First Page -->
+                <button
+                  v-if="pagination.page > 6"
+                  @click="changePage(1)"
+                  class="w-10 h-10 flex items-center justify-center text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] transition-all font-prompt"
+                >
+                  1
+                </button>
+                <span v-if="pagination.page > 7" class="flex items-center px-2 text-gray-400">...</span>
+
+                <!-- Pages around current page -->
+                <button
+                  v-for="page in visiblePages"
+                  :key="page"
+                  @click="changePage(page)"
+                  :class="[
+                    'w-10 h-10 flex items-center justify-center text-base font-semibold border rounded-lg transition-all font-prompt',
+                    page === pagination.page
+                      ? 'bg-[#0090D3] text-white border-[#0090D3]'
+                      : 'border-gray-300 hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3]'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+
+                <!-- Last Page -->
+                <span v-if="pagination.page < pagination.totalPages - 6" class="flex items-center px-2 text-gray-400">...</span>
+                <button
+                  v-if="pagination.page < pagination.totalPages - 5"
+                  @click="changePage(pagination.totalPages)"
+                  class="w-10 h-10 flex items-center justify-center text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] transition-all font-prompt"
+                >
+                  {{ pagination.totalPages }}
+                </button>
+              </div>
+
+              <!-- Next Button -->
+              <button
+                @click="changePage(pagination.page + 1)"
+                :disabled="pagination.page >= pagination.totalPages"
+                class="px-4 py-2 text-base font-semibold border border-gray-300 rounded-lg hover:bg-white hover:border-[#0090D3] hover:text-[#0090D3] disabled:opacity-40 disabled:cursor-not-allowed transition-all font-prompt"
+              >
+                ถัดไป →
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { reportsAPI, getBackendBaseUrl, vehicleTypesAPI, companiesAPI } from '../services/api';
 import ExportModal from '../components/ExportModal.vue';
 import { useToast } from '@/composables/useToast';
+import { useFilterStore } from '../stores/filterStore';
 
 const toast = useToast();
+const filterStore = useFilterStore();
 
 // ==================== STATE ====================
 const loading = ref(false);
@@ -305,11 +373,18 @@ const companies = ref([]);
 const showExportModal = ref(false);
 
 const filters = ref({
-  startDate: '',
-  endDate: '',
+  startDate: filterStore.dateFrom || '',
+  endDate: filterStore.dateTo || '',
   companyId: '',
   status: '',
   vehicleType: '',
+});
+
+const pagination = ref({
+  page: 1,
+  limit: 25,
+  total: 0,
+  totalPages: 0,
 });
 
 const summary = ref({
@@ -317,6 +392,31 @@ const summary = ref({
   in: 0,
   out: 0,
   pending: 0,
+});
+
+// ==================== COMPUTED ====================
+
+// คำนวณหน้าที่จะแสดงใน pagination
+const visiblePages = computed(() => {
+  const current = pagination.value.page;
+  const total = pagination.value.totalPages;
+  const pages = [];
+
+  const start = Math.max(1, current - 5);
+  const end = Math.min(total, current + 4);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
+
+// คำนวณข้อมูลที่จะแสดงในหน้าปัจจุบัน
+const paginatedReports = computed(() => {
+  const start = (pagination.value.page - 1) * pagination.value.limit;
+  const end = start + pagination.value.limit;
+  return reports.value.slice(start, end);
 });
 
 // ==================== FUNCTIONS ====================
@@ -368,6 +468,11 @@ const fetchReport = async () => {
     }));
 
     summary.value = response.data.summary;
+
+    // คำนวณ pagination
+    pagination.value.total = response.data.data.length;
+    pagination.value.totalPages = Math.ceil(summary.value.total / pagination.value.limit);
+    pagination.value.page = 1; // รีเซต pagination เมื่อค้นหาข้อมูลใหม่
   } catch (error) {
     console.error('Error fetching reports:', error);
     toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลรายงานได้');
@@ -375,6 +480,22 @@ const fetchReport = async () => {
     loading.value = false;
   }
 };
+
+const changePage = (page) => {
+  if (page >= 1 && page <= pagination.value.totalPages) {
+    pagination.value.page = page;
+  }
+};
+
+// อัปเดต global filter store เมื่อวันที่เปลี่ยน
+const updateGlobalFilters = () => {
+  filterStore.setDateRange(filters.value.startDate, filters.value.endDate);
+  filterStore.persistToLocalStorage();
+};
+
+// ติดตามการเปลี่ยนแปลงของวันที่
+watch(() => filters.value.startDate, updateGlobalFilters);
+watch(() => filters.value.endDate, updateGlobalFilters);
 
 // ==================== EXPORT MODAL ====================
 const openExportModal = () => {
@@ -467,12 +588,24 @@ const formatDateTime = (dateTime) => {
 };
 
 onMounted(() => {
-  // Set default date range (last 7 days)
-  const today = new Date();
-  const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  // โหลด stored filters จาก localStorage
+  filterStore.initializeFromLocalStorage();
 
-  filters.value.endDate = today.toISOString().split('T')[0];
-  filters.value.startDate = lastWeek.toISOString().split('T')[0];
+  // ใช้ store dates หากมี มิฉะนั้นใช้ default (last 7 days)
+  if (filterStore.dateFrom && filterStore.dateTo) {
+    filters.value.startDate = filterStore.dateFrom;
+    filters.value.endDate = filterStore.dateTo;
+  } else {
+    const today = new Date();
+    const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    filters.value.endDate = today.toISOString().split('T')[0];
+    filters.value.startDate = lastWeek.toISOString().split('T')[0];
+
+    // บันทึกไปยัง store
+    filterStore.setDateRange(filters.value.startDate, filters.value.endDate);
+    filterStore.persistToLocalStorage();
+  }
 
   // Auto-fill companyId จาก localStorage (สำหรับ multi-company)
   const companyId = localStorage.getItem('companyId');

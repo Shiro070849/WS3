@@ -186,11 +186,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import BaseCard from '../components/base/BaseCard.vue';
 import BaseTable from '../components/base/BaseTable.vue';
 import DateRangeFilter from '../components/DateRangeFilter.vue';
 import { dashboardAPI, companiesAPI, vehicleTypesAPI } from '../services/api';
+import { useFilterStore } from '../stores/filterStore';
+
+const filterStore = useFilterStore();
 
 const stats = ref({
   wayInToday: 0,
@@ -213,8 +216,8 @@ console.log(`👤 Dashboard User: userId=${userId}, companyId=${loggedInCompanyI
 
 const filters = ref({
   search: '',
-  dateFrom: null,
-  dateTo: null,
+  dateFrom: filterStore.dateFrom,
+  dateTo: filterStore.dateTo,
   companyId: null,
   vehicleType: '',
 });
@@ -290,9 +293,29 @@ const fetchActivities = async () => {
 const handleDateFilter = ({ dateFrom, dateTo }) => {
   filters.value.dateFrom = dateFrom;
   filters.value.dateTo = dateTo;
+  // อัปเดต global filter store
+  filterStore.setDateRange(dateFrom, dateTo);
+  filterStore.persistToLocalStorage();
   fetchStats();
   fetchActivities();
 };
+
+// ติดตามการเปลี่ยนแปลง store จากหน้าอื่น
+watch(() => filterStore.dateFrom, (newVal) => {
+  if (newVal !== filters.value.dateFrom) {
+    filters.value.dateFrom = newVal;
+    fetchStats();
+    fetchActivities();
+  }
+});
+
+watch(() => filterStore.dateTo, (newVal) => {
+  if (newVal !== filters.value.dateTo) {
+    filters.value.dateTo = newVal;
+    fetchStats();
+    fetchActivities();
+  }
+});
 
 const handleCompanyFilter = () => {
   fetchStats();
@@ -328,6 +351,11 @@ const formatDateTime = (dateTime) => {
 };
 
 onMounted(() => {
+  // โหลด stored filters จาก localStorage
+  filterStore.initializeFromLocalStorage();
+  filters.value.dateFrom = filterStore.dateFrom;
+  filters.value.dateTo = filterStore.dateTo;
+
   fetchCompanies();
   fetchVehicleTypes();
   fetchStats();

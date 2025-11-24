@@ -848,15 +848,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { vehiclesAPI, vehicleTypesAPI, companiesAPI, wayinAPI, getBackendBaseUrl } from '../services/api';
 import DateRangeFilter from '../components/DateRangeFilter.vue';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
 import { REPRINT_CONFIG, isQRUrlType, shouldShowFooterWarning } from '../constants/visitTypes';
 import { useToast } from '@/composables/useToast';
+import { useFilterStore } from '../stores/filterStore';
 
 const toast = useToast();
+const filterStore = useFilterStore();
 
 // ==================== STATE ====================
 const vehicles = ref([]);
@@ -892,8 +894,8 @@ const filters = ref({
   search: '',
   status: '',
   vehicleType: '',
-  dateFrom: null,
-  dateTo: null,
+  dateFrom: filterStore.dateFrom,
+  dateTo: filterStore.dateTo,
   companyId: null,
   page: 1,
   limit: 25,
@@ -991,9 +993,29 @@ const fetchCompanies = async () => {
 const handleDateFilter = ({ dateFrom, dateTo }) => {
   filters.value.dateFrom = dateFrom;
   filters.value.dateTo = dateTo;
+  // อัปเดต global filter store
+  filterStore.setDateRange(dateFrom, dateTo);
+  filterStore.persistToLocalStorage();
   pagination.value.page = 1;
   fetchVehicles();
 };
+
+// ติดตามการเปลี่ยนแปลง store จากหน้าอื่น
+watch(() => filterStore.dateFrom, (newVal) => {
+  if (newVal !== filters.value.dateFrom) {
+    filters.value.dateFrom = newVal;
+    pagination.value.page = 1;
+    fetchVehicles();
+  }
+});
+
+watch(() => filterStore.dateTo, (newVal) => {
+  if (newVal !== filters.value.dateTo) {
+    filters.value.dateTo = newVal;
+    pagination.value.page = 1;
+    fetchVehicles();
+  }
+});
 
 const handleCompanyFilter = () => {
   pagination.value.page = 1;
@@ -1293,6 +1315,11 @@ const fetchVehicleTypes = async () => {
 };
 
 onMounted(() => {
+  // โหลด stored filters จาก localStorage
+  filterStore.initializeFromLocalStorage();
+  filters.value.dateFrom = filterStore.dateFrom;
+  filters.value.dateTo = filterStore.dateTo;
+
   fetchCompanies();
   fetchVehicles();
   fetchVehicleTypes();
