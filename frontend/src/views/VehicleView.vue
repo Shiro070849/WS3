@@ -693,7 +693,7 @@
 
             <!-- Print Instructions -->
             <div class="p-6 mb-4 border-2 border-blue-300 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100">
-              <p class="mb-5 text-lg font-bold text-blue-900 font-prompt flex items-center gap-3">
+              <p class="flex items-center gap-3 mb-5 text-lg font-bold text-blue-900 font-prompt">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -706,7 +706,7 @@
                   </svg>
                   <div>
                     <p class="text-sm font-semibold text-blue-800 font-prompt">เครื่องปริ้น</p>
-                    <p class="text-base text-blue-900 font-mono font-bold">EPSON TM-T82X</p>
+                    <p class="font-mono text-base font-bold text-blue-900">EPSON TM-T82X</p>
                   </div>
                 </div>
                 <div class="flex items-start gap-3">
@@ -715,7 +715,7 @@
                   </svg>
                   <div>
                     <p class="text-sm font-semibold text-blue-800 font-prompt">ขนาดกระดาษ</p>
-                    <p class="text-base text-blue-900 font-mono font-bold">80mm</p>
+                    <p class="font-mono text-base font-bold text-blue-900">80mm</p>
                   </div>
                 </div>
                 <div class="flex items-start gap-3">
@@ -724,7 +724,7 @@
                   </svg>
                   <div>
                     <p class="text-sm font-semibold text-blue-800 font-prompt">ระยะขอบ</p>
-                    <p class="text-base text-blue-900 font-mono font-bold">None</p>
+                    <p class="font-mono text-base font-bold text-blue-900">None</p>
                   </div>
                 </div>
                 <div class="flex items-start gap-3">
@@ -733,7 +733,7 @@
                   </svg>
                   <div>
                     <p class="text-sm font-semibold text-blue-800 font-prompt">ขนาดแสดง</p>
-                    <p class="text-base text-blue-900 font-mono font-bold">100%</p>
+                    <p class="font-mono text-base font-bold text-blue-900">100%</p>
                   </div>
                 </div>
               </div>
