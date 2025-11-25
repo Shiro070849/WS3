@@ -547,13 +547,14 @@
           <div class="browser-content">
             <!-- VisitType Selector -->
             <div class="mb-6">
-              <label class="block mb-2 text-sm font-semibold text-gray-800">ประเภทการเข้า (Visit Type)</label>
+              <label class="block mb-2 text-sm font-semibold text-gray-800 font-prompt">ประเภทการเข้า (Visit Type)</label>
               <select
                 v-model="reprintData.visitTypeId"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all font-prompt"
+                style="font-size: 13px; line-height: 1.4;"
               >
-                <option :value="null">-- เลือกประเภทการเข้า --</option>
-                <option v-for="vt in visitTypes" :key="vt.VT_ID" :value="vt.VT_ID">
+                <option :value="null" style="font-size: 13px; padding: 4px 8px;">-- เลือกประเภทการเข้า --</option>
+                <option v-for="vt in visitTypes" :key="vt.VT_ID" :value="vt.VT_ID" style="font-size: 13px; padding: 4px 8px;">
                   {{ vt.VT_LocalName }} / {{ vt.VT_EnglishName }}
                 </option>
               </select>
@@ -691,14 +692,51 @@
             </div>
 
             <!-- Print Instructions -->
-            <div class="p-4 mb-4 border border-blue-200 rounded-lg bg-blue-50">
-              <p class="mb-2 text-sm font-semibold text-blue-800">คำแนะนำการพิมพ์:</p>
-              <ul class="space-y-1 text-xs text-blue-700 list-disc list-inside">
-                <li>เลือกเครื่องปริ้น: <strong>EPSON TM-T82X Receipt</strong></li>
-                <li>Paper size: <strong>80mm</strong> (3.15 inches)</li>
-                <li>Margins: <strong>None</strong></li>
-                <li>Scale: <strong>100%</strong></li>
-              </ul>
+            <div class="p-6 mb-4 border-2 border-blue-300 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100">
+              <p class="mb-5 text-lg font-bold text-blue-900 font-prompt flex items-center gap-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                คำแนะนำการพิมพ์
+              </p>
+              <div class="grid grid-cols-2 gap-5">
+                <div class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4H7a2 2 0 01-2-2v-4a2 2 0 012-2h10a2 2 0 012 2v4a2 2 0 01-2 2zm0 0h6a2 2 0 002-2v-4a2 2 0 00-2-2h-.756a2 2 0 00-1.789.894l-.276.553a1 1 0 00-.894.446H13a1 1 0 00-.894-.446l-.276-.553A2 2 0 009.756 7H9a2 2 0 00-2 2v4a2 2 0 002 2z"></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-semibold text-blue-800 font-prompt">เครื่องปริ้น</p>
+                    <p class="text-base text-blue-900 font-mono font-bold">EPSON TM-T82X</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-semibold text-blue-800 font-prompt">ขนาดกระดาษ</p>
+                    <p class="text-base text-blue-900 font-mono font-bold">80mm</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m0 18v-6m0-6V5m0 0h10a2 2 0 012 2v14a2 2 0 01-2 2h-10"></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-semibold text-blue-800 font-prompt">ระยะขอบ</p>
+                    <p class="text-base text-blue-900 font-mono font-bold">None</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4h10a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-semibold text-blue-800 font-prompt">ขนาดแสดง</p>
+                    <p class="text-base text-blue-900 font-mono font-bold">100%</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Print Button -->
@@ -1650,12 +1688,25 @@ onMounted(() => {
    80mm Thermal Printer Slip Styles
    ============================================ */
 
+/* Print Slip Preview Container */
+.print-slip-preview {
+  background: #f5f5f5 !important;
+  box-shadow: inset 0 0 20px rgba(8, 0, 0, 0.15) !important;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px !important;
+}
+
 /* Preview slip (shown in modal) */
 .slip-80mm {
   width: 80mm;
   padding: 10mm;
   background: white;
   font-family: 'Courier New', monospace;
+  border: 2px solid #ddd;
+  box-shadow: 0 8px 16px rgba(15, 15, 15, 0.3), 0 0 0 1px #ccc;
+  border-radius: 4px;
 }
 
 /* Print-only slip (actual print output) */
