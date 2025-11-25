@@ -1,9 +1,9 @@
 <template>
   <div class="w-full max-w-full animate-fadeIn">
     <!-- Page Header - Tailwind Only -->
-    <div class="mb-10 relative">
+    <div class="relative mb-10">
       <h1 class="page-title">รายการ การเข้า-ออก</h1>
-      <p class="text-lg text-slate-500 m-0 font-prompt font-medium">
+      <p class="m-0 text-lg font-medium text-slate-500 font-prompt">
         จัดการข้อมูลยานพาหนะเข้า-ออก
       </p>
     </div>
@@ -20,11 +20,11 @@
       </div>
 
       <!-- Filter Card - Tailwind Only -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div class="p-6 mb-6 bg-white border border-gray-100 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-6">
           <!-- Search -->
           <div class="md:col-span-2">
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               ค้นหา
             </label>
             <input
@@ -38,7 +38,7 @@
 
           <!-- Company Filter (Super Admin only) -->
           <div v-if="isSuperAdmin">
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               บริษัท
             </label>
             <select
@@ -59,7 +59,7 @@
 
           <!-- Vehicle Type Filter -->
           <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               ประเภทรถ
             </label>
             <select
@@ -80,7 +80,7 @@
 
           <!-- Status Filter -->
           <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               สถานะ
             </label>
             <select
@@ -114,7 +114,7 @@
       </div>
 
       <!-- Table Card - Tailwind Only -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+      <div class="overflow-hidden bg-white border border-gray-100 rounded-lg shadow-sm">
         <!-- Table Header -->
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
           <h2 class="text-lg font-bold text-gray-900 font-prompt">
@@ -128,33 +128,33 @@
         <!-- Table -->
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+            <thead class="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <tr>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   ทะเบียนรถ
                 </th>
-                <th v-if="canReprint" class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th v-if="canReprint" class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   Barcode
                 </th>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   ประเภทรถ
                 </th>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   คนขับ
                 </th>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   บริษัท
                 </th>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   เวลาเข้า
                 </th>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   เวลาออก
                 </th>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   สถานะ
                 </th>
-                <th class="px-6 py-5 text-left text-sm font-bold text-gray-700 font-prompt">
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   จัดการ
                 </th>
               </tr>
@@ -162,7 +162,7 @@
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="loading" class="bg-white">
                 <td :colspan="canReprint ? 9 : 8" class="px-6 py-10 text-center text-gray-500">
-                  <div class="flex justify-center items-center">
+                  <div class="flex items-center justify-center">
                     <svg class="animate-spin h-6 w-6 mr-3 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -172,11 +172,11 @@
                 </td>
               </tr>
               <tr v-else-if="vehicles.length === 0" class="bg-white">
-                <td :colspan="canReprint ? 9 : 8" class="px-6 py-10 text-center text-base text-gray-500 font-prompt">
+                <td :colspan="canReprint ? 9 : 8" class="px-6 py-10 text-base text-center text-gray-500 font-prompt">
                   ไม่พบข้อมูล
                 </td>
               </tr>
-              <tr v-else v-for="vehicle in vehicles" :key="vehicle.WI_ID" class="hover:bg-blue-50/30 transition-colors border-b border-gray-200">
+              <tr v-else v-for="vehicle in vehicles" :key="vehicle.WI_ID" class="transition-colors border-b border-gray-200 hover:bg-blue-50/30">
                 <td class="px-6 py-5 whitespace-nowrap">
                   <div class="text-base font-bold text-gray-900 font-prompt">
                     {{ vehicle.WI_LicensePlate || '-' }}
@@ -186,32 +186,32 @@
                   </div>
                 </td>
                 <td v-if="canReprint" class="px-6 py-5 whitespace-nowrap">
-                  <div class="text-sm text-gray-700 font-mono font-medium">
+                  <div class="font-mono text-sm font-medium text-gray-700">
                     {{ vehicle.WI_Barcode || '-' }}
                   </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
-                  <div class="text-base text-gray-700 font-medium font-prompt">
+                  <div class="text-base font-medium text-gray-700 font-prompt">
                     {{ vehicle.WI_VehicleType || '-' }}
                   </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
-                  <div class="text-base text-gray-700 font-medium font-prompt">
+                  <div class="text-base font-medium text-gray-700 font-prompt">
                     {{ vehicle.WI_FullName || '-' }}
                   </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
-                  <div class="text-base text-gray-700 font-medium font-prompt">
+                  <div class="text-base font-medium text-gray-700 font-prompt">
                     {{ vehicle.CompanyName || '-' }}
                   </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
-                  <div class="text-base text-gray-700 font-medium font-prompt">
+                  <div class="text-base font-medium text-gray-700 font-prompt">
                     {{ formatDateTime(vehicle.WI_RecordedOn) }}
                   </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
-                  <div class="text-base text-gray-700 font-medium font-prompt">
+                  <div class="text-base font-medium text-gray-700 font-prompt">
                     {{ vehicle.WO_RecordedOn ? formatDateTime(vehicle.WO_RecordedOn) : '-' }}
                   </div>
                 </td>
@@ -231,7 +231,7 @@
                     <button
                       v-if="canReprint"
                       @click="openReprintModal(vehicle)"
-                      class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:scale-95 transition-all text-base font-semibold shadow-sm font-prompt"
+                      class="px-4 py-2 text-base font-semibold text-white transition-all bg-purple-600 rounded-lg shadow-sm hover:bg-purple-700 active:scale-95 font-prompt"
                     >
                       รีปริ้น
                     </button>
@@ -243,7 +243,7 @@
                     </button>
                     <button
                       @click="confirmDelete(vehicle)"
-                      class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all text-base font-semibold shadow-sm font-prompt"
+                      class="px-4 py-2 text-base font-semibold text-white transition-all bg-red-600 rounded-lg shadow-sm hover:bg-red-700 active:scale-95 font-prompt"
                     >
                       ลบ
                     </button>
@@ -255,12 +255,12 @@
         </div>
 
         <!-- Pagination -->
-        <div v-if="pagination.totalPages > 1" class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+        <div v-if="pagination.totalPages > 1" class="px-6 py-4 border-t border-gray-100 bg-gray-50">
           <div class="flex items-center justify-between">
             <div class="text-base text-gray-600 font-prompt">
               แสดง {{ (pagination.page - 1) * pagination.limit + 1 }}-{{ Math.min(pagination.page * pagination.limit, pagination.total) }} จาก {{ pagination.total }} รายการ
             </div>
-            <div class="flex gap-2 items-center">
+            <div class="flex items-center gap-2">
               <!-- Previous Button -->
               <button
                 @click="changePage(pagination.page - 1)"
@@ -324,7 +324,7 @@
 
     <!-- Add/Edit Modal - Browser Style -->
     <Teleport to="body">
-      <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm" @click.self="closeModal">
+      <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm" @click.self="closeModal">
         <div class="browser-modal browser-modal-large">
           <!-- Browser Tabs Header -->
           <div class="tabs-head">
@@ -356,7 +356,7 @@
           <div class="browser-content">
             <div class="grid grid-cols-2 gap-5">
               <div class="col-span-2 md:col-span-1">
-                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
                   ทะเบียนรถ <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -367,7 +367,7 @@
                 />
               </div>
               <div class="col-span-2 md:col-span-1">
-                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
                   จังหวัด
                 </label>
                 <input
@@ -378,7 +378,7 @@
                 />
               </div>
               <div class="col-span-2 md:col-span-1">
-                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
                   ประเภทรถ
                 </label>
                 <select
@@ -396,7 +396,7 @@
                 </select>
               </div>
               <div class="col-span-2 md:col-span-1">
-                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
                   ชื่อคนขับ
                 </label>
                 <input
@@ -407,7 +407,7 @@
                 />
               </div>
               <div class="col-span-2">
-                <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+                <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
                   หมายเหตุ
                 </label>
                 <textarea
@@ -420,10 +420,10 @@
             </div>
 
             <!-- ปุ่ม -->
-            <div class="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 -mx-8 -mb-8 mt-6">
+            <div class="flex justify-end gap-3 px-6 py-4 mt-6 -mx-8 -mb-8 border-t bg-gray-50">
               <button
                 @click="closeModal"
-                class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all font-prompt"
+                class="px-6 py-3 text-base font-semibold text-gray-700 transition-all border-2 border-gray-300 rounded-xl hover:bg-gray-100 active:scale-95 font-prompt"
               >
                 ยกเลิก
               </button>
@@ -441,7 +441,7 @@
 
     <!-- Checkout Modal - Browser Style -->
     <Teleport to="body">
-      <div v-if="showCheckoutModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm" @click.self="closeCheckoutModal">
+      <div v-if="showCheckoutModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm" @click.self="closeCheckoutModal">
         <div class="browser-modal">
           <!-- Browser Tabs Header -->
           <div class="tabs-head tabs-head-green">
@@ -471,18 +471,18 @@
 
           <!-- Content Area -->
           <div class="browser-content">
-            <div class="mb-6 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
-              <p class="text-base text-gray-700 mb-3 font-prompt">
+            <div class="p-6 mb-6 border-2 border-blue-100 bg-blue-50 rounded-xl">
+              <p class="mb-3 text-base text-gray-700 font-prompt">
                 <span class="font-semibold text-gray-600">ทะเบียนรถ:</span>
-                <span class="font-bold text-gray-900 text-lg ml-2">{{ checkoutData.vehicle?.WI_LicensePlate }}</span>
+                <span class="ml-2 text-lg font-bold text-gray-900">{{ checkoutData.vehicle?.WI_LicensePlate }}</span>
               </p>
               <p class="text-base text-gray-700 font-prompt">
                 <span class="font-semibold text-gray-600">คนขับ:</span>
-                <span class="font-bold text-gray-900 text-lg ml-2">{{ checkoutData.vehicle?.WI_FullName || '-' }}</span>
+                <span class="ml-2 text-lg font-bold text-gray-900">{{ checkoutData.vehicle?.WI_FullName || '-' }}</span>
               </p>
             </div>
             <div>
-              <label class="block text-base font-bold text-gray-700 mb-3 font-prompt">
+              <label class="block mb-3 text-base font-bold text-gray-700 font-prompt">
                 หมายเหตุ
               </label>
               <textarea
@@ -494,10 +494,10 @@
             </div>
 
             <!-- ปุ่ม -->
-            <div class="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 -mx-8 -mb-8 mt-6">
+            <div class="flex justify-end gap-3 px-6 py-4 mt-6 -mx-8 -mb-8 border-t bg-gray-50">
               <button
                 @click="closeCheckoutModal"
-                class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all font-prompt"
+                class="px-6 py-3 text-base font-semibold text-gray-700 transition-all border-2 border-gray-300 rounded-xl hover:bg-gray-100 active:scale-95 font-prompt"
               >
                 ยกเลิก
               </button>
@@ -515,7 +515,7 @@
 
     <!-- Reprint Modal -->
     <Teleport to="body">
-      <div v-if="showReprintModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm print:hidden" @click.self="closeReprintModal">
+      <div v-if="showReprintModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm print:hidden" @click.self="closeReprintModal">
         <div class="browser-modal browser-modal-large max-h-[90vh] overflow-y-auto">
           <!-- Browser Tabs Header -->
           <div class="tabs-head">
@@ -547,7 +547,7 @@
           <div class="browser-content">
             <!-- VisitType Selector -->
             <div class="mb-6">
-              <label class="block text-sm font-semibold text-gray-800 mb-2">ประเภทการเข้า (Visit Type)</label>
+              <label class="block mb-2 text-sm font-semibold text-gray-800">ประเภทการเข้า (Visit Type)</label>
               <select
                 v-model="reprintData.visitTypeId"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
@@ -559,15 +559,15 @@
               </select>
               <button
                 @click="updateVisitType"
-                class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold"
+                class="px-4 py-2 mt-3 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
               >
                 อัพเดทประเภทการเข้า
               </button>
             </div>
 
             <!-- Print Preview Container (80mm width) -->
-            <div class="print-slip-preview border-2 border-gray-300 rounded-lg p-4 bg-white">
-              <div class="slip-80mm mx-auto font-prompt">
+            <div class="p-4 bg-white border-2 border-gray-300 rounded-lg print-slip-preview">
+              <div class="mx-auto slip-80mm font-prompt">
                 <!-- Company Logo -->
                 <div class="flex justify-center" v-if="reprintData.vehicle" style="margin-bottom: 4px;">
                   <img
@@ -577,7 +577,7 @@
                     style="height: 48px !important;"
                     @error="(e) => { console.error('[REPRINT] Logo load error:', e); e.target.style.display = 'none'; }"
                   />
-                  <div v-else class="text-gray-600 font-semibold" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
+                  <div v-else class="font-semibold text-gray-600" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
                 </div>
 
                 <!-- Company Name -->
@@ -678,7 +678,7 @@
                 </div>
 
                 <!-- Footer Warnings -->
-                <div v-if="shouldShowFooterWarning(reprintData.vehicle.VT_ID)" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
+                <div v-if="shouldShowFooterWarning(reprintData.vehicle.VT_ID)" class="space-y-0 font-medium text-center" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
                   <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line1 }}</p>
                   <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line2 }}</p>
                 </div>
@@ -691,9 +691,9 @@
             </div>
 
             <!-- Print Instructions -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <p class="text-sm text-blue-800 font-semibold mb-2">คำแนะนำการพิมพ์:</p>
-              <ul class="text-xs text-blue-700 space-y-1 list-disc list-inside">
+            <div class="p-4 mb-4 border border-blue-200 rounded-lg bg-blue-50">
+              <p class="mb-2 text-sm font-semibold text-blue-800">คำแนะนำการพิมพ์:</p>
+              <ul class="space-y-1 text-xs text-blue-700 list-disc list-inside">
                 <li>เลือกเครื่องปริ้น: <strong>EPSON TM-T82X Receipt</strong></li>
                 <li>Paper size: <strong>80mm</strong> (3.15 inches)</li>
                 <li>Margins: <strong>None</strong></li>
@@ -705,13 +705,13 @@
             <div class="flex justify-end gap-3 mt-6">
               <button
                 @click="closeReprintModal"
-                class="px-6 py-3 text-base font-semibold border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 active:scale-95 transition-all"
+                class="px-6 py-3 text-base font-semibold text-gray-700 transition-all border-2 border-gray-300 rounded-xl hover:bg-gray-100 active:scale-95"
               >
                 ยกเลิก
               </button>
               <button
                 @click="printSlip"
-                class="px-6 py-3 text-base font-semibold bg-purple-600 text-white rounded-xl hover:bg-purple-700 active:scale-95 transition-all shadow-md"
+                class="px-6 py-3 text-base font-semibold text-white transition-all bg-purple-600 shadow-md rounded-xl hover:bg-purple-700 active:scale-95"
               >
                 พิมพ์ / Print
               </button>
@@ -722,7 +722,7 @@
     </Teleport>
 
     <!-- Print-only Slip (hidden on screen, shown when printing) -->
-    <div class="print:block hidden">
+    <div class="hidden print:block">
       <div class="slip-80mm-print font-prompt" v-if="reprintData.vehicle">
         <!-- Company Logo -->
         <div class="flex justify-center" style="margin-bottom: 4px;">
@@ -732,7 +732,7 @@
             alt="Company Logo"
             style="height: 48px !important;"
           />
-          <div v-else class="text-gray-700 font-semibold" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
+          <div v-else class="font-semibold text-gray-700" style="font-size: 10px !important;">{{ reprintData.vehicle.IC_LocalName || 'Company' }}</div>
         </div>
 
         <!-- Company Name -->
@@ -833,7 +833,7 @@
         </div>
 
         <!-- Footer Warnings -->
-        <div v-if="shouldShowFooterWarning(reprintData.vehicle.VT_ID)" class="text-center font-medium space-y-0" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
+        <div v-if="shouldShowFooterWarning(reprintData.vehicle.VT_ID)" class="space-y-0 font-medium text-center" style="font-size: 7px !important; line-height: 1.2 !important; margin-bottom: 4px;">
           <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line1 }}</p>
           <p style="font-size: 7px !important; margin-bottom: 2px;">{{ REPRINT_CONFIG.FOOTER_WARNING_TEXT.line2 }}</p>
         </div>
@@ -841,6 +841,11 @@
         <!-- ห้ามทำใบสลิปหาย (แสดงเสมอ) -->
         <div class="text-center" style="margin-top: 4px;">
           <p class="font-bold" style="font-size: 9px !important;">*** ห้ามทำใบสลิปหาย ***</p>
+          <br>
+          <br>
+          <br>
+          <br>
+          <p>-----</p>
         </div>
       </div>
     </div>
