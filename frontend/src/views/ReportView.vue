@@ -262,7 +262,7 @@
         <div v-if="pagination.totalPages > 1" class="px-6 py-4 bg-gray-50 border-t border-gray-100">
           <div class="flex items-center justify-between">
             <div class="text-base text-gray-600 font-prompt">
-              แสดง {{ (pagination.page - 1) * pagination.limit + 1 }}-{{ Math.min(pagination.page * pagination.limit, summary.total) }} จาก {{ summary.total }} รายการ
+              แสดง {{ (pagination.page - 1) * pagination.limit + 1 }}-{{ Math.min(pagination.page * pagination.limit, pagination.total) }} จาก {{ pagination.total }} รายการ
             </div>
             <div class="flex gap-2 items-center">
               <!-- Previous Button -->
@@ -338,6 +338,10 @@ import { useFilterStore } from '../stores/filterStore';
 
 const toast = useToast();
 const filterStore = useFilterStore();
+
+// ==================== CONSTANTS ====================
+// Timing constants
+const BLOB_CLEANUP_DELAY = 100; // milliseconds - time to allow blob download before revoke URL
 
 // ==================== STATE ====================
 const loading = ref(false);
@@ -444,7 +448,7 @@ const fetchReport = async () => {
     summary.value = response.data.summary;
 
     // คำนวณ pagination
-    pagination.value.total = response.data.data.length;
+    pagination.value.total = summary.value.total;
     pagination.value.totalPages = Math.ceil(summary.value.total / pagination.value.limit);
     pagination.value.page = 1; // รีเซต pagination เมื่อค้นหาข้อมูลใหม่
   } catch (error) {
@@ -533,7 +537,7 @@ const handleExport = async (exportData) => {
     document.body.removeChild(link);
 
     // ล้าง blob URL หลังจากดาวน์โหลดเสร็จ
-    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), BLOB_CLEANUP_DELAY);
 
     // แสดง success toast
     toast.success('ดาวน์โหลดสำเร็จ', `ไฟล์ ${format.toUpperCase()} ถูกดาวน์โหลดเรียบร้อย`);
@@ -584,7 +588,8 @@ onMounted(() => {
   // Auto-fill companyId จาก localStorage (สำหรับ multi-company)
   const companyId = localStorage.getItem('companyId');
   // Super Admin (IC_ID = NULL) ไม่ต้อง filter ตามบริษัท
-  const isSuperAdmin = !companyId || companyId === 'null' || companyId === 'undefined';
+  // Check for null, empty string, or string 'null' from localStorage or API
+  const isSuperAdmin = !companyId || companyId === 'null';
   if (!isSuperAdmin) {
     filters.value.companyId = companyId;
   }
