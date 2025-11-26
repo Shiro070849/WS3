@@ -32,7 +32,10 @@
       "Bash(backend/uploads/logos/.gitkeep)",
       "Bash(git rm:*)",
       "Bash(git add:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(while read hash msg)",
+      "Bash(do echo \"=== $msg ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

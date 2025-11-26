@@ -410,9 +410,18 @@ const fetchVehicleTypes = async () => {
 
 const fetchCompanies = async () => {
   try {
+    const companyId = localStorage.getItem('companyId');
+    const isSuperAdmin = !companyId || companyId === 'null';
+
     const response = await companiesAPI.getAll();
-    // Filter only active companies
-    companies.value = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+    let filteredCompanies = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+
+    // If sub-admin, show only their own company
+    if (!isSuperAdmin) {
+      filteredCompanies = filteredCompanies.filter(c => c.IC_ID.toString() === companyId.toString());
+    }
+
+    companies.value = filteredCompanies;
   } catch (error) {
     console.error('Error fetching companies:', error);
   }
