@@ -10,46 +10,30 @@
 
     <!-- Main Content - Tailwind Layout -->
     <div class="w-full">
-      <!-- Filter Card - Tailwind Only -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-5 font-prompt">
-          ตัวกรอง
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <!-- วันที่เริ่มต้น -->
-          <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
-              วันที่เริ่มต้น
-            </label>
-            <input
-              v-model="filters.startDate"
-              type="date"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
-              @change="fetchReport"
-            />
-          </div>
+      <!-- Filter Card - Row 1: Date Range -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-100 px-6 py-4 mb-3">
+        <div class="flex items-end gap-1.5 w-full">
+          <DateRangeFilter
+            :dateFrom="filters.startDate"
+            :dateTo="filters.endDate"
+            @update:dateFrom="filters.startDate = $event"
+            @update:dateTo="filters.endDate = $event"
+            @filter="fetchReport"
+          />
+        </div>
+      </div>
 
-          <!-- วันที่สิ้นสุด -->
-          <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
-              วันที่สิ้นสุด
-            </label>
-            <input
-              v-model="filters.endDate"
-              type="date"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
-              @change="fetchReport"
-            />
-          </div>
-
+      <!-- Filter Card - Row 2: Other Filters + Buttons -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-100 px-6 py-4 mb-6">
+        <div class="flex items-end gap-3 w-full">
           <!-- บริษัท -->
-          <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <div class="flex flex-col gap-1 flex-1">
+            <label class="text-sm font-semibold text-gray-700 font-prompt">
               บริษัท
             </label>
             <select
               v-model="filters.companyId"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @change="fetchReport"
             >
               <option value="">ทั้งหมด</option>
@@ -64,13 +48,13 @@
           </div>
 
           <!-- ประเภทรถ -->
-          <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <div class="flex flex-col gap-1 flex-1">
+            <label class="text-sm font-semibold text-gray-700 font-prompt">
               ประเภทรถ
             </label>
             <select
               v-model="filters.vehicleType"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @change="fetchReport"
             >
               <option value="">ทั้งหมด</option>
@@ -85,13 +69,13 @@
           </div>
 
           <!-- สถานะ -->
-          <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <div class="flex flex-col gap-1 flex-1">
+            <label class="text-sm font-semibold text-gray-700 font-prompt">
               สถานะ
             </label>
             <select
               v-model="filters.status"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @change="fetchReport"
             >
               <option value="">ทั้งหมด</option>
@@ -99,27 +83,16 @@
               <option value="out">ออก</option>
             </select>
           </div>
-        </div>
 
-        <!-- Action Buttons - Tailwind Only -->
-        <div class="flex gap-3 mt-6">
-          <button
-            @click="fetchReport"
-            class="px-5 py-2.5 text-base font-semibold bg-[#0090D3] text-white rounded-lg hover:bg-[#007AB8] active:scale-95 transition-all shadow-sm font-prompt"
-          >
-            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            ค้นหา
-          </button>
+          <!-- Export Button -->
           <button
             @click="openExportModal"
-            class="px-5 py-2.5 text-base font-semibold bg-gradient-to-r from-[#3AAA35] to-[#339A2E] text-white rounded-lg hover:shadow-lg active:scale-95 transition-all shadow-sm font-prompt"
+            class="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-[#3AAA35] to-[#339A2E] text-white rounded-lg hover:shadow-lg active:scale-95 transition-all shadow-sm font-prompt h-auto whitespace-nowrap flex-shrink-0"
           >
-            <svg class="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
-            ส่งออกรายงาน
+            ส่งออก
           </button>
         </div>
       </div>
@@ -358,6 +331,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { reportsAPI, getBackendBaseUrl, vehicleTypesAPI, companiesAPI } from '../services/api';
+import DateRangeFilter from '../components/DateRangeFilter.vue';
 import ExportModal from '../components/ExportModal.vue';
 import { useToast } from '@/composables/useToast';
 import { useFilterStore } from '../stores/filterStore';
