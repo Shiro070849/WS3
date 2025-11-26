@@ -10,7 +10,7 @@
             สถิติและการวิเคราะห์ข้อมูลคลังสินค้า
           </p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex gap-3 flex-wrap">
           <!-- Period Filter Buttons - Tailwind Only -->
           <div class="flex gap-1.5 bg-white p-1 rounded-xl shadow-sm">
             <button
@@ -23,6 +23,21 @@
               {{ period.label }}
             </button>
           </div>
+          <!-- Company Filter (Super Admin only) -->
+          <select
+            v-if="!userCompanyId || userCompanyId === 'null'"
+            v-model="selectedCompany"
+            class="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt bg-white shadow-sm"
+          >
+            <option value="">บริษัททั้งหมด</option>
+            <option
+              v-for="company in companiesList"
+              :key="company.IC_ID"
+              :value="company.IC_ID"
+            >
+              {{ company.IC_LocalName }}
+            </option>
+          </select>
           <!-- Vehicle Type Filter -->
           <select
             v-model="selectedVehicleType"
@@ -166,7 +181,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-import { statisticsAPI, vehicleTypesAPI } from '../services/api';
+import { statisticsAPI, vehicleTypesAPI, companiesAPI } from '../services/api';
 
 // Register Chart.js components
 ChartJS.register(
@@ -194,8 +209,13 @@ const periods = [
 const selectedVehicleType = ref('');
 const vehicleTypesList = ref([]);
 
+// Company filter
+const selectedCompany = ref('');
+const companiesList = ref([]);
+
 // Extract user info from localStorage
 const userId = parseInt(localStorage.getItem('userId'));
+const userCompanyId = localStorage.getItem('companyId');
 
 // Loading states
 const loading = ref(false);
@@ -613,18 +633,50 @@ const fetchVehicleTypes = async () => {
   }
 };
 
+// Fetch companies for dropdown
+const fetchCompanies = async () => {
+  try {
+    const response = await companiesAPI.getAll();
+    console.log('[StatisticsView] All companies:', response.data.data);
+    let filteredCompanies = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+    console.log('[StatisticsView] Filtered companies:', filteredCompanies);
+
+    // If sub-admin, show only their own company
+    const isSuperAdmin = !userCompanyId || userCompanyId === 'null';
+    console.log('[StatisticsView] Is Super Admin:', isSuperAdmin, 'User Company ID:', userCompanyId);
+    if (!isSuperAdmin) {
+      filteredCompanies = filteredCompanies.filter(c => c.IC_ID.toString() === userCompanyId.toString());
+    }
+
+    companiesList.value = filteredCompanies;
+    console.log('[StatisticsView] Companies list set:', companiesList.value);
+
+    // Auto-select first company for Super Admin (if not already selected)
+    if (isSuperAdmin && filteredCompanies.length > 0 && !selectedCompany.value) {
+      selectedCompany.value = filteredCompanies[0].IC_ID;
+      console.log('[StatisticsView] Auto-selected first company:', selectedCompany.value);
+    }
+  } catch (error) {
+    console.error('Error fetching companies:', error);
+  }
+};
+
 // Fetch all statistics
 const fetchStatistics = async () => {
   loading.value = true;
   try {
+    // Determine companyId to pass (if sub-admin, use their company; if super-admin, use selected or null)
+    const companyIdParam = userCompanyId && userCompanyId !== 'null' ? userCompanyId : (selectedCompany.value || null);
+    console.log('[StatisticsView] Fetching statistics with companyId:', companyIdParam, 'selectedCompany:', selectedCompany.value, 'userCompanyId:', userCompanyId);
+
     // Fetch all data in parallel
     const [overviewRes, vehicleTypesRes, peakHoursRes, topCompaniesRes, trafficTrendRes, additionalRes] = await Promise.all([
-      statisticsAPI.getOverview(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getVehicleTypes(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getPeakHours(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId, null, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getTrafficTrend(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getAdditional(selectedPeriod.value, userId, null, null, null, selectedVehicleType.value || null)
+      statisticsAPI.getOverview(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getVehicleTypes(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getPeakHours(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId, companyIdParam, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getTrafficTrend(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
+      statisticsAPI.getAdditional(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null)
     ]);
 
     overviewStats.value = overviewRes.data.data;
@@ -651,9 +703,16 @@ watch(selectedVehicleType, () => {
   fetchStatistics();
 });
 
+// Watch company change - with deep watch to catch all changes
+watch(() => selectedCompany.value, (newVal) => {
+  console.log('[StatisticsView] Selected company changed to:', newVal);
+  fetchStatistics();
+}, { immediate: false });
+
 // Load data on mount
-onMounted(() => {
+onMounted(async () => {
   fetchVehicleTypes();
+  await fetchCompanies();
   fetchStatistics();
 });
 </script>
