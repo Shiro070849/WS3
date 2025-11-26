@@ -30,8 +30,6 @@ export function useTheme() {
   const applyTheme = (settings) => {
     const root = document.documentElement;
 
-    console.log('[THEME] Applying theme:', settings);
-
     // Apply CSS Variables
     root.style.setProperty('--primary-color', settings.primary_color || '#0090D3');
     root.style.setProperty('--primary-color-light', adjustColorBrightness(settings.primary_color || '#0090D3', 15));
@@ -60,8 +58,6 @@ export function useTheme() {
 
     currentTheme.value = settings;
     isThemeLoaded.value = true;
-
-    console.log('[SUCCESS] Theme applied successfully');
   };
 
   /**
@@ -75,7 +71,6 @@ export function useTheme() {
     }
 
     try {
-      console.log(`[FETCH] Loading theme for company ID: ${companyId}`);
       const response = await systemSettingsAPI.getAppearance(companyId);
 
       if (response.data.success) {
@@ -95,10 +90,8 @@ export function useTheme() {
       // Try to load from localStorage cache
       const cached = localStorage.getItem(`theme_${companyId}`);
       if (cached) {
-        console.log('[DATA] Loading theme from cache');
         applyTheme(JSON.parse(cached));
       } else {
-        console.log('[THEME] Using default theme');
         applyTheme(getDefaultTheme());
       }
     }
@@ -111,7 +104,6 @@ export function useTheme() {
     if (!url) return;
 
     const fullUrl = getFullImageUrl(url);
-    console.log('[INFO] Updating logo:', fullUrl);
 
     // Update all elements with class 'app-logo'
     const logoElements = document.querySelectorAll('.app-logo');
@@ -131,7 +123,6 @@ export function useTheme() {
     if (!url) return;
 
     const fullUrl = getFullImageUrl(url);
-    console.log('[INFO] Updating favicon:', fullUrl);
 
     let link = document.querySelector("link[rel~='icon']");
     if (!link) {
@@ -181,7 +172,6 @@ export function useTheme() {
     if (companyId) {
       localStorage.removeItem(`theme_${companyId}`);
       localStorage.removeItem(`theme_${companyId}_timestamp`);
-      console.log('[INFO] Theme cache cleared for company:', companyId);
     }
   };
 
@@ -190,8 +180,6 @@ export function useTheme() {
    * Reset ทุกอย่างกลับไปเป็น Default Theme
    */
   const clearAllThemes = () => {
-    console.log('[LOGOUT] Clearing ALL themes and resetting to default...');
-
     // 1. ล้าง localStorage ทั้งหมดที่เกี่ยวกับ theme
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -201,7 +189,6 @@ export function useTheme() {
       }
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log(`[INFO] Cleared ${keysToRemove.length} theme cache entries`);
 
     // 2. Reset CSS Variables กลับไปเป็น Default
     const defaultTheme = getDefaultTheme();
@@ -210,8 +197,6 @@ export function useTheme() {
     // 3. ล้าง currentTheme state
     currentTheme.value = null;
     isThemeLoaded.value = false;
-
-    console.log('[SUCCESS] All themes cleared successfully');
   };
 
   /**

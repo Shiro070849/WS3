@@ -8,9 +8,6 @@ if (!BACKEND_BASE_URL) {
 }
 const API_BASE_URL = `${BACKEND_BASE_URL}/api`;
 
-console.log('[API] Backend Base URL:', BACKEND_BASE_URL);
-console.log('[API] API Base URL:', API_BASE_URL);
-
 // Export BACKEND_BASE_URL สำหรับใช้ใน component อื่นๆ (สำหรับ static files เช่น images)
 export const getBackendBaseUrl = () => BACKEND_BASE_URL;
 
@@ -25,7 +22,6 @@ export const configAPI = {
       const response = await apiClient.get('/config');
       if (response.data.success) {
         serverConfigCache = response.data.data;
-        console.log('[CONFIG] Server config loaded:', serverConfigCache);
       }
       return response;
     } catch (error) {

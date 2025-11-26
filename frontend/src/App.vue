@@ -48,13 +48,10 @@ export default {
 
     // Load theme on app mount
     onMounted(() => {
-      console.log('[INIT] App mounted - Loading theme...')
-
       // Get user data from localStorage (set during login)
       const userDataStr = localStorage.getItem('user')
 
       if (!userDataStr) {
-        console.log('[INFO] No user data found - using default theme')
         return
       }
 
@@ -66,8 +63,6 @@ export default {
         const isSuperAdmin = !companyId || companyId === null || companyId === undefined
 
         if (isSuperAdmin) {
-          console.log('[SUPER ADMIN] Super Admin detected (IC_ID = NULL) - using default hardcoded theme')
-
           // Clear any theme cache that might exist for Super Admin
           localStorage.removeItem('theme_null')
           localStorage.removeItem('theme_null_timestamp')
@@ -79,7 +74,6 @@ export default {
         }
 
         // Company Admin: Load theme from database using IC_ID (e.g., 1002, 1103, 5)
-        console.log('[COMPANY ADMIN] Loading theme for company IC_ID:', companyId)
         loadTheme(companyId)
       } catch (error) {
         console.error('[ERROR] Failed to parse user data:', error)
@@ -89,7 +83,6 @@ export default {
     // Watch for route changes (in case user switches company)
     watch(() => route.query.companyId, (newCompanyId) => {
       if (newCompanyId && newCompanyId !== 'null' && newCompanyId !== 'undefined') {
-        console.log('[UPDATE] Company changed via route:', newCompanyId)
         loadTheme(parseInt(newCompanyId))
       }
     })

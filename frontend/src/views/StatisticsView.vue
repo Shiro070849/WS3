@@ -637,24 +637,19 @@ const fetchVehicleTypes = async () => {
 const fetchCompanies = async () => {
   try {
     const response = await companiesAPI.getAll();
-    console.log('[StatisticsView] All companies:', response.data.data);
     let filteredCompanies = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
-    console.log('[StatisticsView] Filtered companies:', filteredCompanies);
 
     // If sub-admin, show only their own company
     const isSuperAdmin = !userCompanyId || userCompanyId === 'null';
-    console.log('[StatisticsView] Is Super Admin:', isSuperAdmin, 'User Company ID:', userCompanyId);
     if (!isSuperAdmin) {
       filteredCompanies = filteredCompanies.filter(c => c.IC_ID.toString() === userCompanyId.toString());
     }
 
     companiesList.value = filteredCompanies;
-    console.log('[StatisticsView] Companies list set:', companiesList.value);
 
     // Auto-select first company for Super Admin (if not already selected)
     if (isSuperAdmin && filteredCompanies.length > 0 && !selectedCompany.value) {
       selectedCompany.value = filteredCompanies[0].IC_ID;
-      console.log('[StatisticsView] Auto-selected first company:', selectedCompany.value);
     }
   } catch (error) {
     console.error('Error fetching companies:', error);
@@ -667,7 +662,6 @@ const fetchStatistics = async () => {
   try {
     // Determine companyId to pass (if sub-admin, use their company; if super-admin, use selected or null)
     const companyIdParam = userCompanyId && userCompanyId !== 'null' ? userCompanyId : (selectedCompany.value || null);
-    console.log('[StatisticsView] Fetching statistics with companyId:', companyIdParam, 'selectedCompany:', selectedCompany.value, 'userCompanyId:', userCompanyId);
 
     // Fetch all data in parallel
     const [overviewRes, vehicleTypesRes, peakHoursRes, topCompaniesRes, trafficTrendRes, additionalRes] = await Promise.all([
@@ -705,7 +699,6 @@ watch(selectedVehicleType, () => {
 
 // Watch company change - with deep watch to catch all changes
 watch(() => selectedCompany.value, (newVal) => {
-  console.log('[StatisticsView] Selected company changed to:', newVal);
   fetchStatistics();
 }, { immediate: false });
 
