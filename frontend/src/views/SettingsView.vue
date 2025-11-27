@@ -5,11 +5,11 @@
     <!-- Page Header - Tailwind with Animation -->
     <div class="mb-6 animate-slideDown">
       <h1 class="page-title">ตั้งค่า</h1>
-      <p class="text-lg text-slate-500 m-0 font-medium font-prompt">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
+      <p class="m-0 text-lg font-medium text-slate-500 font-prompt">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
     </div>
 
     <!-- Company Selector - Tailwind + Custom Dropdown CSS with Animation -->
-    <div v-if="accessibleCompanies.length > 0" class="mb-8 flex items-center gap-4 py-4 animate-slideUp" style="position: relative; z-index: 9999;">
+    <div v-if="accessibleCompanies.length > 0" class="flex items-center gap-4 py-4 mb-8 animate-slideUp" style="position: relative; z-index: 9999;">
       <div class="flex items-center gap-2 text-sm font-semibold text-gray-800 whitespace-nowrap">
         <svg class="w-[18px] h-[18px] stroke-[#0090D3] flex-shrink-0 transition-transform duration-300 hover:scale-110" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -62,10 +62,10 @@
         <!-- TAB: จัดการบริษัท -->
         <template #companies>
           <BaseCard>
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center justify-between mb-6">
               <div>
                 <h2 class="text-xl font-semibold text-[#1a202c]">รายการบริษัท</h2>
-                <p class="text-base text-gray-500 mt-1">จัดการข้อมูลบริษัทในระบบ</p>
+                <p class="mt-1 text-base text-gray-500">จัดการข้อมูลบริษัทในระบบ</p>
               </div>
               <BaseButton @click="openCompanyModal" variant="primary">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -83,13 +83,13 @@
               </template>
 
               <template #actions="{ row }">
-                <div class="flex gap-2 justify-end">
+                <div class="flex justify-end gap-2">
                   <button @click="editCompany(row)" class="text-[#0090D3] hover:text-[#007AB8] transition-colors" title="แก้ไข">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  <button @click="deleteCompany(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
+                  <button @click="deleteCompany(row)" class="text-red-600 transition-colors hover:text-red-800" title="ลบ">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -103,10 +103,10 @@
         <!-- TAB: จัดการผู้ใช้งาน -->
         <template #users>
           <BaseCard>
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center justify-between mb-6">
               <div>
                 <h2 class="text-xl font-semibold text-[#1a202c]">รายการผู้ใช้งาน</h2>
-                <p class="text-base text-gray-500 mt-1">จัดการข้อมูลผู้ใช้งานในระบบ</p>
+                <p class="mt-1 text-base text-gray-500">จัดการข้อมูลผู้ใช้งานในระบบ</p>
               </div>
               <BaseButton @click="openUserModal" variant="primary">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,8 +124,8 @@
               </template>
 
               <template #actions="{ row }">
-                <div class="flex gap-2 justify-end">
-                  <button @click="openPasswordModal(row)" class="text-amber-600 hover:text-amber-800 transition-colors" title="เปลี่ยนรหัสผ่าน">
+                <div class="flex justify-end gap-2">
+                  <button @click="openPasswordModal(row)" class="transition-colors text-amber-600 hover:text-amber-800" title="เปลี่ยนรหัสผ่าน">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
@@ -135,7 +135,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  <button @click="deleteUser(row)" class="text-red-600 hover:text-red-800 transition-colors" title="ลบ">
+                  <button @click="deleteUser(row)" class="text-red-600 transition-colors hover:text-red-800" title="ลบ">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -149,10 +149,10 @@
         <!-- TAB: จัดการแผนก -->
         <template #departments>
           <BaseCard>
-            <div class="mb-6 flex justify-between items-center">
+            <div class="flex items-center justify-between mb-6">
               <div>
                 <h2 class="text-xl font-semibold text-[#1a202c]">โครงสร้างแผนก</h2>
-                <p class="text-base text-gray-500 mt-1">จัดการโครงสร้างแผนกแบบ Tree ตามบริษัท</p>
+                <p class="mt-1 text-base text-gray-500">จัดการโครงสร้างแผนกแบบ Tree ตามบริษัท</p>
               </div>
               <BaseButton variant="primary" @click="openDepartmentModal">
                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -163,7 +163,7 @@
             </div>
 
             <!-- Company Tree List -->
-            <div v-if="companyLoading" class="flex justify-center items-center py-12">
+            <div v-if="companyLoading" class="flex items-center justify-center py-12">
               <svg class="animate-spin h-8 w-8 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -171,8 +171,8 @@
               <span class="ml-3 text-gray-600 font-prompt">กำลังโหลดบริษัท...</span>
             </div>
 
-            <div v-else-if="!companies || companies.length === 0" class="text-center py-12 text-gray-500 font-prompt">
-              <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div v-else-if="!companies || companies.length === 0" class="py-12 text-center text-gray-500 font-prompt">
+              <svg class="w-16 h-16 mx-auto mb-3 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               <p>ไม่มีข้อมูลบริษัท</p>
@@ -230,7 +230,7 @@
       <div class="space-y-4">
         <!-- เลือกบริษัท (สำหรับ Super Admin เท่านั้น) -->
         <div v-if="isMainAdmin">
-          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
             บริษัท <span class="text-red-500">*</span>
           </label>
           <select
@@ -275,7 +275,7 @@
       <div class="space-y-4">
         <!-- Company Selection -->
         <div>
-          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
             บริษัท <span class="text-red-500">*</span>
           </label>
           <select
@@ -289,10 +289,10 @@
               {{ company.IC_LocalName }} ({{ company.IC_Code }})
             </option>
           </select>
-          <p class="text-xs text-gray-500 mt-1" v-if="!departmentModal.isEdit && !departmentModal.isAddChild">
+          <p class="mt-1 text-xs text-gray-500" v-if="!departmentModal.isEdit && !departmentModal.isAddChild">
             เลือกบริษัทที่ต้องการเพิ่มแผนก
           </p>
-          <p class="text-xs text-gray-500 mt-1" v-else>
+          <p class="mt-1 text-xs text-gray-500" v-else>
             ไม่สามารถเปลี่ยนบริษัทได้เมื่อแก้ไข
           </p>
         </div>
@@ -303,7 +303,7 @@
 
         <!-- Type Selection -->
         <div>
-          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
             ประเภท <span class="text-red-500">*</span>
           </label>
           <select
@@ -319,15 +319,15 @@
 
         <!-- Parent Selection -->
         <div>
-          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
             แผนกหลัก (Parent)
             <span v-if="departmentForm.type === 'office'" class="text-red-500">*</span>
           </label>
 
           <!-- Warning: ต้องเลือกบริษัทก่อน -->
-          <div v-if="!departmentForm.companyIds || !departmentForm.companyIds[0]" class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p class="text-sm text-amber-800 font-prompt flex items-center gap-2">
-              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div v-if="!departmentForm.companyIds || !departmentForm.companyIds[0]" class="p-3 border rounded-lg bg-amber-50 border-amber-200">
+            <p class="flex items-center gap-2 text-sm text-amber-800 font-prompt">
+              <svg class="flex-shrink-0 w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               กรุณาเลือกบริษัทก่อนเพื่อดูรายการแผนกหลักที่สามารถเลือกได้
@@ -348,8 +348,8 @@
           </select>
 
           <!-- Dynamic Help Text based on Type (แสดงเมื่อเลือกบริษัทแล้ว) -->
-          <div v-if="departmentForm.companyIds && departmentForm.companyIds[0]" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p class="text-xs text-blue-800 font-prompt flex items-start gap-2">
+          <div v-if="departmentForm.companyIds && departmentForm.companyIds[0]" class="p-3 mt-2 border border-blue-200 rounded-lg bg-blue-50">
+            <p class="flex items-start gap-2 text-xs text-blue-800 font-prompt">
               <svg class="w-4 h-4 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -388,7 +388,7 @@
     <!-- MODAL: เปลี่ยนรหัสผ่าน -->
     <BaseModal :show="passwordModal.show" :title="passwordModal.title" @close="closePasswordModal" size="md">
       <!-- แสดงข้อมูล User -->
-      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="p-4 mb-6 border border-blue-200 rounded-lg bg-blue-50">
         <div class="flex items-center gap-3 mb-2">
           <svg class="w-12 h-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -402,7 +402,7 @@
       </div>
 
       <!-- Warning Message -->
-      <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+      <div class="flex items-start gap-2 p-3 mb-4 border rounded-lg bg-amber-50 border-amber-200">
         <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
@@ -412,7 +412,7 @@
       <!-- Password Fields -->
       <div class="space-y-4">
         <div>
-          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
             รหัสผ่านใหม่ <span class="text-red-500">*</span>
           </label>
           <div class="relative">
@@ -426,7 +426,7 @@
             <button
               type="button"
               @click="showPassword = !showPassword"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              class="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2 hover:text-gray-700"
             >
               <svg v-if="!showPassword" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -437,11 +437,11 @@
               </svg>
             </button>
           </div>
-          <p class="text-xs text-gray-500 mt-1">ต้องมีอย่างน้อย 8 ตัวอักษร, ตัวพิมพ์ใหญ่ (A-Z), ตัวพิมพ์เล็ก (a-z), และตัวเลข (0-9)</p>
+          <p class="mt-1 text-xs text-gray-500">ต้องมีอย่างน้อย 8 ตัวอักษร, ตัวพิมพ์ใหญ่ (A-Z), ตัวพิมพ์เล็ก (a-z), และตัวเลข (0-9)</p>
         </div>
 
         <div>
-          <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
             ยืนยันรหัสผ่าน <span class="text-red-500">*</span>
           </label>
           <input
@@ -467,7 +467,7 @@
     <!-- MODAL: ย้ายแผนก -->
     <BaseModal :show="moveModal.show" title="ย้ายแผนก" @close="closeMoveModal" size="md">
       <!-- แสดงข้อมูลแผนกที่จะย้าย -->
-      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="p-4 mb-6 border border-blue-200 rounded-lg bg-blue-50">
         <div class="flex items-center gap-3">
           <svg class="w-10 h-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -480,7 +480,7 @@
       </div>
 
       <!-- Warning Message -->
-      <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+      <div class="flex items-start gap-2 p-3 mb-4 border rounded-lg bg-amber-50 border-amber-200">
         <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
@@ -489,7 +489,7 @@
 
       <!-- Parent Selection -->
       <div>
-        <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+        <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
           ย้ายไปอยู่ภายใต้ Parent ใหม่ <span class="text-red-500">*</span>
         </label>
         <select
@@ -502,7 +502,7 @@
             {{ dept.ID_LocalName }} ({{ dept.ID_Code }})
           </option>
         </select>
-        <p class="text-xs text-gray-500 mt-1 font-prompt">เลือกแผนกที่จะเป็น Parent ใหม่</p>
+        <p class="mt-1 text-xs text-gray-500 font-prompt">เลือกแผนกที่จะเป็น Parent ใหม่</p>
       </div>
 
       <template #footer>
