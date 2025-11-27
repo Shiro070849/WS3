@@ -1,3 +1,4 @@
+const sql = require('mssql');
 const dbService = require('./db.service');
 
 class StatisticsService {
