@@ -1146,7 +1146,7 @@ const saveSecurityGuardPassword = async () => {
 
   try {
     await usersAPI.resetPassword(securityGuardPasswordModal.value.id, {
-      newPassword: securityGuardPasswordForm.value.newPassword
+      password: securityGuardPasswordForm.value.newPassword
     });
     toast.success('สำเร็จ', 'เปลี่ยนรหัสผ่านสำเร็จ');
     securityGuardPasswordModal.value.show = false;

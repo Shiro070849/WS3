@@ -18,7 +18,7 @@
               :key="period.value"
               @click="selectedPeriod = period.value"
               :class="selectedPeriod === period.value ? 'period-btn-active' : 'period-btn'"
-              class="px-4 py-2 text-sm font-semibold transition-all rounded-lg font-prompt"
+              class="px-4 py-2 text-sm font-semibold rounded-lg trsition-anall font-prompt"
             >
               {{ period.label }}
             </button>
