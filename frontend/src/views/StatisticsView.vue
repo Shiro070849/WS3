@@ -3,14 +3,14 @@
     <!-- Page Header - Tailwind Only -->
     <div class="mb-8">
       <!-- Keep existing Period Filter -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 class="page-title">สถิติ</h1>
-          <p class="text-lg text-slate-500 m-0 font-prompt font-medium">
+          <p class="m-0 text-lg font-medium text-slate-500 font-prompt">
             สถิติและการวิเคราะห์ข้อมูลคลังสินค้า
           </p>
         </div>
-        <div class="flex gap-3 flex-wrap">
+        <div class="flex flex-wrap gap-3">
           <!-- Period Filter Buttons - Tailwind Only -->
           <div class="flex gap-1.5 bg-white p-1 rounded-xl shadow-sm">
             <button
@@ -18,7 +18,7 @@
               :key="period.value"
               @click="selectedPeriod = period.value"
               :class="selectedPeriod === period.value ? 'period-btn-active' : 'period-btn'"
-              class="px-4 py-2 rounded-lg text-sm font-semibold font-prompt transition-all"
+              class="px-4 py-2 text-sm font-semibold transition-all rounded-lg font-prompt"
             >
               {{ period.label }}
             </button>
@@ -59,9 +59,9 @@
     <!-- Main Content - Tailwind Layout -->
     <div class="w-full">
       <!-- Overview Stats Cards - Tailwind Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-        <div v-for="stat in overviewStats" :key="stat.label" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-          <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" :style="{ background: stat.gradient }">
+      <div class="grid grid-cols-1 gap-5 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div v-for="stat in overviewStats" :key="stat.label" class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-lg">
+          <div class="flex items-center justify-center shadow-lg w-14 h-14 rounded-2xl" :style="{ background: stat.gradient }">
             <div class="stat-icon" v-html="stat.icon"></div>
           </div>
           <div class="flex-1">
@@ -81,52 +81,52 @@
       </div>
 
       <!-- Charts Section - Tailwind Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+      <div class="grid grid-cols-1 gap-5 mb-6 lg:grid-cols-2">
         <!-- Traffic Trend Chart -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
-          <div class="flex justify-between items-center mb-5">
-            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">แนวโน้มการเข้า-ออกรถ</h3>
+        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">แนวโน้มการเข้า-ออกรถ</h3>
           </div>
-          <div class="h-64 w-full p-2">
+          <div class="w-full h-64 p-2">
             <Line v-if="trafficChartData" :data="trafficChartData" :options="trafficChartOptions" />
           </div>
         </div>
 
         <!-- Vehicle Types Chart -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
-          <div class="flex justify-between items-center mb-5">
-            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">ประเภทรถที่เข้าใช้บริการ</h3>
+        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">ประเภทรถที่เข้าใช้บริการ</h3>
           </div>
-          <div class="h-64 w-full p-2">
+          <div class="w-full h-64 p-2">
             <Bar v-if="vehicleChartData" :data="vehicleChartData" :options="vehicleChartOptions" />
           </div>
         </div>
 
         <!-- Peak Hours Chart -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
-          <div class="flex justify-between items-center mb-5">
-            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">ช่วงเวลาเร่งด่วน</h3>
+        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">ช่วงเวลาเร่งด่วน</h3>
             <span class="chart-badge">24 ชั่วโมง</span>
           </div>
-          <div class="h-64 w-full p-2">
+          <div class="w-full h-64 p-2">
             <Bar v-if="peakHoursChartData" :data="peakHoursChartData" :options="peakHoursChartOptions" />
           </div>
         </div>
 
         <!-- Top Companies -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
-          <div class="flex justify-between items-center mb-5">
-            <h3 class="text-lg font-bold text-gray-900 m-0 font-prompt">บริษัทที่ใช้บริการบ่อยที่สุด</h3>
+        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">บริษัทที่ใช้บริการบ่อยที่สุด</h3>
           </div>
-          <div class="h-64 w-full p-2">
+          <div class="w-full h-64 p-2">
             <Bar v-if="companiesChartData" :data="companiesChartData" :options="companiesChartOptions" />
           </div>
         </div>
       </div>
 
       <!-- Additional Stats - Tailwind Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-md">
           <div class="stat-box-icon-blue">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -134,11 +134,11 @@
           </div>
           <div class="flex-1">
             <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">เวลาเฉลี่ยที่อยู่ในคลัง</p>
-            <p class="text-2xl font-extrabold text-gray-900 m-0 font-prompt leading-none">{{ additionalStats.averageTime }}</p>
+            <p class="m-0 text-2xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.averageTime }}</p>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-md">
           <div class="stat-box-icon-green">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -146,11 +146,11 @@
           </div>
           <div class="flex-1">
             <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">ประสิทธิภาพการทำงาน</p>
-            <p class="text-2xl font-extrabold text-gray-900 m-0 font-prompt leading-none">{{ additionalStats.efficiency }}</p>
+            <p class="m-0 text-2xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.efficiency }}</p>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-md">
           <div class="stat-box-icon-sky">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -158,7 +158,7 @@
           </div>
           <div class="flex-1">
             <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">จำนวนบริษัททั้งหมด</p>
-            <p class="text-2xl font-extrabold text-gray-900 m-0 font-prompt leading-none">{{ additionalStats.totalCompanies }}</p>
+            <p class="m-0 text-2xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.totalCompanies }}</p>
           </div>
         </div>
       </div>
