@@ -98,6 +98,7 @@ export default {
 <style>
 /* Import Theme Variables */
 @import '@/assets/styles/theme-variables.css';
+@import '@/assets/styles/dark-mode.css';
 
 /* ===== Global Reset ===== */
 * {

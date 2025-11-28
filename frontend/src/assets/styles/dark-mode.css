@@ -1,0 +1,610 @@
+/**
+ * Dark Mode Styles
+ * - ใช้ class "dark" บน <html> element
+ * - ทำงานร่วมกับ Company Theme (ไม่ทับ primary color)
+ */
+
+/* ===== Dark Mode CSS Variables ===== */
+html.dark {
+  /* Background & Text Colors */
+  --background-color: #1e1e2e;
+  --text-color: #e0e0e0;
+
+  /* Sidebar Colors (เข้มขึ้น) */
+  --sidebar-bg-start: #1a1a2e;
+  --sidebar-bg-middle: #16213e;
+  --sidebar-bg-end: #0f3460;
+
+  /* Card & Component Colors */
+  --card-bg: #2a2a3e;
+  --card-border: #3a3a52;
+  --card-hover: #353548;
+
+  /* Input Colors */
+  --input-bg: #2a2a3e;
+  --input-border: #3a3a52;
+  --input-text: #e0e0e0;
+  --input-placeholder: #808080;
+
+  /* Table Colors */
+  --table-header-bg: #2a2a3e;
+  --table-row-hover: #353548;
+  --table-border: #3a3a52;
+
+  /* Modal Colors */
+  --modal-bg: #2a2a3e;
+  --modal-overlay: rgba(0, 0, 0, 0.85);
+
+  /* Divider & Border */
+  --divider-color: #3a3a52;
+  --border-color: #3a3a52;
+
+  /* Shadow */
+  --shadow-light: rgba(0, 0, 0, 0.4);
+  --shadow-medium: rgba(0, 0, 0, 0.6);
+  --shadow-heavy: rgba(0, 0, 0, 0.8);
+}
+
+/* ===== Universal Dark Mode Override ===== */
+html.dark * {
+  border-color: #3a3a52;
+}
+
+/* ===== Body & Background ===== */
+html.dark body {
+  background: #1e1e2e !important;
+  color: #e0e0e0 !important;
+}
+
+html.dark .main-content {
+  background: #1e1e2e !important;
+  color: #e0e0e0 !important;
+}
+
+
+/* ===== Cards ===== */
+html.dark .card,
+html.dark .base-card,
+html.dark [class*="card"] {
+  background: #2a2a3e;
+  border-color: #3a3a52;
+  color: #e0e0e0;
+}
+
+html.dark .card:hover,
+html.dark .base-card:hover {
+  background: #353548;
+}
+
+/* BaseCard component */
+html.dark .card-modern {
+  background: #2a2a3e !important;
+  border-color: #3a3a52 !important;
+  color: #e0e0e0 !important;
+}
+
+html.dark .card-header {
+  border-color: #3a3a52 !important;
+}
+
+html.dark .card-header h3,
+html.dark .card-header .text-slate-800 {
+  color: #e0e0e0 !important;
+}
+
+html.dark .border-slate-100 {
+  border-color: #3a3a52 !important;
+}
+
+/* ===== Inputs & Forms ===== */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #9ca3af;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  background: #374151;
+  border-color: var(--primary-color, #0090D3);
+  color: #f9fafb;
+}
+
+/* Input Disabled State */
+html.dark input:disabled,
+html.dark select:disabled,
+html.dark textarea:disabled {
+  background: #2d3748;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Input Labels */
+html.dark label {
+  color: #f9fafb !important;
+}
+
+/* ===== Tables ===== */
+html.dark table {
+  background: #2a2a3e;
+  color: #e0e0e0;
+}
+
+html.dark table thead {
+  background: #2a2a3e;
+  color: #e0e0e0;
+}
+
+html.dark table tbody {
+  background: #2a2a3e;
+}
+
+html.dark table tbody tr {
+  background: #2a2a3e;
+  border-bottom-color: #3a3a52;
+}
+
+html.dark table tbody tr:hover {
+  background: #353548;
+}
+
+html.dark table td,
+html.dark table th {
+  border-color: #3a3a52;
+  color: #e0e0e0 !important;
+  background: transparent;
+}
+
+/* Table Header (BaseTable) */
+html.dark .table-header {
+  background: linear-gradient(135deg, #2a2a3e 0%, #353548 100%) !important;
+}
+
+html.dark .table-header th {
+  color: #f9fafb !important;
+}
+
+/* Override text-slate-700 in table headers */
+html.dark th.text-slate-700 {
+  color: #f9fafb !important;
+}
+
+/* ===== Modals ===== */
+html.dark .modal-overlay {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+html.dark .modal-content,
+html.dark .browser-modal,
+html.dark .base-modal {
+  background: #2d3748;
+  color: #f9fafb;
+  border-color: #4a5568;
+}
+
+/* Browser Modal Components */
+html.dark .browser-modal .browser-content {
+  background: #2d3748;
+  color: #f9fafb;
+}
+
+html.dark .browser-modal .tabs-head {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+html.dark .browser-modal .head-browser {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+html.dark .browser-modal .url-bar {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+html.dark .browser-modal .tab-open {
+  background: #374151;
+  color: #f9fafb;
+}
+
+/* Modal Footer & Labels */
+html.dark .browser-modal .bg-gray-50 {
+  background: #1e293b !important;
+}
+
+html.dark .browser-modal label.text-gray-700 {
+  color: #e0e0e0 !important;
+}
+
+html.dark .browser-modal .text-gray-700 {
+  color: #e0e0e0 !important;
+}
+
+/* Additional text colors for modal */
+html.dark .browser-modal .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+html.dark .browser-modal .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+html.dark .browser-modal .text-xs,
+html.dark .browser-modal .text-sm {
+  color: inherit;
+}
+
+/* File format selection cards */
+html.dark .browser-modal .bg-blue-50 {
+  background: #1e3a5f !important;
+}
+
+html.dark .browser-modal .border-gray-300 {
+  border-color: #4b5563 !important;
+}
+
+html.dark .browser-modal .hover\:border-gray-400:hover {
+  border-color: #6b7280 !important;
+}
+
+/* Export summary info card */
+html.dark .browser-modal .bg-gradient-to-r.from-blue-50 {
+  background: linear-gradient(to right, #1e3a5f, #2d4a7c) !important;
+}
+
+html.dark .browser-modal .border-blue-200 {
+  border-color: #3b5998 !important;
+}
+
+html.dark .browser-modal .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+/* Print instruction card (คำแนะนำการพิมพ์) */
+html.dark .browser-modal .from-blue-50.to-blue-100 {
+  background: linear-gradient(to right, #1e3a5f, #2563a5) !important;
+}
+
+html.dark .browser-modal .border-blue-300 {
+  border-color: #3b82f6 !important;
+}
+
+html.dark .browser-modal .text-blue-800,
+html.dark .browser-modal .text-blue-900 {
+  color: #e0e7ff !important;
+}
+
+/* ===== Print Preview - Force Light Mode ===== */
+/* ให้ slip ใช้สีธรรมชาติ (ไม่บังคับ background white) เพื่อไม่ให้สีจางเวลาพิมพ์ */
+html.dark .print-slip-preview,
+html.dark .print-slip-preview *,
+html.dark .slip-80mm,
+html.dark .slip-80mm * {
+  background: transparent !important;
+  color: black !important;
+  border-color: #d1d5db !important;
+}
+
+/* Override สำหรับ element ที่มี bg-white class */
+html.dark .print-slip-preview.bg-white,
+html.dark .slip-80mm .bg-white {
+  background: white !important;
+}
+
+html.dark .print-slip-preview .text-gray-600,
+html.dark .slip-80mm .text-gray-600 {
+  color: #4b5563 !important;
+}
+
+/* ===== @media print - บังคับให้พิมพ์ด้วยสีดำ-ขาวเสมอ ===== */
+@media print {
+  html.dark * {
+    background: transparent !important;
+    color: black !important;
+    border-color: #000 !important;
+    box-shadow: none !important;
+  }
+
+  html.dark .text-gray-600 {
+    color: #666 !important;
+  }
+
+  html.dark body {
+    background: white !important;
+  }
+}
+
+/* ===== Dropdowns ===== */
+html.dark .dropdown,
+html.dark .select,
+html.dark .options {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+html.dark .option:hover {
+  background: #4a5568;
+}
+
+/* ===== Tabs ===== */
+html.dark .tabs-head {
+  background: #374151;
+}
+
+html.dark .tab-open {
+  background: #4a5568;
+}
+
+/* ===== Sidebar (Dark Mode) ===== */
+html.dark .sidebar {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+html.dark .sidebar .profile-section {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark .sidebar .profile-section:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .sidebar .menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .sidebar .divider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Buttons (ใช้สี theme ปกติ) ===== */
+html.dark .btn-secondary {
+  background: #4b5563;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+html.dark .btn-secondary:hover {
+  background: #6b7280;
+}
+
+/* ===== Toast & Notifications ===== */
+html.dark .toast {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4a5568;
+}
+
+html.dark .toast-success {
+  background: #065f46;
+  border-color: #047857;
+}
+
+html.dark .toast-error {
+  background: #7f1d1d;
+  border-color: #991b1b;
+}
+
+html.dark .toast-warning {
+  background: #78350f;
+  border-color: #92400e;
+}
+
+html.dark .toast-info {
+  background: #1e3a8a;
+  border-color: #1e40af;
+}
+
+/* ===== Scrollbar (Dark Mode) ===== */
+html.dark ::-webkit-scrollbar-track {
+  background: #2d3748;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4a5568;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* ===== Text Colors ===== */
+html.dark .text-gray-500,
+html.dark .text-gray-600,
+html.dark .text-slate-500,
+html.dark .text-slate-600 {
+  color: #9ca3af !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-800,
+html.dark .text-gray-900,
+html.dark .text-slate-700,
+html.dark .text-slate-800,
+html.dark .text-slate-900 {
+  color: #f9fafb !important;
+}
+
+/* ===== Borders & Dividers ===== */
+html.dark .border,
+html.dark .border-t,
+html.dark .border-b,
+html.dark .border-l,
+html.dark .border-r {
+  border-color: #4a5568 !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-gray-100 {
+  background: #2a2a3e !important;
+}
+
+html.dark .bg-gray-200 {
+  background: #353548 !important;
+}
+
+/* ===== Override Tailwind bg-white ===== */
+html.dark .bg-white {
+  background: #2a2a3e !important;
+}
+
+/* ===== Override Tailwind Gradients ===== */
+html.dark .bg-gradient-to-r.from-gray-50,
+html.dark .from-gray-50.to-white {
+  background: linear-gradient(to right, #2a2a3e, #2d3748) !important;
+}
+
+/* ===== Override Tailwind Text Colors ===== */
+html.dark .text-gray-700,
+html.dark .text-gray-900 {
+  color: #e0e0e0 !important;
+}
+
+html.dark .text-slate-500 {
+  color: #9ca3af !important;
+}
+
+/* ===== Shadows (เข้มขึ้น) ===== */
+html.dark .shadow,
+html.dark .shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .shadow-md {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .shadow-lg {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .shadow-xl {
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Page Title ===== */
+html.dark .page-title {
+  color: #f9fafb;
+}
+
+/* ===== Loading Spinner ===== */
+html.dark .spinner {
+  border-color: #4a5568;
+  border-top-color: var(--primary-color, #0090D3);
+}
+
+/* ===== Status Badges ===== */
+html.dark .badge,
+html.dark .tag {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4a5568;
+}
+
+/* ===== Smooth Transitions ===== */
+html.dark * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ===== Company Cards (Settings Page) ===== */
+html.dark .company-card {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+html.dark .company-card:hover {
+  background: #374151;
+  border-color: #6b7280;
+}
+
+/* ===== Department Cards ===== */
+html.dark .department-card {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+html.dark .department-card:hover {
+  background: #374151;
+}
+
+/* ===== Action Buttons ===== */
+html.dark .action-btn-view {
+  background: #1e3a8a;
+  color: #93c5fd;
+}
+
+html.dark .action-btn-view:hover {
+  background: #1e40af;
+  color: #fff;
+}
+
+html.dark .action-btn-edit {
+  background: #065f46;
+  color: #6ee7b7;
+}
+
+html.dark .action-btn-edit:hover {
+  background: #047857;
+  color: #fff;
+}
+
+html.dark .action-btn-delete {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+html.dark .action-btn-delete:hover {
+  background: #991b1b;
+  color: #fff;
+}
+
+/* ===== Select Dropdown (Custom) ===== */
+html.dark .selected {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+html.dark .selected:hover {
+  background: #4a5568;
+}
+
+/* ===== Logout Button ===== */
+html.dark .Btn {
+  background-color: #dc2626;
+}
+
+html.dark .Btn:hover {
+  background-color: #ef4444;
+}
+
+/* ===== Statistics Cards ===== */
+html.dark .stat-card {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+html.dark .stat-card:hover {
+  background: #374151;
+}
+
+/* ===== Charts (Chart.js) ===== */
+html.dark .chart-container {
+  background: #2d3748;
+}
+
+/* ===== Code Blocks ===== */
+html.dark code,
+html.dark pre {
+  background: #1e293b;
+  color: #f9fafb;
+  border-color: #4a5568;
+}

@@ -58,6 +58,14 @@
       </router-link>
     </nav>
 
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle-section">
+      <ThemeToggle />
+    </div>
+
+    <!-- Divider -->
+    <div class="divider"></div>
+
     <!-- Logout Section -->
     <div class="logout-section">
       <button @click="showLogoutModal = true" class="Btn" :class="{ 'collapsed': isCollapsed }">
@@ -132,7 +140,9 @@
 import { ref, computed, defineEmits, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
+import { useDarkMode } from '@/composables/useDarkMode'
 import { companiesAPI, getBackendBaseUrl } from '@/services/api'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -156,6 +166,9 @@ const isMainAdmin = computed(() => {
 
 // Theme
 const { currentTheme, loadTheme } = useTheme()
+
+// Dark Mode
+const { initDarkMode } = useDarkMode()
 
 // Logo URL - ใช้ logo ของบริษัทจาก IC_LogoPath หรือ fallback ไปที่ theme logo
 const logoUrl = computed(() => {
@@ -266,6 +279,9 @@ const confirmLogout = () => {
 
 // Load theme and company logo on mount
 onMounted(async () => {
+  // โหลด Dark Mode preference ก่อน
+  initDarkMode()
+
   // Get user data from localStorage
   const userDataStr = localStorage.getItem('user')
 
@@ -1219,6 +1235,23 @@ onMounted(async () => {
   margin: 0 0.5rem;
 }
 
+/* ===== Theme Toggle Section ===== */
+.theme-toggle-section {
+  padding: 0.75rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  overflow: visible;
+  margin-top: auto;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar.collapsed .theme-toggle-section {
+  padding: 0.5rem 0.25rem;
+  transform: scale(0.8);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .sidebar {
@@ -1238,6 +1271,11 @@ onMounted(async () => {
   .sidebar .menu-item {
     padding: 0.75rem 0.5rem;
     justify-content: center;
+  }
+
+  .sidebar .theme-toggle-section {
+    padding: 0.5rem 0.25rem;
+    transform: scale(0.75);
   }
 }
 </style>
