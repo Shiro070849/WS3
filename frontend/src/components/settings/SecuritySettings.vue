@@ -897,30 +897,36 @@
           </div>
         </div>
 
-        <!-- Parent Department Selection (แสดงเมื่อ type = office หรือ department) -->
-        <div v-if="departmentForm.type !== 'branch'">
+        <!-- Parent Department Selection -->
+        <div>
           <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
-            แผนกหลัก (Parent) <span v-if="departmentForm.type === 'office'" class="text-red-500">*</span>
+            แผนกหลัก (Parent)
+            <span v-if="departmentForm.type === 'branch' || departmentForm.type === 'department'" class="text-red-500">*</span>
           </label>
           <select
             v-model="departmentForm.parentId"
             :disabled="departmentModal.isReadOnly || departmentModal.isAddChild"
+            :required="departmentForm.type === 'branch' || departmentForm.type === 'department'"
             class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            <option :value="null">-- เลือกแผนกหลัก --</option>
+            <option :value="null" v-if="departmentForm.type === 'office'">ไม่มี (Root Level)</option>
+            <option :value="null" v-else>-- เลือกแผนกหลัก --</option>
             <option
               v-for="dept in availableParentDepartments"
               :key="dept.ID_ID"
               :value="dept.ID_ID"
             >
-              {{ dept.ID_LocalName }} ({{ dept.ID_Code }}) - {{ dept.ID_Type === 'branch' ? 'สาขา' : 'สำนัก' }}
+              {{ dept.ID_LocalName }} ({{ dept.ID_Code }}) - {{ dept.ID_Type === 'office' ? 'สำนัก' : dept.ID_Type === 'branch' ? 'สาขา' : 'แผนก' }}
             </option>
           </select>
           <p v-if="departmentForm.type === 'office'" class="text-xs text-gray-500 mt-1">
-            สำนักต้องอยู่ภายใต้สาขา (Branch)
+            สำนักสามารถเป็น Root (ไม่มี Parent) หรือ อยู่ภายใต้สำนักอื่นได้
+          </p>
+          <p v-if="departmentForm.type === 'branch'" class="text-xs text-gray-500 mt-1">
+            สาขาต้องอยู่ภายใต้สำนัก (Office) เท่านั้น
           </p>
           <p v-if="departmentForm.type === 'department'" class="text-xs text-gray-500 mt-1">
-            ฝ่ายสามารถอยู่ภายใต้สาขา (Branch) หรือสำนัก (Office)
+            แผนกต้องอยู่ภายใต้สาขา (Branch) เท่านั้น
           </p>
         </div>
 
@@ -1286,14 +1292,17 @@ const fetchAvailableParentDepartments = async () => {
     const flatDepts = flattenDepartments(allDepts);
 
     // Filter based on department type
+    // โครงสร้างใหม่: Office → Branch → Department
     if (departmentForm.value.type === 'office') {
-      // Office can only have branch as parent
-      availableParentDepartments.value = flatDepts.filter(d => d.ID_Type === 'branch');
+      // Office can have parent=NULL (root) or parent=office (sub-office)
+      availableParentDepartments.value = flatDepts.filter(d => d.ID_Type === 'office');
+    } else if (departmentForm.value.type === 'branch') {
+      // Branch must have parent=office (required)
+      availableParentDepartments.value = flatDepts.filter(d => d.ID_Type === 'office');
     } else if (departmentForm.value.type === 'department') {
-      // Department can have branch or office as parent
-      availableParentDepartments.value = flatDepts.filter(d => d.ID_Type === 'branch' || d.ID_Type === 'office');
+      // Department must have parent=branch (required)
+      availableParentDepartments.value = flatDepts.filter(d => d.ID_Type === 'branch');
     } else {
-      // Branch doesn't need parent
       availableParentDepartments.value = [];
     }
 
@@ -1313,9 +1322,14 @@ const saveDepartment = async () => {
     return;
   }
 
-  // Validation 2: office type must have parent
-  if (departmentForm.value.type === 'office' && !departmentForm.value.parentId) {
-    toast.warning('ข้อมูลไม่ครบ', 'สำนักจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
+  // Validation 2: branch and department must have parent
+  if (departmentForm.value.type === 'branch' && !departmentForm.value.parentId) {
+    toast.warning('ข้อมูลไม่ครบ', 'สาขาจำเป็นต้องอยู่ภายใต้สำนัก กรุณาเลือก Parent');
+    return;
+  }
+
+  if (departmentForm.value.type === 'department' && !departmentForm.value.parentId) {
+    toast.warning('ข้อมูลไม่ครบ', 'แผนกจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
     return;
   }
 

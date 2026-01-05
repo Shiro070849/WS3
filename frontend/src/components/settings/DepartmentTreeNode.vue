@@ -135,12 +135,13 @@ const getDisplayType = () => {
 };
 
 // Check ว่าสามารถเพิ่มลูกได้ไหม
-// branch → สามารถเพิ่ม office/department
-// office → สามารถเพิ่ม department
+// โครงสร้างใหม่: Office → Branch → Department
+// office → สามารถเพิ่ม office/branch ได้
+// branch → สามารถเพิ่ม department ได้
 // department → ไม่สามารถเพิ่มลูก
 const canAddChild = computed(() => {
   const type = props.node.ID_Type;
-  return type === 'branch' || type === 'office';
+  return type === 'office' || type === 'branch';
 });
 </script>
 

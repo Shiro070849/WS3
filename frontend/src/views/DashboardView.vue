@@ -3,9 +3,9 @@
   <div class="w-full max-w-full animate-fadeIn">
 
     <!-- Header - Tailwind Only -->
-    <div class="mb-10 relative">
+    <div class="relative mb-10">
       <h1 class="page-title">Dashboard</h1>
-      <p class="text-lg text-slate-500 m-0 font-prompt font-medium">
+      <p class="m-0 text-lg font-medium text-slate-500 font-prompt">
         ภาพรวมระบบ Smart Security
       </p>
     </div>
@@ -23,11 +23,11 @@
       </div>
 
       <!-- Filter Card -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Search -->
+      <div class="p-6 mb-6 bg-white border border-gray-100 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <!-- Search -->                         
           <div class="md:col-span-2">
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               ค้นหา
             </label>
             <input
@@ -41,7 +41,7 @@
 
           <!-- Company Filter (Super Admin only) -->
           <div v-if="isSuperAdmin">
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               บริษัท
             </label>
             <select
@@ -62,7 +62,7 @@
 
           <!-- Vehicle Type Filter -->
           <div>
-            <label class="block text-base font-semibold text-gray-700 mb-2 font-prompt">
+            <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               ประเภทรถ
             </label>
             <select
@@ -84,7 +84,7 @@
       </div>
 
       <!-- Stats Cards Grid - Tailwind Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 mb-10">
+      <div class="grid grid-cols-1 mb-10 sm:grid-cols-2 lg:grid-cols-4 gap-7">
 
         <!-- Card 1: รถเข้าวันนี้ -->
         <BaseCard>
@@ -95,10 +95,10 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-base text-slate-500 mb-2 font-prompt font-medium tracking-wide">
+              <p class="mb-2 text-base font-medium tracking-wide text-slate-500 font-prompt">
                 รถเข้าวันนี้
               </p>
-              <p class="text-4xl font-extrabold text-slate-900 m-0 font-prompt tracking-tight leading-none">
+              <p class="m-0 text-4xl font-extrabold leading-none tracking-tight text-slate-900 font-prompt">
                 {{ stats.wayInToday || 0 }}
               </p>
             </div>
@@ -114,10 +114,10 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-base text-slate-500 mb-2 font-prompt font-medium tracking-wide">
+              <p class="mb-2 text-base font-medium tracking-wide text-slate-500 font-prompt">
                 รถออกวันนี้
               </p>
-              <p class="text-4xl font-extrabold text-slate-900 m-0 font-prompt tracking-tight leading-none">
+              <p class="m-0 text-4xl font-extrabold leading-none tracking-tight text-slate-900 font-prompt">
                 {{ stats.wayOutToday || 0 }}
               </p>
             </div>
@@ -133,10 +133,10 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-base text-slate-500 mb-2 font-prompt font-medium tracking-wide">
+              <p class="mb-2 text-base font-medium tracking-wide text-slate-500 font-prompt">
                 รถยังไม่ชั่งออก
               </p>
-              <p class="text-4xl font-extrabold text-slate-900 m-0 font-prompt tracking-tight leading-none">
+              <p class="m-0 text-4xl font-extrabold leading-none tracking-tight text-slate-900 font-prompt">
                 {{ stats.pendingVehicles || 0 }}
               </p>
             </div>
@@ -152,10 +152,10 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-base text-slate-500 mb-2 font-prompt font-medium tracking-wide">
+              <p class="mb-2 text-base font-medium tracking-wide text-slate-500 font-prompt">
                 บริษัททั้งหมด
               </p>
-              <p class="text-4xl font-extrabold text-slate-900 m-0 font-prompt tracking-tight leading-none">
+              <p class="m-0 text-4xl font-extrabold leading-none tracking-tight text-slate-900 font-prompt">
                 {{ stats.activeCompanies || 0 }}
               </p>
             </div>

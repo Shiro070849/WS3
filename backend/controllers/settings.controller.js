@@ -476,11 +476,18 @@ class SettingsController {
         });
       }
 
-      // Backend Validation: office type must have parent
-      if (type === 'office' && !parentId) {
+      // Backend Validation: branch and department must have parent
+      if (type === 'branch' && !parentId) {
         return res.status(400).json({
           success: false,
-          message: 'Office type must have a parent branch'
+          message: 'Branch type must have a parent office'
+        });
+      }
+
+      if (type === 'department' && !parentId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Department type must have a parent branch'
         });
       }
 
@@ -523,11 +530,18 @@ class SettingsController {
         });
       }
 
-      // Backend Validation: office type must have parent
-      if (type === 'office' && !parentId) {
+      // Backend Validation: branch and department must have parent
+      if (type === 'branch' && !parentId) {
         return res.status(400).json({
           success: false,
-          message: 'Office type must have a parent branch'
+          message: 'Branch type must have a parent office'
+        });
+      }
+
+      if (type === 'department' && !parentId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Department type must have a parent branch'
         });
       }
 

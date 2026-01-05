@@ -539,13 +539,19 @@ class SettingsService {
   }
 
   // Validate Hierarchy Rules
+  // โครงสร้างที่ถูกต้อง: สำนัก (Office) → สาขา (Branch) → ฝ่าย/แผนก (Department)
   async validateDepartmentHierarchy(type, parentId, pool) {
-    // Rule 1: office type must have a parent
-    if (type === 'office' && !parentId) {
-      throw new Error('สำนัก (office) จำเป็นต้องอยู่ภายใต้สาขา (branch)');
+    // Rule 1: branch type must have a parent (office)
+    if (type === 'branch' && !parentId) {
+      throw new Error('สาขา (branch) จำเป็นต้องอยู่ภายใต้สำนัก (office)');
     }
 
-    // Rule 2: If parent is specified, validate parent type based on child type
+    // Rule 2: department type must have a parent (branch)
+    if (type === 'department' && !parentId) {
+      throw new Error('ฝ่าย/แผนก (department) จำเป็นต้องอยู่ภายใต้สาขา (branch)');
+    }
+
+    // Rule 3: If parent is specified, validate parent type based on child type
     if (parentId) {
       const parentQuery = `SELECT ID_Type FROM [dbo].[InternalDepartment] WHERE ID_ID = @ParentId`;
       const parentResult = await pool.request()
@@ -559,20 +565,20 @@ class SettingsService {
       const parentType = parentResult.recordset[0].ID_Type;
 
       // Validate based on child type
-      if (type === 'branch') {
-        // branch can only have parent of type 'branch'
-        if (parentType !== 'branch') {
-          throw new Error('สาขา (branch) สามารถอยู่ภายใต้สาขาอื่นเท่านั้น');
+      if (type === 'office') {
+        // office can only have parent of type 'office' (or no parent for root)
+        if (parentType !== 'office') {
+          throw new Error('สำนัก (office) สามารถอยู่ภายใต้สำนักอื่นเท่านั้น หรือเป็น root');
         }
-      } else if (type === 'office') {
-        // office must have parent of type 'branch'
-        if (parentType !== 'branch') {
-          throw new Error('สำนัก (office) ต้องอยู่ภายใต้สาขา (branch) เท่านั้น');
+      } else if (type === 'branch') {
+        // branch must have parent of type 'office'
+        if (parentType !== 'office') {
+          throw new Error('สาขา (branch) ต้องอยู่ภายใต้สำนัก (office) เท่านั้น');
         }
       } else if (type === 'department') {
-        // department can have parent of type 'branch' or 'office'
-        if (parentType !== 'branch' && parentType !== 'office') {
-          throw new Error('แผนก (department) สามารถอยู่ภายใต้สาขา (branch) หรือสำนัก (office) เท่านั้น');
+        // department must have parent of type 'branch'
+        if (parentType !== 'branch') {
+          throw new Error('ฝ่าย/แผนก (department) ต้องอยู่ภายใต้สาขา (branch) เท่านั้น');
         }
       }
     }
