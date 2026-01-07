@@ -321,7 +321,6 @@
         <div>
           <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
             แผนกหลัก (Parent)
-            <span v-if="departmentForm.type === 'branch' || departmentForm.type === 'department'" class="text-red-500">*</span>
           </label>
 
           <!-- Warning: ต้องเลือกบริษัทก่อน -->
@@ -339,30 +338,33 @@
             v-else
             v-model="departmentForm.parentId"
             class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
-            :required="departmentForm.type === 'branch' || departmentForm.type === 'department'"
           >
-            <option :value="null" v-if="departmentForm.type === 'office'">ไม่มี (Root Level)</option>
+            <option :value="null">ไม่มี (Root Level - แผนกอิสระ)</option>
             <option v-for="dept in availableParents" :key="dept.ID_ID" :value="dept.ID_ID">
               {{ dept.ID_LocalName }} ({{ dept.ID_Code }})
             </option>
           </select>
 
           <!-- Dynamic Help Text based on Type (แสดงเมื่อเลือกบริษัทแล้ว) -->
-          <div v-if="departmentForm.companyIds && departmentForm.companyIds[0]" class="p-3 mt-2 border border-blue-200 rounded-lg bg-blue-50">
-            <p class="flex items-start gap-2 text-xs text-blue-800 font-prompt">
-              <svg class="w-4 h-4 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div v-if="departmentForm.companyIds && departmentForm.companyIds[0]" class="p-4 mt-3 border border-blue-200 rounded-lg bg-blue-50 shadow-sm">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span v-if="departmentForm.type === 'office'">
-                <strong>กฎสำนัก:</strong> สามารถเป็น Root (ไม่มี Parent) หรือ อยู่ภายใต้สำนักอื่นได้
-              </span>
-              <span v-else-if="departmentForm.type === 'branch'">
-                <strong>กฎสาขา:</strong> ต้องอยู่ภายใต้สำนักเท่านั้น (จำเป็นต้องเลือก Parent)
-              </span>
-              <span v-else-if="departmentForm.type === 'department'">
-                <strong>กฎแผนก:</strong> ต้องอยู่ภายใต้สาขาเท่านั้น (จำเป็นต้องเลือก Parent)
-              </span>
-            </p>
+              <div class="flex-1">
+                <p class="text-sm text-blue-800 font-prompt leading-relaxed">
+                  <span v-if="departmentForm.type === 'office'">
+                    <strong class="font-semibold text-blue-900">กฎสำนัก:</strong> สามารถเป็น Root (ไม่มี Parent) หรือ อยู่ภายใต้สำนักอื่นได้
+                  </span>
+                  <span v-else-if="departmentForm.type === 'branch'">
+                    <strong class="font-semibold text-blue-900">กฎสาขา:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสำนัก (Office) เพื่อจัดโครงสร้าง Tree
+                  </span>
+                  <span v-else-if="departmentForm.type === 'department'">
+                    <strong class="font-semibold text-blue-900">กฎแผนก:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสาขา (Branch) เพื่อจัดโครงสร้าง Tree
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -518,7 +520,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import BaseTabs from '../components/base/BaseTabs.vue';
 import BaseCard from '../components/base/BaseCard.vue';
 import BaseTable from '../components/base/BaseTable.vue';
@@ -1039,16 +1041,19 @@ const saveDepartment = async () => {
     return;
   }
 
-  // Validation 2: branch and department must have parent
-  if (departmentForm.value.type === 'branch' && !departmentForm.value.parentId) {
-    warning('สาขาจำเป็นต้องอยู่ภายใต้สำนัก กรุณาเลือก Parent');
+  // Validation 2: ตรวจสอบ required fields
+  if (!departmentForm.value.code || !departmentForm.value.code.trim()) {
+    warning('กรุณากรอกรหัสแผนก');
     return;
   }
 
-  if (departmentForm.value.type === 'department' && !departmentForm.value.parentId) {
-    warning('แผนกจำเป็นต้องอยู่ภายใต้สาขา กรุณาเลือก Parent');
+  if (!departmentForm.value.localName || !departmentForm.value.localName.trim()) {
+    warning('กรุณากรอกชื่อแผนก (ไทย)');
     return;
   }
+
+  // Validation 3: Parent เป็น optional แล้ว แต่ถ้ามีการเลือก Parent ต้องเป็น type ที่ถูกต้อง
+  // (การตรวจสอบ parent type จะทำที่ backend)
 
   departmentSaving.value = true;
   try {
@@ -1162,18 +1167,19 @@ const availableParents = computed(() => {
     filtered = filtered.filter(d => departmentIdsInCompany.includes(d.ID_ID));
   }
 
-  // Filter ตาม Type Hierarchy Rules
-  // โครงสร้างใหม่: Office → Branch → Department
+  // Filter ตาม Type Hierarchy Rules (แนะนำโครงสร้าง Tree)
+  // โครงสร้างแนะนำ: Office → Branch → Department
+  // แต่ Parent เป็น optional - สามารถเป็น root level ได้
   const selectedType = departmentForm.value.type;
 
   if (selectedType === 'office') {
     // office: can have parent=NULL (root) or parent=office (sub-office)
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (selectedType === 'branch') {
-    // branch: must have parent=office (required)
+    // branch: recommended to have parent=office (but optional)
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (selectedType === 'department') {
-    // department: must have parent=branch (required)
+    // department: recommended to have parent=branch (but optional)
     filtered = filtered.filter(d => d.ID_Type === 'branch');
   }
 
@@ -1206,20 +1212,41 @@ const availableParentsForMove = computed(() => {
 
   const deptType = movingDept.ID_Type;
 
-  // Filter ตาม Type Hierarchy Rules
-  // โครงสร้างใหม่: Office → Branch → Department
+  // Filter ตาม Type Hierarchy Rules (แนะนำโครงสร้าง Tree)
+  // โครงสร้างแนะนำ: Office → Branch → Department
+  // แต่ Parent เป็น optional - สามารถเป็น root level ได้
   if (deptType === 'office') {
     // office: can have parent=NULL (root) or parent=office (sub-office)
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (deptType === 'branch') {
-    // branch: must have parent=office (required)
+    // branch: recommended to have parent=office (but optional)
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (deptType === 'department') {
-    // department: must have parent=branch (required)
+    // department: recommended to have parent=branch (but optional)
     filtered = filtered.filter(d => d.ID_Type === 'branch');
   }
 
   return filtered;
+});
+
+// Watch: เมื่อเปลี่ยน type ให้ reset parentId ถ้า parentId ที่เลือกไว้ไม่ match กับ availableParents ใหม่
+watch(() => departmentForm.value.type, (newType, oldType) => {
+  // ถ้าเป็นการแก้ไข (isEdit) หรือยังไม่ได้เปิด modal ไม่ต้องทำอะไร
+  if (!departmentModal.value.show || departmentModal.value.isEdit) {
+    return;
+  }
+
+  // ถ้ามี parentId ที่เลือกไว้ ให้ตรวจสอบว่า parentId ยังอยู่ใน availableParents หรือไม่
+  if (departmentForm.value.parentId) {
+    const isValidParent = availableParents.value.some(
+      dept => dept.ID_ID === departmentForm.value.parentId
+    );
+
+    // ถ้า parentId ไม่ valid ให้ reset เป็น null
+    if (!isValidParent) {
+      departmentForm.value.parentId = null;
+    }
+  }
 });
 
 // ==================== Load Data on Mount ====================

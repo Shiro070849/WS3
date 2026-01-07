@@ -541,17 +541,10 @@ class SettingsService {
   // Validate Hierarchy Rules
   // โครงสร้างที่ถูกต้อง: สำนัก (Office) → สาขา (Branch) → ฝ่าย/แผนก (Department)
   async validateDepartmentHierarchy(type, parentId, pool) {
-    // Rule 1: branch type must have a parent (office)
-    if (type === 'branch' && !parentId) {
-      throw new Error('สาขา (branch) จำเป็นต้องอยู่ภายใต้สำนัก (office)');
-    }
+    // Note: Parent is now optional - departments can be root level
+    // But if parent is specified, we validate that the parent type is correct
 
-    // Rule 2: department type must have a parent (branch)
-    if (type === 'department' && !parentId) {
-      throw new Error('ฝ่าย/แผนก (department) จำเป็นต้องอยู่ภายใต้สาขา (branch)');
-    }
-
-    // Rule 3: If parent is specified, validate parent type based on child type
+    // Rule: If parent is specified, validate parent type based on child type
     if (parentId) {
       const parentQuery = `SELECT ID_Type FROM [dbo].[InternalDepartment] WHERE ID_ID = @ParentId`;
       const parentResult = await pool.request()
@@ -571,12 +564,12 @@ class SettingsService {
           throw new Error('สำนัก (office) สามารถอยู่ภายใต้สำนักอื่นเท่านั้น หรือเป็น root');
         }
       } else if (type === 'branch') {
-        // branch must have parent of type 'office'
+        // branch should have parent of type 'office' (if parent is provided)
         if (parentType !== 'office') {
           throw new Error('สาขา (branch) ต้องอยู่ภายใต้สำนัก (office) เท่านั้น');
         }
       } else if (type === 'department') {
-        // department must have parent of type 'branch'
+        // department should have parent of type 'branch' (if parent is provided)
         if (parentType !== 'branch') {
           throw new Error('ฝ่าย/แผนก (department) ต้องอยู่ภายใต้สาขา (branch) เท่านั้น');
         }

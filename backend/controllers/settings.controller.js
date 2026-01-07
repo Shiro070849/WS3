@@ -461,10 +461,17 @@ class SettingsController {
       const { code, localName, englishName, type, parentId, isActive, remarks, companyId } = req.body;
 
       // Validate required fields
-      if (!code || !localName) {
+      if (!code || !code.trim()) {
         return res.status(400).json({
           success: false,
-          message: 'Code and Local Name are required'
+          message: 'กรุณากรอกรหัสแผนก'
+        });
+      }
+
+      if (!localName || !localName.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณากรอกชื่อแผนก (ไทย)'
         });
       }
 
@@ -476,20 +483,7 @@ class SettingsController {
         });
       }
 
-      // Backend Validation: branch and department must have parent
-      if (type === 'branch' && !parentId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Branch type must have a parent office'
-        });
-      }
-
-      if (type === 'department' && !parentId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Department type must have a parent branch'
-        });
-      }
+      // Note: Parent is now optional - validation of parent type (if provided) is done in service layer
 
       const result = await settingsService.createDepartment({
         code,
@@ -523,27 +517,21 @@ class SettingsController {
       const { code, localName, englishName, type, parentId, isActive, remarks } = req.body;
 
       // Validate required fields
-      if (!code || !localName) {
+      if (!code || !code.trim()) {
         return res.status(400).json({
           success: false,
-          message: 'Code and Local Name are required'
+          message: 'กรุณากรอกรหัสแผนก'
         });
       }
 
-      // Backend Validation: branch and department must have parent
-      if (type === 'branch' && !parentId) {
+      if (!localName || !localName.trim()) {
         return res.status(400).json({
           success: false,
-          message: 'Branch type must have a parent office'
+          message: 'กรุณากรอกชื่อแผนก (ไทย)'
         });
       }
 
-      if (type === 'department' && !parentId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Department type must have a parent branch'
-        });
-      }
+      // Note: Parent is now optional - validation of parent type (if provided) is done in service layer
 
       await settingsService.updateDepartment(id, {
         code,
