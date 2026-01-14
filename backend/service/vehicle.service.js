@@ -41,10 +41,10 @@ class VehicleService {
         }
       }
 
-      // Filter by search (license plate, full name)
+      // Filter by search (license plate, barcode, full name, WI_Sequence)
       if (filters.search) {
         whereConditions.push(
-          "(WI.WI_LicensePlate LIKE @Search OR WI.WI_FullName LIKE @Search)"
+          "(WI.WI_LicensePlate LIKE @Search OR WI.WI_Barcode LIKE @Search OR WI.WI_FullName LIKE @Search OR CAST(WI.WI_Sequence AS NVARCHAR) LIKE @Search)"
         );
         request.input('Search', sql.NVarChar, `%${filters.search}%`);
       }
@@ -84,6 +84,7 @@ class VehicleService {
       const query = `
         SELECT
           WI.WI_ID,
+          WI.WI_Sequence,
           WI.WI_Barcode,
           WI.WI_LicensePlate,
           WI.WI_LicenseProvince,

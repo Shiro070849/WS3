@@ -30,8 +30,9 @@
             <input
               v-model="filters.search"
               type="text"
-              placeholder="ทะเบียนรถ หรือชื่อคนขับ"
+              placeholder="ทะเบียนรถ, ชื่อคนขับ, Sequence"
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+              @input="handleSearchInput"
               @keyup.enter="fetchVehicles"
             />
           </div>
@@ -131,6 +132,9 @@
             <thead class="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <tr>
                 <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
+                  Sequence
+                </th>
+                <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   ทะเบียนรถ
                 </th>
                 <th v-if="canReprint" class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
@@ -161,7 +165,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="loading" class="bg-white">
-                <td :colspan="canReprint ? 9 : 8" class="px-6 py-10 text-center text-gray-500">
+                <td :colspan="canReprint ? 10 : 9" class="px-6 py-10 text-center text-gray-500">
                   <div class="flex items-center justify-center">
                     <svg class="animate-spin h-6 w-6 mr-3 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -172,11 +176,16 @@
                 </td>
               </tr>
               <tr v-else-if="vehicles.length === 0" class="bg-white">
-                <td :colspan="canReprint ? 9 : 8" class="px-6 py-10 text-base text-center text-gray-500 font-prompt">
+                <td :colspan="canReprint ? 10 : 9" class="px-6 py-10 text-base text-center text-gray-500 font-prompt">
                   ไม่พบข้อมูล
                 </td>
               </tr>
               <tr v-else v-for="vehicle in vehicles" :key="vehicle.WI_ID" class="transition-colors border-b border-gray-200 hover:bg-blue-50/30">
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <div class="text-base font-medium text-gray-900 font-prompt">
+                    {{ vehicle.WI_Sequence || '-' }}
+                  </div>
+                </td>
                 <td class="px-6 py-5 whitespace-nowrap">
                   <div class="text-base font-bold text-gray-900 font-prompt">
                     {{ vehicle.WI_LicensePlate || '-' }}
@@ -1015,6 +1024,12 @@ const fetchVehicles = async () => {
     const response = await vehiclesAPI.getAll(params);
     vehicles.value = response.data.data;
     pagination.value = response.data.pagination;
+
+    // Debug: Check if WI_Sequence exists
+    if (vehicles.value.length > 0) {
+      console.log('🔍 [DEBUG] First vehicle WI_Sequence:', vehicles.value[0].WI_Sequence);
+      console.log('🔍 [DEBUG] First vehicle keys:', Object.keys(vehicles.value[0]));
+    }
   } catch (error) {
     console.error('Error fetching vehicles:', error);
     toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้');
@@ -1063,6 +1078,21 @@ watch(() => filterStore.dateTo, (newVal) => {
 const handleCompanyFilter = () => {
   pagination.value.page = 1;
   fetchVehicles();
+};
+
+// Real-time search with debounce
+let searchTimeout = null;
+const handleSearchInput = () => {
+  // Clear previous timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  // Set new timeout (300ms delay)
+  searchTimeout = setTimeout(() => {
+    pagination.value.page = 1;
+    fetchVehicles();
+  }, 300);
 };
 
 const changePage = (page) => {
