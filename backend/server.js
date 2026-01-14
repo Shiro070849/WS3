@@ -18,10 +18,10 @@ const corsOptions = {
   origin: ["http://localhost:8080",
            "http://localhost:8081",
            "https://web.mrgshrimp.com",
-           "*" 
+           "*"
           ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // เพิ่ม: ระบุ methods ที่อนุญาต
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // เพิ่ม: ระบุ methods ที่อนุญาต
   allowedHeaders: ['Content-Type', 'Authorization'] // เพิ่ม: ระบุ headers ที่อนุญาต
 };
 

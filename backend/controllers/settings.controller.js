@@ -202,6 +202,66 @@ class SettingsController {
     }
   }
 
+  async updateCompanySequence(req, res) {
+    try {
+      const companyId = parseInt(req.params.id);
+      const { sequence } = req.body;
+
+      if (sequence === undefined || sequence === null) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุลำดับ (sequence)'
+        });
+      }
+
+      await settingsService.updateCompanySequence(companyId, parseInt(sequence));
+
+      console.log(`🔢 Company sequence updated for IC_ID ${companyId}: ${sequence}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'อัพเดทลำดับบริษัทสำเร็จ'
+      });
+    } catch (error) {
+      console.error('Error in updateCompanySequence:', error);
+      res.status(500).json({
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการอัพเดทลำดับ',
+        error: error.message
+      });
+    }
+  }
+
+  async batchUpdateCompanySequences(req, res) {
+    try {
+      const { updates } = req.body;
+
+      if (!updates || !Array.isArray(updates) || updates.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'กรุณาระบุข้อมูลลำดับ (updates)'
+        });
+      }
+
+      const result = await settingsService.batchUpdateCompanySequences(updates);
+
+      console.log(`🔢 Batch updated ${result.updated} company sequences`);
+
+      res.status(200).json({
+        success: true,
+        message: 'อัพเดทลำดับบริษัททั้งหมดสำเร็จ',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in batchUpdateCompanySequences:', error);
+      res.status(500).json({
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการอัพเดทลำดับ',
+        error: error.message
+      });
+    }
+  }
+
   // ==================== USERS ====================
 
   async getAllUsers(req, res) {

@@ -67,15 +67,27 @@
                 <h2 class="text-xl font-semibold text-[#1a202c]">รายการบริษัท</h2>
                 <p class="mt-1 text-base text-gray-500">จัดการข้อมูลบริษัทในระบบ</p>
               </div>
-              <BaseButton @click="openCompanyModal" variant="primary">
-                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                เพิ่มบริษัท
-              </BaseButton>
+              <div class="flex gap-3">
+                <BaseButton @click="openReorderModal" variant="secondary">
+                  <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  จัดลำดับบริษัท
+                </BaseButton>
+                <BaseButton @click="openCompanyModal" variant="primary">
+                  <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  เพิ่มบริษัท
+                </BaseButton>
+              </div>
             </div>
 
             <BaseTable :columns="companyColumns" :data="companies" :loading="companyLoading">
+              <template #cell-Company_Sequence="{ value }">
+                <span class="text-gray-900">{{ value || '-' }}</span>
+              </template>
+
               <template #cell-IC_IsActive="{ value }">
                 <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
                   {{ value ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
@@ -220,6 +232,66 @@
           <BaseButton variant="secondary" @click="closeCompanyModal">ยกเลิก</BaseButton>
           <BaseButton variant="primary" @click="saveCompany" :loading="companySaving">
             {{ companyModal.isEdit ? 'บันทึก' : 'สร้าง' }}
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- MODAL: จัดลำดับบริษัท -->
+    <BaseModal :show="reorderModal.show" title="จัดลำดับบริษัท" @close="closeReorderModal" size="lg">
+      <div class="mb-4">
+        <p class="text-sm text-gray-600 font-prompt">
+          <svg class="inline w-4 h-4 mr-1 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          ลากและวางเพื่อจัดลำดับบริษัท
+        </p>
+      </div>
+
+      <div ref="scrollContainer" class="space-y-2 max-h-[500px] overflow-y-auto">
+        <div
+          v-for="(company, index) in reorderList"
+          :key="company.IC_ID"
+          :draggable="true"
+          @dragstart="handleDragStart($event, index)"
+          @dragover.prevent="handleDragOver($event, index)"
+          @drag="handleDrag"
+          @drop="handleDrop($event, index)"
+          @dragend="handleDragEnd"
+          class="flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-lg cursor-move hover:border-[#0090D3] hover:shadow-md transition-all"
+          :class="{ 'opacity-50': draggedIndex === index, 'border-[#0090D3] bg-blue-50': dragOverIndex === index }"
+        >
+          <!-- Drag Handle Icon -->
+          <svg class="w-5 h-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+          </svg>
+
+          <!-- Sequence Number -->
+          <div class="flex items-center justify-center w-8 h-8 bg-[#0090D3] text-white rounded-full font-bold text-sm flex-shrink-0">
+            {{ index + 1 }}
+          </div>
+
+          <!-- Company Info -->
+          <div class="flex-1">
+            <div class="font-semibold text-gray-900 font-prompt">{{ company.IC_LocalName }}</div>
+            <div class="text-sm text-gray-500 font-prompt">{{ company.IC_Code }}</div>
+          </div>
+
+          <!-- Status Badge -->
+          <span
+            :class="company.IC_IsActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+            class="px-3 py-1 text-xs font-semibold rounded-full flex-shrink-0"
+          >
+            {{ company.IC_IsActive ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
+          </span>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="closeReorderModal">ยกเลิก</BaseButton>
+          <BaseButton variant="primary" @click="saveReorder" :loading="reorderSaving">
+            บันทึกลำดับ
           </BaseButton>
         </div>
       </template>
@@ -630,6 +702,7 @@ const companyModal = ref({ show: false, isEdit: false, title: '', id: null });
 const companyForm = ref({ code: '', localName: '', englishName: '', isActive: true, remarks: '' });
 
 const companyColumns = [
+  { key: 'Company_Sequence', label: 'ลำดับ' },
   { key: 'IC_Code', label: 'รหัส' },
   { key: 'IC_LocalName', label: 'ชื่อบริษัท (ไทย)' },
   { key: 'IC_EnglishName', label: 'ชื่อบริษัท (EN)' },
@@ -657,7 +730,13 @@ const openCompanyModal = () => {
 
 const editCompany = (row) => {
   companyModal.value = { show: true, isEdit: true, title: 'แก้ไขบริษัท', id: row.IC_ID };
-  companyForm.value = { code: row.IC_Code, localName: row.IC_LocalName, englishName: row.IC_EnglishName, isActive: row.IC_IsActive, remarks: row.IC_Remarks || '' };
+  companyForm.value = {
+    code: row.IC_Code,
+    localName: row.IC_LocalName,
+    englishName: row.IC_EnglishName,
+    isActive: row.IC_IsActive,
+    remarks: row.IC_Remarks || ''
+  };
 };
 
 const closeCompanyModal = () => {
@@ -667,10 +746,17 @@ const closeCompanyModal = () => {
 const saveCompany = async () => {
   companySaving.value = true;
   try {
-    const payload = { code: companyForm.value.code, localName: companyForm.value.localName, englishName: companyForm.value.englishName, isActive: companyForm.value.isActive, remarks: companyForm.value.remarks };
+    const payload = {
+      code: companyForm.value.code,
+      localName: companyForm.value.localName,
+      englishName: companyForm.value.englishName,
+      isActive: companyForm.value.isActive,
+      remarks: companyForm.value.remarks
+    };
+
     if (companyModal.value.isEdit) {
       await companiesAPI.update(companyModal.value.id, payload);
-      toast.success('สำเร็จ', 'บันทึกข้อมูลสำเร็จ');
+      toast.success('สำเร็จ', 'บันทึกข้อมูลบริษัทสำเร็จ');
     } else {
       await companiesAPI.create(payload);
       toast.success('สำเร็จ', 'สร้างบริษัทใหม่สำเร็จ');
@@ -694,6 +780,79 @@ const deleteCompany = async (row) => {
   } catch (error) {
     console.error('Error:', error);
     toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
+  }
+};
+
+// ==================== จัดลำดับบริษัท (Reorder) ====================
+const reorderModal = ref({ show: false });
+const reorderList = ref([]);
+const reorderSaving = ref(false);
+const draggedIndex = ref(null);
+const dragOverIndex = ref(null);
+
+const openReorderModal = () => {
+  // Copy companies array เพื่อจัดลำดับ
+  reorderList.value = JSON.parse(JSON.stringify(companies.value));
+  reorderModal.value.show = true;
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+};
+
+const closeReorderModal = () => {
+  reorderModal.value.show = false;
+  reorderList.value = [];
+};
+
+const handleDragStart = (event, index) => {
+  draggedIndex.value = index;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/html', event.target.innerHTML);
+};
+
+const handleDragOver = (event, index) => {
+  event.preventDefault();
+  dragOverIndex.value = index;
+};
+
+const handleDrop = (event, dropIndex) => {
+  event.preventDefault();
+
+  const dragIndex = draggedIndex.value;
+  if (dragIndex === null || dragIndex === dropIndex) return;
+
+  // Swap items
+  const draggedItem = reorderList.value[dragIndex];
+  reorderList.value.splice(dragIndex, 1);
+  reorderList.value.splice(dropIndex, 0, draggedItem);
+
+  dragOverIndex.value = null;
+};
+
+const handleDragEnd = () => {
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+};
+
+const saveReorder = async () => {
+  reorderSaving.value = true;
+  try {
+    // สร้าง array ของ { id, sequence } สำหรับส่งไป backend
+    const updates = reorderList.value.map((company, index) => ({
+      id: company.IC_ID,
+      sequence: index + 1
+    }));
+
+    // เรียก API batch update
+    await companiesAPI.batchUpdateSequences(updates);
+
+    toast.success('สำเร็จ', 'บันทึกลำดับบริษัทสำเร็จ');
+    closeReorderModal();
+    fetchCompanies(); // Refresh ข้อมูล
+  } catch (error) {
+    console.error('Error saving reorder:', error);
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
+  } finally {
+    reorderSaving.value = false;
   }
 };
 

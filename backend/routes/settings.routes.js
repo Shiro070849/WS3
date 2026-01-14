@@ -17,6 +17,10 @@ module.exports = (app) => {
   app.put('/api/settings/companies/:id', settingsController.updateCompany);
   // อัปโหลด logo ของบริษัท
   app.post('/api/settings/companies/:id/logo', uploadLogo.single('logo'), settingsController.uploadCompanyLogo);
+  // อัพเดต Company Sequence (ลำดับการแสดงผล)
+  app.patch('/api/settings/companies/:id/sequence', settingsController.updateCompanySequence);
+  // อัพเดต Company Sequences แบบ Batch
+  app.post('/api/settings/companies/batch-update-sequences', settingsController.batchUpdateCompanySequences);
   // ลบบริษัท (Soft Delete)
   app.delete('/api/settings/companies/:id', settingsController.deleteCompany);
 

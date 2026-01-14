@@ -17,9 +17,15 @@ class SettingsService {
           IC_EnglishName,
           IC_IsActive,
           IC_Remarks,
-          IC_LogoPath
+          IC_LogoPath,
+          Company_Sequence
         FROM [dbo].[InternalCompany]
-        ORDER BY IC_Code ASC
+        ORDER BY
+          CASE
+            WHEN Company_Sequence IS NULL THEN 999999
+            ELSE Company_Sequence
+          END ASC,
+          IC_Code ASC
       `;
       const result = await pool.request().query(query);
       return result.recordset;
@@ -212,6 +218,59 @@ class SettingsService {
       return { success: true };
     } catch (error) {
       console.error('Error updating company logo:', error);
+      throw error;
+    }
+  }
+
+  // อัพเดต Company Sequence (ลำดับการแสดงผล)
+  async updateCompanySequence(id, sequence) {
+    try {
+      const pool = await dbService.connect();
+      const query = `
+        UPDATE [dbo].[InternalCompany]
+        SET Company_Sequence = @Company_Sequence
+        WHERE IC_ID = @IC_ID
+      `;
+      await pool.request()
+        .input('IC_ID', sql.Int, id)
+        .input('Company_Sequence', sql.Int, sequence)
+        .query(query);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating company sequence:', error);
+      throw error;
+    }
+  }
+
+  // อัพเดต Company Sequences แบบ Batch
+  async batchUpdateCompanySequences(updates) {
+    try {
+      const pool = await dbService.connect();
+      const transaction = pool.transaction();
+
+      await transaction.begin();
+
+      try {
+        for (const update of updates) {
+          const query = `
+            UPDATE [dbo].[InternalCompany]
+            SET Company_Sequence = @Company_Sequence
+            WHERE IC_ID = @IC_ID
+          `;
+          await transaction.request()
+            .input('IC_ID', sql.Int, update.id)
+            .input('Company_Sequence', sql.Int, update.sequence)
+            .query(query);
+        }
+
+        await transaction.commit();
+        return { success: true, updated: updates.length };
+      } catch (error) {
+        await transaction.rollback();
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error batch updating company sequences:', error);
       throw error;
     }
   }

@@ -98,6 +98,8 @@ export const companiesAPI = {
   create: (data) => apiClient.post('/settings/companies', data),
   update: (id, data) => apiClient.put(`/settings/companies/${id}`, data),
   delete: (id) => apiClient.delete(`/settings/companies/${id}`),
+  updateSequence: (id, sequence) => apiClient.patch(`/settings/companies/${id}/sequence`, { sequence }),
+  batchUpdateSequences: (updates) => apiClient.post('/settings/companies/batch-update-sequences', { updates }),
   uploadLogo: (id, file) => {
     const formData = new FormData();
     formData.append('logo', file);
