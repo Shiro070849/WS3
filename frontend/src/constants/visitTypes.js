@@ -1,6 +1,7 @@
 // VisitType IDs (ตาม Database)
 export const VISIT_TYPE_IDS = {
   CONTACT_COORDINATOR: 18, // ติดต่อประสานงาน
+  DEPOSIT_WITHDRAW: 40, // ฝาก/เบิกสินค้า
   // เพิ่มอื่นๆตามต้องการในอนาคต
   // SUPPLIER: 39, // อัพพลายเออร์
   // OPERATOR: 19, // Operator
@@ -16,6 +17,11 @@ export const REPRINT_CONFIG = {
   // VT_ID ที่แสดง Footer Warning
   SHOW_FOOTER_WARNING_IDS: [
     VISIT_TYPE_IDS.CONTACT_COORDINATOR, // 18
+  ],
+
+  // VT_ID ที่แสดง Barcode (เฉพาะ "ฝาก/เบิกสินค้า")
+  SHOW_BARCODE_TYPE_IDS: [
+    VISIT_TYPE_IDS.DEPOSIT_WITHDRAW, // 40
   ],
 
   // URL Template (อิงจาก VUE_APP_QR_URL จาก .env หรือใช้ค่า default)
@@ -35,4 +41,8 @@ export const isQRUrlType = (vtId) => {
 
 export const shouldShowFooterWarning = (vtId) => {
   return REPRINT_CONFIG.SHOW_FOOTER_WARNING_IDS.includes(vtId);
+};
+
+export const shouldShowBarcode = (vtId) => {
+  return REPRINT_CONFIG.SHOW_BARCODE_TYPE_IDS.includes(vtId);
 };

@@ -688,9 +688,9 @@
                   <img v-if="reprintData.qrCodeUrl" :src="reprintData.qrCodeUrl" alt="QR Code" style="width: 112px !important; height: 112px !important;" />
                 </div>
 
-                <!-- Barcode -->
-                <div class="flex justify-center" style="margin-bottom: 6px;">
-                  <img v-if="reprintData.barcodeUrl" :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
+                <!-- Barcode (แสดงเฉพาะ "ฝาก/เบิกสินค้า") -->
+                <div v-if="reprintData.barcodeUrl && shouldShowBarcode(reprintData.vehicle.VT_ID)" class="flex justify-center" style="margin-bottom: 6px;">
+                  <img :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
                 </div>
 
                 <!-- Footer Warnings -->
@@ -891,9 +891,9 @@
           <img v-if="reprintData.qrCodeUrl" :src="reprintData.qrCodeUrl" alt="QR Code" style="width: 112px !important; height: 112px !important;" />
         </div>
 
-        <!-- Barcode -->
-        <div class="flex justify-center" style="margin-bottom: 6px;">
-          <img v-if="reprintData.barcodeUrl" :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
+        <!-- Barcode (แสดงเฉพาะ "ฝาก/เบิกสินค้า") -->
+        <div v-if="reprintData.barcodeUrl && shouldShowBarcode(reprintData.vehicle.VT_ID)" class="flex justify-center" style="margin-bottom: 6px;">
+          <img :src="reprintData.barcodeUrl" alt="Barcode" style="max-width: 55% !important;" />
         </div>
 
         <!-- Footer Warnings -->
@@ -922,7 +922,7 @@ import { vehiclesAPI, vehicleTypesAPI, companiesAPI, wayinAPI, getBackendBaseUrl
 import DateRangeFilter from '../components/DateRangeFilter.vue';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
-import { REPRINT_CONFIG, isQRUrlType, shouldShowFooterWarning } from '../constants/visitTypes';
+import { REPRINT_CONFIG, isQRUrlType, shouldShowFooterWarning, shouldShowBarcode } from '../constants/visitTypes';
 import { useToast } from '@/composables/useToast';
 import { useFilterStore } from '../stores/filterStore';
 
