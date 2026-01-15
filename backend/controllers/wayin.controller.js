@@ -198,6 +198,7 @@ class WayInController {
         licensePlate: req.body.licensePlate,
         licenseProvince: req.body.licenseProvince,
         vehicleType: req.body.vehicleType,
+        visitTypeId: req.body.visitTypeId,
         internalDivision: req.body.internalDivision,
         follower: req.body.follower,
         remarks: req.body.remarks,
