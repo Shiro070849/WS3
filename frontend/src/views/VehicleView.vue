@@ -598,6 +598,12 @@
 
                 <!-- Visitor Information -->
                 <div v-if="reprintData.vehicle" style="line-height: 1.3 !important; margin-bottom: 6px;">
+                  <!-- เลขที่ -->
+                  <div style="margin-bottom: 2px; font-size: 11px !important;">
+                    <span style="font-weight: 500; font-size: 11px !important;">เลขที่: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_Sequence || '-' }}</span>
+                  </div>
+
                   <!-- ประเภทผู้มาติดต่อ -->
                   <div style="margin-bottom: 2px; font-size: 11px !important;">
                     <span style="font-weight: 500; font-size: 11px !important;">ประเภทผู้มาติดต่อ: </span>
@@ -670,10 +676,10 @@
                     <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_InternalNote || '' }}</span>
                   </div>
 
-                  <!-- สถานที่ปริ้น -->
+                  <!-- ประตู -->
                   <div style="margin-bottom: 2px; font-size: 11px !important;">
-                    <span style="font-weight: 500; font-size: 11px !important;">สถานที่ปริ้น: </span>
-                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.IC_LocalName || 'ประตู1' }}</span>
+                    <span style="font-weight: 500; font-size: 11px !important;">ประตู: </span>
+                    <span style="font-size: 11px !important;">{{ reprintData.vehicle.User_Location || '-' }}</span>
                   </div>
                 </div>
 
@@ -696,6 +702,11 @@
                 <!-- ห้ามทำใบสลิปหาย (แสดงเสมอ) -->
                 <div class="text-center" style="margin-top: 4px;">
                   <p class="font-bold" style="font-size: 9px !important;">*** ห้ามทำใบสลิปหาย ***</p>
+                  <br>
+                  <br>
+                  <br>
+                  <br>
+                  <p>-----</p>
                 </div>
               </div>
             </div>
@@ -790,6 +801,12 @@
 
         <!-- Visitor Information -->
         <div style="line-height: 1.3 !important; margin-bottom: 6px;">
+          <!-- เลขที่ -->
+          <div style="margin-bottom: 2px; font-size: 11px !important;">
+            <span style="font-weight: 500; font-size: 11px !important;">เลขที่: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_Sequence || '-' }}</span>
+          </div>
+
           <!-- ประเภทผู้มาติดต่อ -->
           <div style="margin-bottom: 2px; font-size: 11px !important;">
             <span style="font-weight: 500; font-size: 11px !important;">ประเภทผู้มาติดต่อ: </span>
@@ -862,10 +879,10 @@
             <span style="font-size: 11px !important;">{{ reprintData.vehicle.WI_InternalNote || '' }}</span>
           </div>
 
-          <!-- สถานที่ปริ้น -->
+          <!-- ประตู -->
           <div style="margin-bottom: 2px; font-size: 11px !important;">
-            <span style="font-weight: 500; font-size: 11px !important;">สถานที่ปริ้น: </span>
-            <span style="font-size: 11px !important;">{{ reprintData.vehicle.IC_LocalName || 'ประตู1' }}</span>
+            <span style="font-weight: 500; font-size: 11px !important;">ประตู: </span>
+            <span style="font-size: 11px !important;">{{ reprintData.vehicle.User_Location || '-' }}</span>
           </div>
         </div>
 

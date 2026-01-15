@@ -110,6 +110,7 @@ class VehicleService {
           VT.VT_EnglishName,
           VT.VT_LocalName as VisitTypeName,
           SU.SU_Name1 as RecordedByUserName,
+          SU.User_Location,
           WO.WO_ID,
           WO.WO_RecordedOn,
           WO.WO_Remarks as WO_Remarks,

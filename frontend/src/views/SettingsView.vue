@@ -248,7 +248,7 @@
         </p>
       </div>
 
-      <div ref="scrollContainer" class="space-y-2 max-h-[500px] overflow-y-auto">
+      <div ref="scrollContainer" class="space-y-2 max-h-[60vh] overflow-y-auto pr-2" @wheel.prevent="handleWheel">
         <div
           v-for="(company, index) in reorderList"
           :key="company.IC_ID"
@@ -789,6 +789,8 @@ const reorderList = ref([]);
 const reorderSaving = ref(false);
 const draggedIndex = ref(null);
 const dragOverIndex = ref(null);
+const scrollContainer = ref(null);
+let scrollInterval = null;
 
 const openReorderModal = () => {
   // Copy companies array เพื่อจัดลำดับ
@@ -831,6 +833,49 @@ const handleDrop = (event, dropIndex) => {
 const handleDragEnd = () => {
   draggedIndex.value = null;
   dragOverIndex.value = null;
+  // หยุด auto-scroll เมื่อปล่อย
+  if (scrollInterval) {
+    clearInterval(scrollInterval);
+    scrollInterval = null;
+  }
+};
+
+// Auto-scroll เมื่อลากไปใกล้ขอบบน/ล่าง
+const handleDrag = (event) => {
+  if (!scrollContainer.value) return;
+
+  const container = scrollContainer.value;
+  const rect = container.getBoundingClientRect();
+  const scrollSpeed = 10;
+  const edgeThreshold = 50; // ระยะจากขอบที่จะเริ่ม scroll
+
+  // ตำแหน่ง Y ของเมาส์
+  const mouseY = event.clientY;
+
+  // หยุด interval เดิม
+  if (scrollInterval) {
+    clearInterval(scrollInterval);
+    scrollInterval = null;
+  }
+
+  // ใกล้ขอบบน - scroll ขึ้น
+  if (mouseY < rect.top + edgeThreshold && mouseY > rect.top) {
+    scrollInterval = setInterval(() => {
+      container.scrollTop -= scrollSpeed;
+    }, 16);
+  }
+  // ใกล้ขอบล่าง - scroll ลง
+  else if (mouseY > rect.bottom - edgeThreshold && mouseY < rect.bottom) {
+    scrollInterval = setInterval(() => {
+      container.scrollTop += scrollSpeed;
+    }, 16);
+  }
+};
+
+// ใช้ mouse wheel scroll ได้ขณะลาก
+const handleWheel = (event) => {
+  if (!scrollContainer.value) return;
+  scrollContainer.value.scrollTop += event.deltaY;
 };
 
 const saveReorder = async () => {
