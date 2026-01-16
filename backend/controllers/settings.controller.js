@@ -266,10 +266,14 @@ class SettingsController {
 
   async getAllUsers(req, res) {
     try {
-      const users = await settingsService.getAllUsers();
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 25;
+      const search = req.query.search || '';
+
+      const result = await settingsService.getAllUsers(page, limit, search);
 
       // ไม่ส่ง password กลับไป
-      const usersWithoutPassword = users.map(user => {
+      const usersWithoutPassword = result.data.map(user => {
         const { SU_Password, ...userWithoutPassword } = user;
         return userWithoutPassword;
       });
@@ -277,7 +281,8 @@ class SettingsController {
       res.status(200).json({
         success: true,
         count: usersWithoutPassword.length,
-        data: usersWithoutPassword
+        data: usersWithoutPassword,
+        pagination: result.pagination
       });
     } catch (error) {
       console.error('Error in getAllUsers:', error);

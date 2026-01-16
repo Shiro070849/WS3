@@ -113,7 +113,7 @@ export const companiesAPI = {
 
 // ==================== USERS API ====================
 export const usersAPI = {
-  getAll: () => apiClient.get('/settings/users'),
+  getAll: (params = {}) => apiClient.get('/settings/users', { params }),
   getById: (id) => apiClient.get(`/settings/users/${id}`),
   create: (data) => apiClient.post('/settings/users', data),
   update: (id, data) => apiClient.put(`/settings/users/${id}`, data),

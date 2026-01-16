@@ -8,33 +8,44 @@
       <p class="m-0 text-lg font-medium text-slate-500 font-prompt">จัดการบริษัท ผู้ใช้งาน และแผนก</p>
     </div>
 
-    <!-- Company Selector - Tailwind + Custom Dropdown CSS with Animation -->
-    <div v-if="accessibleCompanies.length > 0" class="flex items-center gap-4 py-4 mb-8 animate-slideUp" style="position: relative; z-index: 9999;">
-      <div class="flex items-center gap-2 text-sm font-semibold text-gray-800 whitespace-nowrap">
-        <svg class="w-[18px] h-[18px] stroke-[#0090D3] flex-shrink-0 transition-transform duration-300 hover:scale-110" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <!-- Company Selector - Pure Tailwind -->
+    <div v-if="accessibleCompanies.length > 0" class="relative z-50 flex items-center gap-2 py-2 mb-4 animate-slideUp">
+      <div class="flex items-center gap-1.5 text-sm font-medium text-gray-600 whitespace-nowrap">
+        <svg class="w-4 h-4 stroke-[#0090D3] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
-        <span class="text-gray-800">เลือกบริษัท:</span>
+        <span>เลือกบริษัท:</span>
       </div>
 
-      <div class="select" :class="{ open: isDropdownOpen }">
-        <div class="selected" :data-selected="getSelectedCompanyName()" @click="toggleDropdown">
-          <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" class="arrow">
-            <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path>
+      <div class="relative">
+        <button
+          @click="toggleDropdown"
+          class="flex items-center justify-between gap-3 px-4 py-2 text-sm font-medium text-white bg-[#007AB8] hover:bg-[#006299] rounded-lg shadow-sm transition-all duration-200"
+        >
+          <span class="truncate max-w-[280px]">{{ getSelectedCompanyName() }}</span>
+          <svg
+            class="w-3.5 h-3.5 fill-white transition-transform duration-200 flex-shrink-0"
+            :class="{ 'rotate-180': isDropdownOpen }"
+            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+          >
+            <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/>
           </svg>
-        </div>
-        <div class="options" v-show="isDropdownOpen">
-          <div v-for="company in accessibleCompanies" :key="company.IC_ID" :title="company.IC_LocalName">
-            <input
-              :id="`company-${company.IC_ID}`"
-              name="company-option"
-              type="radio"
-              :value="company.IC_ID"
-              v-model="selectedCompanyId"
-              @change="onCompanyChange"
-              :checked="company.IC_ID === selectedCompanyId"
-            />
-            <label class="option" :for="`company-${company.IC_ID}`" :data-txt="`${company.IC_LocalName} (${company.IC_Code})`"></label>
+        </button>
+
+        <div
+          v-show="isDropdownOpen"
+          class="absolute left-0 top-full mt-1 w-[400px] max-h-80 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50"
+        >
+          <div
+            v-for="company in accessibleCompanies"
+            :key="company.IC_ID"
+            @click="selectCompany(company.IC_ID)"
+            class="px-4 py-3 text-sm transition-colors border-b border-gray-100 cursor-pointer hover:bg-blue-50 last:border-b-0"
+            :class="{ 'bg-blue-50': company.IC_ID === selectedCompanyId }"
+          >
+            <span class="font-bold text-[#007AB8]">{{ company.IC_Code }}</span>
+            <span class="mx-2 text-gray-400">-</span>
+            <span class="text-gray-700" :class="{ 'font-medium': company.IC_ID === selectedCompanyId }">{{ company.IC_LocalName }}</span>
           </div>
         </div>
       </div>
@@ -128,6 +139,22 @@
               </BaseButton>
             </div>
 
+            <!-- Search Box -->
+            <div class="mb-4">
+              <div class="relative max-w-xs">
+                <input
+                  v-model="userSearch"
+                  @keyup.enter="onUserSearch"
+                  type="text"
+                  placeholder="ค้นหา รหัส, ชื่อ, username..."
+                  class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent"
+                />
+                <svg class="absolute w-4 h-4 text-gray-400 left-3 top-2.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
             <BaseTable :columns="userColumns" :data="users" :loading="userLoading">
               <template #cell-SU_Active="{ value }">
                 <span :class="value ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'" class="px-3 py-1.5 rounded-full text-sm font-semibold">
@@ -155,6 +182,44 @@
                 </div>
               </template>
             </BaseTable>
+
+            <!-- Pagination -->
+            <div v-if="userPagination.totalPages > 1" class="flex items-center justify-between px-4 py-3 mt-4 bg-white border border-gray-200 rounded-lg">
+              <div class="text-sm text-gray-600">
+                แสดง {{ ((userPagination.page - 1) * userPagination.limit) + 1 }} - {{ Math.min(userPagination.page * userPagination.limit, userPagination.total) }} จาก {{ userPagination.total }} รายการ
+              </div>
+              <div class="flex items-center gap-1">
+                <button
+                  @click="onUserPageChange(userPagination.page - 1)"
+                  :disabled="userPagination.page === 1"
+                  class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← ก่อนหน้า
+                </button>
+                <template v-for="page in userPagination.totalPages" :key="page">
+                  <button
+                    v-if="page === 1 || page === userPagination.totalPages || (page >= userPagination.page - 1 && page <= userPagination.page + 1)"
+                    @click="onUserPageChange(page)"
+                    :class="[
+                      'px-3 py-1.5 text-sm font-medium rounded-md',
+                      page === userPagination.page
+                        ? 'bg-[#007AB8] text-white'
+                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                  <span v-else-if="page === userPagination.page - 2 || page === userPagination.page + 2" class="px-2 text-gray-400">...</span>
+                </template>
+                <button
+                  @click="onUserPageChange(userPagination.page + 1)"
+                  :disabled="userPagination.page === userPagination.totalPages"
+                  class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ถัดไป →
+                </button>
+              </div>
+            </div>
           </BaseCard>
         </template>
 
@@ -248,44 +313,44 @@
         </p>
       </div>
 
-      <div ref="scrollContainer" class="space-y-2 max-h-[60vh] overflow-y-auto pr-2" @wheel.prevent="handleWheel">
-        <div
-          v-for="(company, index) in reorderList"
-          :key="company.IC_ID"
-          :draggable="true"
-          @dragstart="handleDragStart($event, index)"
-          @dragover.prevent="handleDragOver($event, index)"
-          @drag="handleDrag"
-          @drop="handleDrop($event, index)"
-          @dragend="handleDragEnd"
-          class="flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-lg cursor-move hover:border-[#0090D3] hover:shadow-md transition-all"
-          :class="{ 'opacity-50': draggedIndex === index, 'border-[#0090D3] bg-blue-50': dragOverIndex === index }"
-        >
-          <!-- Drag Handle Icon -->
-          <svg class="w-5 h-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-          </svg>
+      <draggable
+        v-model="reorderList"
+        item-key="IC_ID"
+        handle=".drag-handle"
+        ghost-class="dragging-ghost"
+        chosen-class="dragging-chosen"
+        class="space-y-2 max-h-[60vh] overflow-y-auto pr-2"
+        :scroll-sensitivity="100"
+        :force-fallback="true"
+      >
+        <template #item="{ element, index }">
+          <div class="flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-lg cursor-move hover:border-[#0090D3] hover:shadow-md transition-all select-none">
+            <!-- Drag Handle Icon -->
+            <svg class="flex-shrink-0 w-5 h-5 text-gray-400 drag-handle cursor-grab active:cursor-grabbing" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+            </svg>
 
-          <!-- Sequence Number -->
-          <div class="flex items-center justify-center w-8 h-8 bg-[#0090D3] text-white rounded-full font-bold text-sm flex-shrink-0">
-            {{ index + 1 }}
+            <!-- Sequence Number -->
+            <div class="flex items-center justify-center w-8 h-8 bg-[#0090D3] text-white rounded-full font-bold text-sm flex-shrink-0">
+              {{ index + 1 }}
+            </div>
+
+            <!-- Company Info -->
+            <div class="flex-1">
+              <div class="font-semibold text-gray-900 font-prompt">{{ element.IC_LocalName }}</div>
+              <div class="text-sm text-gray-500 font-prompt">{{ element.IC_Code }}</div>
+            </div>
+
+            <!-- Status Badge -->
+            <span
+              :class="element.IC_IsActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+              class="flex-shrink-0 px-3 py-1 text-xs font-semibold rounded-full"
+            >
+              {{ element.IC_IsActive ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
+            </span>
           </div>
-
-          <!-- Company Info -->
-          <div class="flex-1">
-            <div class="font-semibold text-gray-900 font-prompt">{{ company.IC_LocalName }}</div>
-            <div class="text-sm text-gray-500 font-prompt">{{ company.IC_Code }}</div>
-          </div>
-
-          <!-- Status Badge -->
-          <span
-            :class="company.IC_IsActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
-            class="px-3 py-1 text-xs font-semibold rounded-full flex-shrink-0"
-          >
-            {{ company.IC_IsActive ? 'ใช้งาน' : 'ไม่ใช้งาน' }}
-          </span>
-        </div>
-      </div>
+        </template>
+      </draggable>
 
       <template #footer>
         <div class="flex justify-end gap-3">
@@ -302,18 +367,20 @@
       <div class="space-y-4">
         <!-- เลือกบริษัท (สำหรับ Super Admin เท่านั้น) -->
         <div v-if="isMainAdmin">
-          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
             บริษัท <span class="text-red-500">*</span>
           </label>
           <select
             v-model="userForm.companyId"
-            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            class="block w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
             required
           >
             <option value="">เลือกบริษัท</option>
-            <option v-for="company in companies" :key="company.IC_ID" :value="company.IC_ID">
-              {{ company.IC_LocalName }} ({{ company.IC_Code }})
-            </option>
+            <template v-for="company in companies" :key="company.IC_ID">
+              <option v-if="company.IC_IsActive" :value="company.IC_ID" style="font-size: 14px;">
+                {{ company.IC_Code }} - {{ company.IC_LocalName }}
+              </option>
+            </template>
           </select>
         </div>
 
@@ -322,6 +389,24 @@
         <BaseInput v-model="userForm.name2" label="ชื่อ (อังกฤษ)" placeholder="เช่น Mr. Somchai Jaidee" />
         <BaseInput v-model="userForm.username" label="Username" placeholder="ชื่อผู้ใช้สำหรับเข้าสู่ระบบ" required />
         <BaseInput v-if="!userModal.isEdit" v-model="userForm.password" label="Password" type="password" placeholder="รหัสผ่าน" required />
+
+        <!-- เลือกบทบาท -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
+            บทบาท <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="userForm.roleId"
+            class="block w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
+            required
+          >
+            <option :value="null">เลือกบทบาท</option>
+            <option v-for="role in roles" :key="role.SR_ID" :value="role.SR_ID">
+              {{ role.SR_Code }} - {{ role.SR_Name }}
+            </option>
+          </select>
+        </div>
+
         <BaseInput v-model="userForm.email" label="Email" type="email" placeholder="email@example.com" />
         <div>
           <label class="flex items-center">
@@ -347,19 +432,21 @@
       <div class="space-y-4">
         <!-- Company Selection -->
         <div>
-          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
             บริษัท <span class="text-red-500">*</span>
           </label>
           <select
             v-model="departmentForm.companyIds[0]"
-            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            class="block w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
             required
             :disabled="departmentModal.isEdit || departmentModal.isAddChild"
           >
             <option value="">เลือกบริษัท</option>
-            <option v-for="company in companies" :key="company.IC_ID" :value="company.IC_ID">
-              {{ company.IC_LocalName }} ({{ company.IC_Code }})
-            </option>
+            <template v-for="company in companies" :key="company.IC_ID">
+              <option v-if="company.IC_IsActive" :value="company.IC_ID" style="font-size: 14px;">
+                {{ company.IC_Code }} - {{ company.IC_LocalName }}
+              </option>
+            </template>
           </select>
           <p class="mt-1 text-xs text-gray-500" v-if="!departmentModal.isEdit && !departmentModal.isAddChild">
             เลือกบริษัทที่ต้องการเพิ่มแผนก
@@ -375,12 +462,12 @@
 
         <!-- Type Selection -->
         <div>
-          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
             ประเภท <span class="text-red-500">*</span>
           </label>
           <select
             v-model="departmentForm.type"
-            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            class="block w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
             required
           >
             <option value="branch">สาขา (Branch)</option>
@@ -391,14 +478,14 @@
 
         <!-- Parent Selection -->
         <div>
-          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
             แผนกหลัก (Parent)
           </label>
 
           <!-- Warning: ต้องเลือกบริษัทก่อน -->
-          <div v-if="!departmentForm.companyIds || !departmentForm.companyIds[0]" class="p-3 border rounded-lg bg-amber-50 border-amber-200">
-            <p class="flex items-center gap-2 text-sm text-amber-800 font-prompt">
-              <svg class="flex-shrink-0 w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div v-if="!departmentForm.companyIds || !departmentForm.companyIds[0]" class="p-2.5 border rounded-lg bg-amber-50 border-amber-200">
+            <p class="flex items-center gap-2 text-sm text-amber-800">
+              <svg class="flex-shrink-0 w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               กรุณาเลือกบริษัทก่อนเพื่อดูรายการแผนกหลักที่สามารถเลือกได้
@@ -409,30 +496,30 @@
           <select
             v-else
             v-model="departmentForm.parentId"
-            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            class="block w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
           >
             <option :value="null">ไม่มี (Root Level - แผนกอิสระ)</option>
             <option v-for="dept in availableParents" :key="dept.ID_ID" :value="dept.ID_ID">
-              {{ dept.ID_LocalName }} ({{ dept.ID_Code }})
+              {{ dept.ID_Code }} - {{ dept.ID_LocalName }}
             </option>
           </select>
 
           <!-- Dynamic Help Text based on Type (แสดงเมื่อเลือกบริษัทแล้ว) -->
-          <div v-if="departmentForm.companyIds && departmentForm.companyIds[0]" class="p-4 mt-3 border border-blue-200 rounded-lg bg-blue-50 shadow-sm">
-            <div class="flex items-start gap-3">
-              <svg class="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div v-if="departmentForm.companyIds && departmentForm.companyIds[0]" class="p-2.5 mt-2 border border-blue-200 rounded-lg bg-blue-50">
+            <div class="flex items-start gap-2">
+              <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div class="flex-1">
-                <p class="text-sm text-blue-800 font-prompt leading-relaxed">
+                <p class="text-xs leading-relaxed text-blue-800">
                   <span v-if="departmentForm.type === 'office'">
-                    <strong class="font-semibold text-blue-900">กฎสำนัก:</strong> สามารถเป็น Root (ไม่มี Parent) หรือ อยู่ภายใต้สำนักอื่นได้
+                    <strong class="font-medium text-blue-900">กฎสำนัก:</strong> สามารถเป็น Root (ไม่มี Parent) หรือ อยู่ภายใต้สำนักอื่นได้
                   </span>
                   <span v-else-if="departmentForm.type === 'branch'">
-                    <strong class="font-semibold text-blue-900">กฎสาขา:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสำนัก (Office) เพื่อจัดโครงสร้าง Tree
+                    <strong class="font-medium text-blue-900">กฎสาขา:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสำนัก (Office) เพื่อจัดโครงสร้าง Tree
                   </span>
                   <span v-else-if="departmentForm.type === 'department'">
-                    <strong class="font-semibold text-blue-900">กฎแผนก:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสาขา (Branch) เพื่อจัดโครงสร้าง Tree
+                    <strong class="font-medium text-blue-900">กฎแผนก:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสาขา (Branch) เพื่อจัดโครงสร้าง Tree
                   </span>
                 </p>
               </div>
@@ -486,14 +573,14 @@
       <!-- Password Fields -->
       <div class="space-y-4">
         <div>
-          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
             รหัสผ่านใหม่ <span class="text-red-500">*</span>
           </label>
           <div class="relative">
             <input
               v-model="passwordForm.newPassword"
               :type="showPassword ? 'text' : 'password'"
-              class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt pr-12"
+              class="block w-full px-3 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
               placeholder="รหัสผ่านใหม่ (8+ ตัว, A-Z, a-z, 0-9)"
               required
             />
@@ -502,11 +589,11 @@
               @click="showPassword = !showPassword"
               class="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2 hover:text-gray-700"
             >
-              <svg v-if="!showPassword" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg v-if="!showPassword" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              <svg v-else class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg v-else class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
               </svg>
             </button>
@@ -515,13 +602,13 @@
         </div>
 
         <div>
-          <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
             ยืนยันรหัสผ่าน <span class="text-red-500">*</span>
           </label>
           <input
             v-model="passwordForm.confirmPassword"
             :type="showPassword ? 'text' : 'password'"
-            class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+            class="block w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
             placeholder="ยืนยันรหัสผ่านใหม่"
             required
           />
@@ -563,20 +650,20 @@
 
       <!-- Parent Selection -->
       <div>
-        <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">
           ย้ายไปอยู่ภายใต้ Parent ใหม่ <span class="text-red-500">*</span>
         </label>
         <select
           v-model="newParentId"
-          class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
+          class="block w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
           required
         >
           <option :value="null">ไม่มี (Root Level)</option>
           <option v-for="dept in availableParentsForMove" :key="dept.ID_ID" :value="dept.ID_ID">
-            {{ dept.ID_LocalName }} ({{ dept.ID_Code }})
+            {{ dept.ID_Code }} - {{ dept.ID_LocalName }}
           </option>
         </select>
-        <p class="mt-1 text-xs text-gray-500 font-prompt">เลือกแผนกที่จะเป็น Parent ใหม่</p>
+        <p class="mt-1 text-xs text-gray-500">เลือกแผนกที่จะเป็น Parent ใหม่</p>
       </div>
 
       <template #footer>
@@ -593,6 +680,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import draggable from 'vuedraggable';
 import BaseTabs from '../components/base/BaseTabs.vue';
 import BaseCard from '../components/base/BaseCard.vue';
 import BaseTable from '../components/base/BaseTable.vue';
@@ -604,7 +692,7 @@ import AppearanceSettings from '../components/settings/AppearanceSettings.vue';
 import SecuritySettings from '../components/settings/SecuritySettings.vue';
 import VehicleTypeSettings from '../components/settings/VehicleTypeSettings.vue';
 import CompanyTreeNode from '../components/settings/CompanyTreeNode.vue';
-import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI } from '../services/api';
+import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI, rolesAPI } from '../services/api';
 import { useTheme } from '@/composables/useTheme';
 import { useNotification } from '@/composables/useNotification';
 import { useToast } from '@/composables/useToast';
@@ -647,6 +735,12 @@ const toggleDropdown = () => {
 const onCompanyChange = () => {
   console.log('[UPDATE] Selected company changed to:', selectedCompanyId.value);
   isDropdownOpen.value = false;
+};
+
+const selectCompany = (companyId) => {
+  selectedCompanyId.value = companyId;
+  isDropdownOpen.value = false;
+  console.log('[UPDATE] Selected company changed to:', companyId);
 };
 
 const getSelectedCompanyName = () => {
@@ -787,95 +881,16 @@ const deleteCompany = async (row) => {
 const reorderModal = ref({ show: false });
 const reorderList = ref([]);
 const reorderSaving = ref(false);
-const draggedIndex = ref(null);
-const dragOverIndex = ref(null);
-const scrollContainer = ref(null);
-let scrollInterval = null;
 
 const openReorderModal = () => {
   // Copy companies array เพื่อจัดลำดับ
   reorderList.value = JSON.parse(JSON.stringify(companies.value));
   reorderModal.value.show = true;
-  draggedIndex.value = null;
-  dragOverIndex.value = null;
 };
 
 const closeReorderModal = () => {
   reorderModal.value.show = false;
   reorderList.value = [];
-};
-
-const handleDragStart = (event, index) => {
-  draggedIndex.value = index;
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/html', event.target.innerHTML);
-};
-
-const handleDragOver = (event, index) => {
-  event.preventDefault();
-  dragOverIndex.value = index;
-};
-
-const handleDrop = (event, dropIndex) => {
-  event.preventDefault();
-
-  const dragIndex = draggedIndex.value;
-  if (dragIndex === null || dragIndex === dropIndex) return;
-
-  // Swap items
-  const draggedItem = reorderList.value[dragIndex];
-  reorderList.value.splice(dragIndex, 1);
-  reorderList.value.splice(dropIndex, 0, draggedItem);
-
-  dragOverIndex.value = null;
-};
-
-const handleDragEnd = () => {
-  draggedIndex.value = null;
-  dragOverIndex.value = null;
-  // หยุด auto-scroll เมื่อปล่อย
-  if (scrollInterval) {
-    clearInterval(scrollInterval);
-    scrollInterval = null;
-  }
-};
-
-// Auto-scroll เมื่อลากไปใกล้ขอบบน/ล่าง
-const handleDrag = (event) => {
-  if (!scrollContainer.value) return;
-
-  const container = scrollContainer.value;
-  const rect = container.getBoundingClientRect();
-  const scrollSpeed = 10;
-  const edgeThreshold = 50; // ระยะจากขอบที่จะเริ่ม scroll
-
-  // ตำแหน่ง Y ของเมาส์
-  const mouseY = event.clientY;
-
-  // หยุด interval เดิม
-  if (scrollInterval) {
-    clearInterval(scrollInterval);
-    scrollInterval = null;
-  }
-
-  // ใกล้ขอบบน - scroll ขึ้น
-  if (mouseY < rect.top + edgeThreshold && mouseY > rect.top) {
-    scrollInterval = setInterval(() => {
-      container.scrollTop -= scrollSpeed;
-    }, 16);
-  }
-  // ใกล้ขอบล่าง - scroll ลง
-  else if (mouseY > rect.bottom - edgeThreshold && mouseY < rect.bottom) {
-    scrollInterval = setInterval(() => {
-      container.scrollTop += scrollSpeed;
-    }, 16);
-  }
-};
-
-// ใช้ mouse wheel scroll ได้ขณะลาก
-const handleWheel = (event) => {
-  if (!scrollContainer.value) return;
-  scrollContainer.value.scrollTop += event.deltaY;
 };
 
 const saveReorder = async () => {
@@ -906,7 +921,10 @@ const users = ref([]);
 const userLoading = ref(false);
 const userSaving = ref(false);
 const userModal = ref({ show: false, isEdit: false, title: '', id: null });
-const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: null });
+const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: null, roleId: null });
+const roles = ref([]);
+const userPagination = ref({ page: 1, limit: 25, total: 0, totalPages: 0 });
+const userSearch = ref('');
 
 const userColumns = computed(() => {
   if (isMainAdmin.value) {
@@ -929,11 +947,32 @@ const userColumns = computed(() => {
   }
 });
 
-const fetchUsers = async () => {
+const fetchRoles = async () => {
+  try {
+    const response = await rolesAPI.getAll();
+    roles.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching roles:', error);
+  }
+};
+
+const fetchUsers = async (page = 1) => {
   userLoading.value = true;
   try {
-    const response = await usersAPI.getAll();
-    users.value = response.data.data;
+    const params = {
+      page,
+      limit: userPagination.value.limit,
+      search: userSearch.value
+    };
+    const [usersRes] = await Promise.all([
+      usersAPI.getAll(params),
+      fetchRoles()
+    ]);
+    users.value = usersRes.data.data;
+    userPagination.value = {
+      ...userPagination.value,
+      ...usersRes.data.pagination
+    };
   } catch (error) {
     console.error('Error:', error);
     toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้');
@@ -942,11 +981,20 @@ const fetchUsers = async () => {
   }
 };
 
+const onUserPageChange = (page) => {
+  fetchUsers(page);
+};
+
+const onUserSearch = () => {
+  userPagination.value.page = 1;
+  fetchUsers(1);
+};
+
 const openUserModal = () => {
   userModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งานใหม่', id: null };
   // ถ้าไม่ใช่ Super Admin ให้ใช้ company ของตัวเอง
   const defaultCompanyId = isMainAdmin.value ? null : selectedCompanyId.value;
-  userForm.value = { code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: defaultCompanyId };
+  userForm.value = { code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: defaultCompanyId, roleId: null };
 };
 
 const editUser = (row) => {
@@ -960,7 +1008,8 @@ const editUser = (row) => {
     email: row.SU_Email || '',
     active: row.SU_Active,
     remarks: row.SU_Remarks || '',
-    companyId: row.IC_ID || null
+    companyId: row.IC_ID || null,
+    roleId: row.SR_ID || null
   };
 };
 
@@ -975,6 +1024,12 @@ const saveUser = async () => {
     return;
   }
 
+  // Validation: ต้องเลือก Role
+  if (!userForm.value.roleId) {
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกบทบาท');
+    return;
+  }
+
   userSaving.value = true;
   try {
     const payload = {
@@ -985,7 +1040,8 @@ const saveUser = async () => {
       email: userForm.value.email,
       active: userForm.value.active,
       remarks: userForm.value.remarks,
-      companyId: userForm.value.companyId // ส่ง IC_ID ไปด้วย
+      companyId: userForm.value.companyId,
+      roleId: userForm.value.roleId
     };
 
     if (userModal.value.isEdit) {
@@ -1637,119 +1693,17 @@ onBeforeUnmount(() => {
   transform: scale(1.08);
 }
 
-/* 3. Custom Dropdown (Complex component) */
-.select {
-  width: fit-content;
-  cursor: pointer;
-  position: relative;
-  transition: 300ms;
-  color: white;
-  overflow: visible;
-  z-index: 9998;
-}
-
-.selected {
-  background: #007AB8;
-  padding: 8px 12px;
-  margin-bottom: 3px;
-  border-radius: 6px;
-  position: relative;
-  z-index: 9999;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 240px;
-  gap: 0.75rem;
-  font-family: 'Prompt', sans-serif;
-  box-shadow: 0 2px 6px rgba(0, 122, 184, 0.2);
-  transition: all 0.3s ease;
-}
-
-.selected:hover {
-  background: #006299;
-}
-
-.selected::before {
-  content: attr(data-selected);
-}
-
-.arrow {
-  position: relative;
-  right: 0px;
-  height: 8px;
-  transform: rotate(-90deg);
-  width: 20px;
-  fill: white;
-  z-index: 10000;
-  transition: 300ms;
-  flex-shrink: 0;
-}
-
-.options {
-  display: flex;
-  flex-direction: column;
-  border-radius: 6px;
-  padding: 4px;
-  background-color: #ffffff;
-  border: 2px solid #007AB8;
-  position: absolute;
-  top: -100px;
-  left: 0;
-  opacity: 0;
-  transition: 300ms;
-  min-width: 240px;
-  max-height: 280px;
-  overflow-y: auto;
-  box-shadow: 0 8px 20px rgba(0, 122, 184, 0.15);
-  z-index: 10001;
-}
-
-.select.open > .options {
-  opacity: 1;
-  top: 38px;
-}
-
-.select.open > .selected .arrow {
-  transform: rotate(0deg);
-}
-
-.option {
-  border-radius: 4px;
-  padding: 8px 12px;
-  transition: 300ms;
-  background-color: transparent;
-  width: 100%;
-  font-size: 0.875rem;
-  cursor: pointer;
-  font-family: 'Prompt', sans-serif;
-  color: #1a202c;
-}
-
-.option:hover {
-  background-color: #E3F2FD;
-  color: #007AB8;
-}
-
-.options input[type="radio"] {
-  display: none;
-}
-
-.options label {
-  display: block;
-  width: 100%;
-  cursor: pointer;
-}
-
-.options label::before {
-  content: attr(data-txt);
-  display: block;
-  width: 100%;
-}
-
-.options input[type="radio"]:checked + label {
-  display: none;
-}
+/* 3. Custom Dropdown - Now using Tailwind classes inline */
 
 /* Responsive - page-title moved to theme-variables.css */
+
+/* Draggable styles */
+.dragging-ghost {
+  opacity: 0.5;
+}
+
+.dragging-chosen {
+  border-color: #0090D3 !important;
+  background-color: #eff6ff !important;
+}
 </style>

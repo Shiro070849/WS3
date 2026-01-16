@@ -297,10 +297,21 @@ class SettingsService {
   // ==================== USERS ====================
 
   // ดึงรายการ User ทั้งหมด (พร้อมชื่อบริษัทและ Role)
-  async getAllUsers() {
+  async getAllUsers(page = 1, limit = 25, search = '') {
     try {
       const pool = await dbService.connect();
-      const query = `
+      const offset = (page - 1) * limit;
+
+      // Query นับจำนวนทั้งหมด
+      let countQuery = `
+        SELECT COUNT(*) AS total
+        FROM [dbo].[SystemUser] SU
+        LEFT JOIN [dbo].[InternalCompany] IC ON SU.IC_ID = IC.IC_ID
+        LEFT JOIN [dbo].[SystemRole] SR ON SU.SR_ID = SR.SR_ID
+      `;
+
+      // Query ดึงข้อมูลพร้อม pagination
+      let dataQuery = `
         SELECT
           SU.SU_ID,
           SU.SU_Code,
@@ -320,10 +331,51 @@ class SettingsService {
         FROM [dbo].[SystemUser] SU
         LEFT JOIN [dbo].[InternalCompany] IC ON SU.IC_ID = IC.IC_ID
         LEFT JOIN [dbo].[SystemRole] SR ON SU.SR_ID = SR.SR_ID
-        ORDER BY SU.SU_Code ASC
       `;
-      const result = await pool.request().query(query);
-      return result.recordset;
+
+      // เพิ่ม WHERE clause ถ้ามี search
+      if (search) {
+        const whereClause = `
+          WHERE SU.SU_Code LIKE @search
+          OR SU.SU_Name1 LIKE @search
+          OR SU.SU_Username LIKE @search
+          OR SU.SU_Email LIKE @search
+        `;
+        countQuery += whereClause;
+        dataQuery += whereClause;
+      }
+
+      dataQuery += `
+        ORDER BY SU.SU_Code ASC
+        OFFSET @offset ROWS
+        FETCH NEXT @limit ROWS ONLY
+      `;
+
+      const request = pool.request()
+        .input('offset', sql.Int, offset)
+        .input('limit', sql.Int, limit);
+
+      if (search) {
+        request.input('search', sql.NVarChar, `%${search}%`);
+      }
+
+      const [countResult, dataResult] = await Promise.all([
+        pool.request().input('search', sql.NVarChar, search ? `%${search}%` : '').query(countQuery),
+        request.query(dataQuery)
+      ]);
+
+      const total = countResult.recordset[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: dataResult.recordset,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages
+        }
+      };
     } catch (error) {
       console.error('Error getting all users:', error);
       throw error;
