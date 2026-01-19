@@ -131,9 +131,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authAPI } from '../services/api'
 import { useTheme } from '@/composables/useTheme'
+import { usePermissionStore } from '@/stores/permissionStore'
 
 const router = useRouter()
 const { loadTheme, clearAllThemes } = useTheme()  // เพิ่ม clearAllThemes
+const permissionStore = usePermissionStore()
 
 const username = ref('')
 const password = ref('')
@@ -190,6 +192,19 @@ const handleLogin = async () => {
       } else {
         console.log('[COMPANY ADMIN LOGIN] Loading company theme for IC_ID:', userData.IC_ID)
         await loadTheme(userData.IC_ID)
+      }
+
+      // STEP 5: Load Permissions (Production Tip: ใช้ /api/auth/me เพื่อลด Network Round-trip)
+      try {
+        console.log('[LOGIN] Loading user permissions...')
+        await permissionStore.loadUserProfile(userData.SU_ID)
+        
+        // STEP 6: เริ่ม Silent Refresh (ทุก 5 นาที)
+        permissionStore.startSilentRefresh(userData.SU_ID, 5)
+        console.log('[LOGIN] Silent refresh started')
+      } catch (error) {
+        console.error('[LOGIN] Error loading permissions:', error)
+        // ถ้าโหลด Permission ไม่ได้ → ยังให้ Login ได้ แต่จะไม่มีสิทธิ์เข้าหน้าใดๆ
       }
 
       successMessage.value = 'Login successful! Redirecting...'

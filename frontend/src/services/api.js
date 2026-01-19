@@ -72,15 +72,98 @@ const apiClient = axios.create({
   },
 });
 
+// Request interceptor - เพิ่ม userId ใน header อัตโนมัติ
+apiClient.interceptors.request.use(
+  (config) => {
+    // ข้ามการเพิ่ม userId สำหรับ auth routes (login, logout)
+    const authRoutes = ['/auth/login', '/auth/logout'];
+    const isAuthRoute = authRoutes.some(route => config.url?.includes(route));
+    
+    if (!isAuthRoute) {
+      // ดึง userId จาก localStorage และเพิ่มใน header
+      const userId = localStorage.getItem('userId');
+      
+      if (userId && userId !== 'null' && userId !== 'undefined' && userId !== '') {
+        // เพิ่ม userId ใน header เสมอ (ถ้ายังไม่มี)
+        if (!config.headers['x-user-id']) {
+          config.headers['x-user-id'] = userId;
+        }
+        
+        // เพิ่ม userId ใน params เฉพาะเมื่อ:
+        // 1. เป็น GET request
+        // 2. ยังไม่มี userId ใน params อยู่แล้ว (ป้องกันการซ้ำ)
+        if (config.method === 'get') {
+          config.params = config.params || {};
+          // เช็คว่ามี userId อยู่แล้วหรือไม่ (ทั้งใน params object และ URL string)
+          const hasUserIdInParams = config.params.userId !== undefined && config.params.userId !== null;
+          const hasUserIdInUrl = config.url?.includes('userId=');
+          
+          if (!hasUserIdInParams && !hasUserIdInUrl) {
+            config.params.userId = userId;
+          }
+        }
+        
+        console.log(`[API INTERCEPTOR] Added userId (${userId}) to request: ${config.method?.toUpperCase()} ${config.url}`);
+      } else {
+        // ถ้ายังไม่มี userId และไม่ใช่ auth route → log warning
+        console.warn(`[API INTERCEPTOR] No valid userId found in localStorage for request: ${config.method?.toUpperCase()} ${config.url}`);
+        console.warn(`[API INTERCEPTOR] localStorage userId value:`, userId);
+        console.warn(`[API INTERCEPTOR] This request may fail with 400 Bad Request if backend requires userId`);
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    // Handle 403 Forbidden - Permission Denied
+    if (error.response?.status === 403) {
+      console.warn('[API INTERCEPTOR] 403 Forbidden:', error.config?.url);
+      
+      // Import permissionStore dynamically เพื่อหลีกเลี่ยง circular dependency
+      const { usePermissionStore } = await import('@/stores/permissionStore');
+      const permissionStore = usePermissionStore();
+      
+      // ล้าง Permissions (อาจมีการเปลี่ยนแปลงสิทธิ์)
+      permissionStore.clearPermissions();
+      
+      // Import router dynamically
+      const router = (await import('@/router')).default;
+      
+      // Redirect ไปหน้า 403 (ถ้ายังไม่อยู่ในหน้า 403 อยู่แล้ว)
+      if (router.currentRoute.value.path !== '/error/403') {
+        router.push('/error/403');
+      }
+      
+      return Promise.reject(error);
+    }
+
+    // Handle 400 Bad Request - อาจเกิดจาก missing userId
+    if (error.response?.status === 400) {
+      const errorMessage = error.response?.data?.message || 'Bad Request';
+      console.error(`[API INTERCEPTOR] 400 Bad Request: ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+      console.error(`[API INTERCEPTOR] Error message:`, errorMessage);
+      console.error(`[API INTERCEPTOR] Request headers:`, error.config?.headers);
+      console.error(`[API INTERCEPTOR] Request params:`, error.config?.params);
+      
+      // ถ้า error message บอกว่า userId is required → แจ้งให้ user login ใหม่
+      if (errorMessage.includes('userId is required') || errorMessage.includes('userId')) {
+        console.error('[API INTERCEPTOR] Missing userId - User may need to login again');
+      }
+    }
+
     // ซ่อน Network Error ที่ไม่สำคัญ (API ที่ยังไม่ได้ implement)
     if (error.code === 'ERR_NETWORK') {
-      console.warn('⚠️ Network Error (API not available):', error.config?.url);
-    } else {
-      console.error('API Error:', error.response?.data || error.message);
+      console.warn('[API INTERCEPTOR] Network Error (API not available):', error.config?.url);
+    } else if (error.response?.status !== 400) {
+      // Log error อื่นๆ ยกเว้น 400 (เพราะ log ไปแล้วข้างบน)
+      console.error('[API INTERCEPTOR] API Error:', error.response?.data || error.message);
     }
     return Promise.reject(error);
   }
@@ -89,6 +172,8 @@ apiClient.interceptors.response.use(
 // ==================== AUTH API ====================
 export const authAPI = {
   login: (username, password) => apiClient.post('/auth/login', { username, password }),
+  getMe: (userId) => apiClient.get('/auth/me', { params: { userId } }),
+  getPermissions: (userId) => apiClient.get('/auth/permissions', { params: { userId } }),
 };
 
 // ==================== COMPANIES API ====================
@@ -124,6 +209,14 @@ export const usersAPI = {
 // ==================== ROLES API ====================
 export const rolesAPI = {
   getAll: () => apiClient.get('/settings/roles'),
+};
+
+// ==================== PERMISSIONS API ====================
+export const permissionsAPI = {
+  getScreens: () => apiClient.get('/settings/permissions/screens'),
+  getRolePermissions: (roleId) => apiClient.get(`/settings/permissions/roles/${roleId}`),
+  addPermission: (data) => apiClient.post('/settings/permissions', data),
+  deletePermission: (roleId, screenId) => apiClient.delete(`/settings/permissions/${roleId}/${screenId}`),
 };
 
 // ==================== DEPARTMENTS API ====================
@@ -260,8 +353,10 @@ export const statisticsAPI = {
 export const systemSettingsAPI = {
   // Companies
   getAccessibleCompanies: (userId) => {
-    const params = userId ? `?userId=${userId}` : '';
-    return apiClient.get(`/settings/companies/accessible${params}`);
+    // ไม่ต้องส่ง userId ไปเอง เพราะ Request Interceptor จะเพิ่มให้อัตโนมัติ
+    // แต่ถ้าต้องการส่ง userId ไปเอง (กรณีพิเศษ) ให้ส่งผ่าน params object
+    const params = userId ? { userId } : {};
+    return apiClient.get('/settings/companies/accessible', { params });
   },
 
   // General Settings

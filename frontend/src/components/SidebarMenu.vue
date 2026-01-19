@@ -142,6 +142,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import { useDarkMode } from '@/composables/useDarkMode'
 import { companiesAPI, getBackendBaseUrl } from '@/services/api'
+import { usePermissionStore } from '@/stores/permissionStore'
+import { SYSTEM_SCREENS } from '@/constants/screens'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
@@ -215,34 +217,60 @@ const fetchCompanyLogo = async () => {
   }
 }
 
-// Menu Items
-const menuItems = [
+// Permission Store
+const permissionStore = usePermissionStore()
+
+// Menu Items Definition (พร้อม Screen IDs)
+const allMenuItems = [
   {
     name: 'Dashboard',
     route: '/dashboard',
+    screenId: SYSTEM_SCREENS.DASHBOARD,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>'
   },
   {
     name: 'รายการ การเข้า-ออก',
     route: '/vehicle',
+    screenId: SYSTEM_SCREENS.DATA_DAILY,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/></svg>'
   },
   {
     name: 'Report',
     route: '/report',
+    screenId: SYSTEM_SCREENS.DATA_DAILY,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>'
   },
   {
     name: 'Statistics',
     route: '/statistics',
+    screenId: SYSTEM_SCREENS.STATISTICS,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>'
   },
   {
     name: 'Settings',
     route: '/settings',
+    screenId: SYSTEM_SCREENS.SETTINGS,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
   }
 ]
+
+// Filtered Menu Items (กรองตาม Permission)
+const menuItems = computed(() => {
+  // ถ้ายังไม่โหลด Permissions → ไม่แสดงเมนู (รอให้โหลดก่อน)
+  if (!permissionStore.isLoaded) {
+    console.log('[SIDEBAR] Permissions not loaded yet, hiding menu items');
+    return [];
+  }
+
+  // กรองเมนูตาม Permission
+  return allMenuItems.filter(item => {
+    const hasAccess = permissionStore.hasAccess(item.screenId);
+    if (!hasAccess) {
+      console.log(`[SIDEBAR] Hiding menu item: ${item.name} (Screen ${item.screenId})`);
+    }
+    return hasAccess;
+  });
+})
 
 // Methods
 const toggleSidebar = () => {
@@ -259,6 +287,10 @@ const confirmLogout = () => {
   const { clearAllThemes } = useTheme()
   clearAllThemes()
 
+  // ล้าง Permissions และหยุด Silent Refresh
+  permissionStore.clearPermissions()
+  permissionStore.stopSilentRefresh()
+
   // ล้าง company logo path
   companyLogoPath.value = null
   companyName.value = 'Smart Security'  // Reset กลับไปเป็นค่า default
@@ -271,8 +303,11 @@ const confirmLogout = () => {
   localStorage.removeItem('companyId')  // ล้าง companyId ด้วย
   localStorage.removeItem('userId')     // ล้าง userId ด้วย
   localStorage.removeItem('user')       // ล้าง user object ด้วย
+  localStorage.removeItem('roleId')     // ล้าง roleId
+  localStorage.removeItem('roleCode')   // ล้าง roleCode
+  localStorage.removeItem('roleName')   // ล้าง roleName
 
-  console.log('[LOGOUT] User logged out successfully - Theme and Logo cleared')
+  console.log('[LOGOUT] User logged out successfully - Theme, Permissions, and Logo cleared')
   showLogoutModal.value = false
   router.push('/login')
 }

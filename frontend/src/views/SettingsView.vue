@@ -270,6 +270,206 @@
           </BaseCard>
         </template>
 
+        <!-- TAB: จัดการสิทธิ์ (Super Admin เท่านั้น) -->
+        <template #permissions>
+          <BaseCard>
+            <div class="mb-6">
+              <h2 class="text-xl font-semibold text-[#1a202c]">จัดการสิทธิ์</h2>
+              <p class="mt-1 text-base text-gray-500">กำหนดว่าบทบาทไหนเข้าถึงหน้าจอไหนได้บ้าง</p>
+            </div>
+
+            <!-- Step 1: เลือก Role -->
+            <div class="mb-6 p-4 bg-white border border-gray-200 rounded-lg">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                เลือกบทบาทที่ต้องการตั้งค่า
+              </label>
+              <select
+                v-model="selectedRoleId"
+                @change="onRoleChange"
+                class="block w-full max-w-md px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+              >
+                <option :value="null">-- เลือกบทบาท --</option>
+                <option v-for="role in roles" :key="role.SR_ID" :value="role.SR_ID">
+                  {{ role.SR_Code }} - {{ role.SR_Name }}
+                </option>
+              </select>
+              <p class="mt-2 text-xs text-gray-500">
+                เลือกบทบาทที่ต้องการ เช่น HRU (ดูรายงาน), RCT/QA (รีปริ้นสลิป)
+              </p>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="permissionLoading" class="py-12 text-center">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0090D3]"></div>
+              <p class="mt-2 text-gray-500">กำลังโหลดข้อมูล...</p>
+            </div>
+
+            <!-- No Role Selected -->
+            <div v-else-if="!selectedRoleId" class="py-12 text-center text-gray-500">
+              <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <p class="text-lg font-medium mb-2">กรุณาเลือกบทบาทก่อน</p>
+              <p class="text-sm">เลือกบทบาทจากด้านบนเพื่อเริ่มจัดการสิทธิ์</p>
+            </div>
+
+            <!-- Step 2: จัดการ Screens -->
+            <div v-else class="space-y-6">
+              <!-- Info Box -->
+              <div class="p-4 bg-white border border-gray-200 rounded-lg">
+                <div class="flex items-start gap-3">
+                  <svg class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-700 mb-3">วิธีใช้งาน:</p>
+                    <ol class="text-xs text-gray-600 space-y-2 list-decimal list-inside">
+                      <li>ติ๊กถูก = ให้บทบาทนี้เข้าถึงหน้าจอนี้ได้</li>
+                      <li>ไม่ติ๊ก = ไม่ให้เข้าถึงหน้าจอนี้</li>
+                      <li>กดบันทึก = เก็บการตั้งค่า</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ข้อมูลบริษัท -->
+              <div class="p-4 bg-white border border-gray-200 rounded-lg">
+                <div class="flex items-start gap-3">
+                  <svg class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-700 mb-2">เกี่ยวกับบริษัท:</p>
+                    <div class="text-xs text-gray-600 space-y-1.5">
+                      <p>• <strong>Global (ทุกบริษัท)</strong> = ใช้ได้ทุกบริษัท</p>
+                      <p>• <strong>ชื่อบริษัท</strong> = ใช้ได้เฉพาะบริษัทนั้นๆ</p>
+                      <p>• Super Admin สามารถตั้งค่าได้ทั้ง Global และ Company-specific</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Search & Filter -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    ค้นหาหน้าจอ
+                  </label>
+                  <div class="relative">
+                    <input
+                      v-model="screenSearch"
+                      type="text"
+                      placeholder="พิมพ์ชื่อหน้าจอเพื่อค้นหา..."
+                      class="block w-full px-4 py-2.5 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all"
+                    />
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    กรองแสดง
+                  </label>
+                  <select
+                    v-model="screenFilter"
+                    class="block w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all bg-white"
+                  >
+                    <option value="all">แสดงทั้งหมด</option>
+                    <option value="selected">มีสิทธิ์แล้ว ({{ selectedScreens.length }})</option>
+                    <option value="unselected">ยังไม่มีสิทธิ์</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Summary -->
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="text-sm">
+                    <span class="font-semibold text-gray-700">เลือกแล้ว:</span>
+                    <span class="ml-2 text-[#0090D3] font-bold">{{ selectedScreens.length }}</span>
+                    <span class="text-gray-500">/ {{ filteredScreens.length }} หน้าจอ</span>
+                  </div>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                  <button
+                    @click="selectAllScreens"
+                    class="px-3 py-1.5 text-xs font-medium text-[#0090D3] bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    เลือกทั้งหมด
+                  </button>
+                  <button
+                    @click="deselectAllScreens"
+                    class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    ยกเลิกทั้งหมด
+                  </button>
+                </div>
+              </div>
+
+              <!-- Screens List -->
+              <div class="max-h-[50vh] overflow-y-auto space-y-3 pr-2 border border-gray-200 rounded-lg p-4 bg-white">
+                <div
+                  v-for="screen in filteredScreens"
+                  :key="screen.SS_ID"
+                  class="flex items-center gap-3 p-3 bg-white border rounded-lg transition-all"
+                  :class="isScreenSelected(screen.SS_ID) 
+                    ? 'border-green-300 bg-green-50' 
+                    : 'border-gray-200 hover:border-[#0090D3] hover:shadow-sm'"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="isScreenSelected(screen.SS_ID)"
+                    @change="toggleScreen(screen.SS_ID)"
+                    class="w-5 h-5 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3] cursor-pointer flex-shrink-0"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <div class="font-medium text-gray-900">{{ screen.SS_Name }}</div>
+                      <span v-if="isScreenSelected(screen.SS_ID)" class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                        มีสิทธิ์
+                      </span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1 truncate">{{ screen.SS_RelativePath || '-' }}</div>
+                    <div v-if="getPermissionCompany(screen.SS_ID)" class="text-xs text-gray-600 mt-1">
+                      <span class="inline-flex items-center gap-1">
+                        <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        {{ getPermissionCompany(screen.SS_ID) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-if="filteredScreens.length === 0" class="py-8 text-center text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p>ไม่พบหน้าจอที่ค้นหา</p>
+              </div>
+
+              <!-- Save Button -->
+              <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <BaseButton variant="secondary" @click="resetPermissions">
+                  <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  ยกเลิกการเปลี่ยนแปลง
+                </BaseButton>
+                <BaseButton variant="primary" @click="savePermissions" :loading="permissionSaving">
+                  <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  บันทึกสิทธิ์
+                </BaseButton>
+              </div>
+            </div>
+          </BaseCard>
+        </template>
+
         <!-- TAB: จัดการประเภทรถ -->
         <template #vehicleTypes>
           <VehicleTypeSettings />
@@ -401,10 +601,13 @@
             required
           >
             <option :value="null">เลือกบทบาท</option>
-            <option v-for="role in roles" :key="role.SR_ID" :value="role.SR_ID">
+            <option v-for="role in filteredRoles" :key="role.SR_ID" :value="role.SR_ID">
               {{ role.SR_Code }} - {{ role.SR_Name }}
             </option>
           </select>
+          <p class="mt-1 text-xs text-gray-500">
+            เลือกบทบาทของผู้ใช้งานในระบบ
+          </p>
         </div>
 
         <BaseInput v-model="userForm.email" label="Email" type="email" placeholder="email@example.com" />
@@ -692,7 +895,7 @@ import AppearanceSettings from '../components/settings/AppearanceSettings.vue';
 import SecuritySettings from '../components/settings/SecuritySettings.vue';
 import VehicleTypeSettings from '../components/settings/VehicleTypeSettings.vue';
 import CompanyTreeNode from '../components/settings/CompanyTreeNode.vue';
-import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI, rolesAPI } from '../services/api';
+import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI, rolesAPI, permissionsAPI } from '../services/api';
 import { useTheme } from '@/composables/useTheme';
 import { useNotification } from '@/composables/useNotification';
 import { useToast } from '@/composables/useToast';
@@ -768,18 +971,19 @@ const checkIsMainAdmin = () => {
 
 const tabs = computed(() => {
   if (isMainAdmin.value) {
-    // Super Admin: Show General, Appearance, Security, Companies, Users, Departments, Vehicle Types
+    // Super Admin: Show General, Appearance, Security, Companies, Users, Permissions, Departments, Vehicle Types
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
       { key: 'security', label: 'ความปลอดภัย', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
       { key: 'companies', label: 'จัดการบริษัท', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
       { key: 'users', label: 'จัดการผู้ใช้งาน', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+      { key: 'permissions', label: 'จัดการสิทธิ์', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
       { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
       { key: 'vehicleTypes', label: 'จัดการประเภทรถ', icon: 'M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2' },
     ];
   } else {
-    // Company Admin: Show General, Appearance, Security only
+    // Company Admin: Show General, Appearance, Security only (ไม่แสดง Permissions)
     return [
       { key: 'general', label: 'ทั่วไป', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
       { key: 'appearance', label: 'รูปแบบ', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
@@ -950,10 +1154,176 @@ const userColumns = computed(() => {
 const fetchRoles = async () => {
   try {
     const response = await rolesAPI.getAll();
-    roles.value = response.data.data;
+    roles.value = response.data.data || [];
+    console.log('[SETTINGS] Fetched roles:', roles.value.length, 'roles');
   } catch (error) {
     console.error('Error fetching roles:', error);
+    roles.value = [];
   }
+};
+
+// Filter roles ตาม company ที่เลือก
+// Super Admin: แสดง roles ทั้งหมด
+// Company Admin: แสดง roles ทั้งหมด (Roles เป็น Global)
+const filteredRoles = computed(() => {
+  // Roles เป็น Global (ใช้ได้ทุกบริษัท) ดังนั้นแสดงทั้งหมด
+  // แต่ถ้าต้องการกรองตาม company ในอนาคต สามารถเพิ่ม logic ได้ที่นี่
+  return roles.value.filter(role => role.SR_Active === 1 || role.SR_Active === true);
+});
+
+// ==================== PERMISSIONS ====================
+const selectedRoleId = ref(null);
+const screens = ref([]);
+const rolePermissions = ref([]);
+const selectedScreens = ref([]);
+const permissionLoading = ref(false);
+const permissionSaving = ref(false);
+const screenSearch = ref('');
+const screenFilter = ref('all');
+
+const fetchScreens = async () => {
+  try {
+    const response = await permissionsAPI.getScreens();
+    screens.value = response.data.data || [];
+  } catch (error) {
+    console.error('Error fetching screens:', error);
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูล Screens ได้');
+  }
+};
+
+const fetchRolePermissions = async (roleId) => {
+  if (!roleId) return;
+  
+  permissionLoading.value = true;
+  try {
+    const response = await permissionsAPI.getRolePermissions(roleId);
+    rolePermissions.value = response.data.data || [];
+    // อัพเดท selectedScreens จาก rolePermissions
+    selectedScreens.value = rolePermissions.value.map(p => p.SS_ID);
+  } catch (error) {
+    console.error('Error fetching role permissions:', error);
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูล Permissions ได้');
+  } finally {
+    permissionLoading.value = false;
+  }
+};
+
+const onRoleChange = () => {
+  if (selectedRoleId.value) {
+    fetchRolePermissions(selectedRoleId.value);
+  } else {
+    rolePermissions.value = [];
+    selectedScreens.value = [];
+  }
+};
+
+const isScreenSelected = (screenId) => {
+  return selectedScreens.value.includes(screenId);
+};
+
+const toggleScreen = (screenId) => {
+  const index = selectedScreens.value.indexOf(screenId);
+  if (index > -1) {
+    selectedScreens.value.splice(index, 1);
+  } else {
+    selectedScreens.value.push(screenId);
+  }
+};
+
+const getPermissionCompany = (screenId) => {
+  const permission = rolePermissions.value.find(p => p.SS_ID === screenId);
+  if (permission) {
+    if (permission.IC_ID === null || permission.IC_ID === undefined) {
+      return 'Global (ทุกบริษัท)';
+    } else {
+      return permission.CompanyName || `Company ID: ${permission.IC_ID}`;
+    }
+  }
+  return null;
+};
+
+const resetPermissions = () => {
+  selectedScreens.value = rolePermissions.value.map(p => p.SS_ID);
+  toast.info('รีเซ็ตแล้ว', 'คืนค่า Permissions เป็นค่าเดิม');
+};
+
+const savePermissions = async () => {
+  if (!selectedRoleId.value) {
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกบทบาท');
+    return;
+  }
+
+  permissionSaving.value = true;
+  try {
+    // หา Screens ที่ต้องเพิ่ม (มีใน selectedScreens แต่ไม่มีใน rolePermissions)
+    const currentScreenIds = rolePermissions.value.map(p => p.SS_ID);
+    const screensToAdd = selectedScreens.value.filter(id => !currentScreenIds.includes(id));
+    const screensToRemove = currentScreenIds.filter(id => !selectedScreens.value.includes(id));
+
+    // เพิ่ม Permissions
+    for (const screenId of screensToAdd) {
+      try {
+        await permissionsAPI.addPermission({
+          roleId: selectedRoleId.value,
+          screenId: screenId
+        });
+      } catch (error) {
+        console.error(`Error adding permission for screen ${screenId}:`, error);
+      }
+    }
+
+    // ลบ Permissions
+    for (const screenId of screensToRemove) {
+      try {
+        await permissionsAPI.deletePermission(selectedRoleId.value, screenId);
+      } catch (error) {
+        console.error(`Error deleting permission for screen ${screenId}:`, error);
+      }
+    }
+
+    // โหลด Permissions ใหม่
+    await fetchRolePermissions(selectedRoleId.value);
+
+    toast.success('สำเร็จ', 'บันทึกสิทธิ์สำเร็จ');
+  } catch (error) {
+    console.error('Error saving permissions:', error);
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกสิทธิ์ได้');
+  } finally {
+    permissionSaving.value = false;
+  }
+};
+
+// Filter Screens
+const filteredScreens = computed(() => {
+  let result = screens.value;
+
+  // Filter by search
+  if (screenSearch.value) {
+    const searchLower = screenSearch.value.toLowerCase();
+    result = result.filter(screen => 
+      screen.SS_Name.toLowerCase().includes(searchLower) ||
+      (screen.SS_RelativePath && screen.SS_RelativePath.toLowerCase().includes(searchLower))
+    );
+  }
+
+  // Filter by selection status
+  if (screenFilter.value === 'selected') {
+    result = result.filter(screen => isScreenSelected(screen.SS_ID));
+  } else if (screenFilter.value === 'unselected') {
+    result = result.filter(screen => !isScreenSelected(screen.SS_ID));
+  }
+
+  return result;
+});
+
+// Select All / Deselect All
+const selectAllScreens = () => {
+  selectedScreens.value = [...new Set([...selectedScreens.value, ...filteredScreens.value.map(s => s.SS_ID)])];
+};
+
+const deselectAllScreens = () => {
+  const filteredIds = filteredScreens.value.map(s => s.SS_ID);
+  selectedScreens.value = selectedScreens.value.filter(id => !filteredIds.includes(id));
 };
 
 const fetchUsers = async (page = 1) => {
@@ -990,14 +1360,25 @@ const onUserSearch = () => {
   fetchUsers(1);
 };
 
-const openUserModal = () => {
+const openUserModal = async () => {
   userModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งานใหม่', id: null };
   // ถ้าไม่ใช่ Super Admin ให้ใช้ company ของตัวเอง
   const defaultCompanyId = isMainAdmin.value ? null : selectedCompanyId.value;
   userForm.value = { code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: defaultCompanyId, roleId: null };
+  
+  // ตรวจสอบว่า roles ถูกโหลดแล้วหรือยัง
+  if (roles.value.length === 0) {
+    await fetchRoles();
+  }
 };
 
-const editUser = (row) => {
+const editUser = async (row) => {
+  // Validation: Company Admin แก้ไขได้เฉพาะ user ของบริษัทตัวเอง
+  if (!isMainAdmin.value && row.IC_ID !== selectedCompanyId.value) {
+    toast.warning('ไม่มีสิทธิ์', 'คุณสามารถแก้ไขได้เฉพาะผู้ใช้งานของบริษัทคุณเท่านั้น');
+    return;
+  }
+
   userModal.value = { show: true, isEdit: true, title: 'แก้ไขผู้ใช้งาน', id: row.SU_ID };
   userForm.value = {
     code: row.SU_Code,
@@ -1011,6 +1392,11 @@ const editUser = (row) => {
     companyId: row.IC_ID || null,
     roleId: row.SR_ID || null
   };
+
+  // ตรวจสอบว่า roles ถูกโหลดแล้วหรือยัง
+  if (roles.value.length === 0) {
+    await fetchRoles();
+  }
 };
 
 const closeUserModal = () => {
@@ -1022,6 +1408,11 @@ const saveUser = async () => {
   if (isMainAdmin.value && !userForm.value.companyId) {
     toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกบริษัท');
     return;
+  }
+
+  // Validation: Company Admin ต้องใช้บริษัทของตัวเองเท่านั้น
+  if (!isMainAdmin.value) {
+    userForm.value.companyId = selectedCompanyId.value;
   }
 
   // Validation: ต้องเลือก Role
@@ -1517,6 +1908,8 @@ onMounted(() => {
   fetchUsers();
   fetchDepartments();
   fetchCompanyDepartments();
+  fetchScreens();
+  fetchRoles();
   document.addEventListener('click', handleClickOutside);
 });
 

@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { usePermissionStore } from "@/stores/permissionStore";
+import { getScreenIdFromRoute } from "@/constants/screens";
 
 const routes = [
   {
@@ -15,31 +17,43 @@ const routes = [
     path: "/dashboard",
     name: "Dashboard",
     component: () => import("@/views/DashboardView.vue"),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, screenId: 2000 } // DASHBOARD
   },
   {
     path: "/vehicle",
     name: "Vehicle",
     component: () => import("@/views/VehicleView.vue"),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, screenId: 1101 } // DATA_DAILY
+  },
+  {
+    path: "/vehicle/reprint",
+    name: "VehicleReprint",
+    component: () => import("@/views/VehicleReprintView.vue"),
+    meta: { requiresAuth: true, screenId: 4000 } // REPRINT
   },
   {
     path: "/report",
     name: "Report",
     component: () => import("@/views/ReportView.vue"),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, screenId: 1101 } // DATA_DAILY
   },
   {
     path: "/statistics",
     name: "Statistics",
     component: () => import("@/views/StatisticsView.vue"),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, screenId: 3000 } // STATISTICS
   },
   {
     path: "/settings",
     name: "Settings",
     component: () => import("@/views/SettingsView.vue"),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, screenId: 10000 } // SETTINGS
+  },
+  {
+    path: "/error/403",
+    name: "Error403",
+    component: () => import("@/views/Error403View.vue"),
+    meta: { hideLayout: true }
   },
   {
     path: "/:catchAll(.*)",
@@ -52,15 +66,69 @@ const router = createRouter({
   routes
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const isAuthenticated = localStorage.getItem('isLoggedIn') === 'true';
-  
+  const permissionStore = usePermissionStore();
+
+  // 1. เช็ค Authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login');
-  } else if (to.path === '/login' && isAuthenticated) {
+    return;
+  }
+
+  // 2. ถ้าเป็นหน้า Login และ Login แล้ว → redirect ไป Dashboard
+  if (to.path === '/login' && isAuthenticated) {
     next('/dashboard');
-  } else {
+    return;
+  }
+
+  // 3. ถ้าไม่ใช่หน้า Login และไม่ต้องการ Auth → ผ่าน
+  if (!to.meta.requiresAuth) {
     next();
+    return;
+  }
+
+  // 4. เช็ค Permission (ถ้าต้องการ Auth)
+  try {
+    const userId = parseInt(localStorage.getItem('userId'));
+
+    if (!userId) {
+      console.warn('[ROUTER] No userId found, redirecting to login');
+      next('/login');
+      return;
+    }
+
+    // โหลด Permissions ถ้ายังไม่มี
+    if (!permissionStore.isLoaded) {
+      console.log('[ROUTER] Loading permissions...');
+      await permissionStore.loadPermissions(userId);
+    }
+
+    // ดึง Screen ID จาก route meta หรือ route path
+    const screenId = to.meta.screenId || getScreenIdFromRoute(to.path);
+
+    if (!screenId) {
+      console.warn('[ROUTER] No screenId found for route:', to.path);
+      // ถ้าไม่มี screenId → อนุญาตให้ผ่าน (backward compatibility)
+      next();
+      return;
+    }
+
+    // เช็คสิทธิ์
+    const hasAccess = permissionStore.hasAccess(screenId);
+
+    if (!hasAccess) {
+      console.warn(`[ROUTER] Permission denied for Screen ${screenId} (${to.path})`);
+      next('/error/403');
+      return;
+    }
+
+    console.log(`[ROUTER] Permission granted for Screen ${screenId} (${to.path})`);
+    next();
+  } catch (error) {
+    console.error('[ROUTER] Error checking permissions:', error);
+    // ถ้า error → redirect ไป login (อาจเป็นเพราะ session หมดอายุ)
+    next('/login');
   }
 });
 

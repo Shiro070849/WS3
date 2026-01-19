@@ -46,7 +46,7 @@ async function getUserCompanyInfo(req, res, next) {
       isSuperAdmin: user.IC_ID === null || user.IC_ID === undefined
     };
 
-    console.log(`🔐 [AUTH] User: ${user.SU_Username}, IC_ID: ${user.IC_ID === null ? 'NULL (Super Admin)' : user.IC_ID}`);
+    console.log(`[AUTH] User: ${user.SU_Username}, IC_ID: ${user.IC_ID === null ? 'NULL (Super Admin)' : user.IC_ID}`);
 
     next();
   } catch (error) {

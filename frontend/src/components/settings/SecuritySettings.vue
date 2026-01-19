@@ -25,7 +25,7 @@
           </button>
 
           <button
-            @click="activeTab = 'users'"
+            @click="handleUsersTabClick"
             :class="[
               activeTab === 'users'
                 ? 'border-[#0090D3] text-[#0090D3]'
@@ -720,10 +720,12 @@
               <select
                 v-model="securityGuardForm.roleId"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] focus:border-[#0090D3] transition-all"
+                required
               >
-                <option :value="SYSTEM_ROLES.ADMINISTRATOR">Administrator (ADM) - ผู้ดูแลระบบบริษัท</option>
-                <option :value="SYSTEM_ROLES.SGS">Security Guard Supervisor (SGS) - หัวหน้ารปภ.</option>
-                <option :value="SYSTEM_ROLES.SGU">Security Guard User (SGU) - รปภ.</option>
+                <option :value="null">เลือกบทบาท</option>
+                <option v-for="role in roles" :key="role.SR_ID" :value="role.SR_ID">
+                  {{ role.SR_Code }} - {{ role.SR_Name }}
+                </option>
               </select>
               <p class="text-xs text-gray-500 mt-1">เลือกบทบาทของผู้ใช้งานในระบบ</p>
             </div>
@@ -962,7 +964,7 @@ import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import BaseTable from '../base/BaseTable.vue';
 import BaseModal from '../base/BaseModal.vue';
-import { systemSettingsAPI, usersAPI, companiesAPI, departmentsAPI } from '@/services/api';
+import { systemSettingsAPI, usersAPI, companiesAPI, departmentsAPI, rolesAPI } from '@/services/api';
 import { SYSTEM_ROLES } from '@/constants/roles';
 import CompanyTreeNode from './CompanyTreeNode.vue';
 import { useToast } from '@/composables/useToast';
@@ -1015,6 +1017,7 @@ const saveCompanyData = async () => {
 // ==================== Security Guard Management ====================
 const securityGuards = ref([]);
 const securityGuardLoading = ref(false);
+const roles = ref([]);
 const securityGuardModal = ref({ show: false, isEdit: false, title: '', id: null });
 const securityGuardForm = ref({
   code: '', name1: '', name2: '', username: '', password: '',
@@ -1037,33 +1040,92 @@ const securityGuardColumns = [
   { key: 'SU_Active', label: 'สถานะ' }
 ];
 
+const fetchRoles = async () => {
+  try {
+    const response = await rolesAPI.getAll();
+    roles.value = response.data.data || [];
+    console.log('[SecuritySettings] Fetched roles:', roles.value.length, 'roles');
+  } catch (error) {
+    console.error('[SecuritySettings] Error fetching roles:', error);
+    roles.value = [];
+  }
+};
+
+// Handler สำหรับเมื่อคลิก tab "จัดการผู้ใช้งาน"
+const handleUsersTabClick = async () => {
+  activeTab.value = 'users';
+  if (props.companyId) {
+    await fetchSecurityGuards();
+  } else {
+    securityGuards.value = [];
+  }
+};
+
 const fetchSecurityGuards = async () => {
   securityGuardLoading.value = true;
   try {
-    const response = await usersAPI.getAll();
-    if (response.data.success) {
-      // Filter: แสดงเฉพาะผู้ใช้ในบริษัทนี้ (ADMINISTRATOR, SGS, SGU)
-      securityGuards.value = response.data.data.filter(user =>
-        user.IC_ID === props.companyId &&
-        (user.SR_ID === SYSTEM_ROLES.ADMINISTRATOR || user.SR_ID === SYSTEM_ROLES.SGS || user.SR_ID === SYSTEM_ROLES.SGU)
-      );
+    // รอให้ roles โหลดเสร็จก่อน (ถ้ายังไม่โหลด)
+    if (roles.value.length === 0) {
+      await fetchRoles();
     }
+
+    // เรียก API เพื่อดึงข้อมูล users ทั้งหมด
+    const response = await usersAPI.getAll();
+    
+    // ตรวจสอบ response structure
+    let usersData = [];
+    if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      usersData = response.data.data;
+    } else if (response.data && Array.isArray(response.data.data)) {
+      usersData = response.data.data;
+    } else if (Array.isArray(response.data)) {
+      usersData = response.data;
+    }
+    
+    // ตรวจสอบว่า props.companyId ถูกส่งมาหรือไม่
+    if (!props.companyId) {
+      securityGuards.value = [];
+      return;
+    }
+    
+    // Filter: แสดงเฉพาะผู้ใช้ในบริษัทนี้ (IC_ID) และ roles ที่เป็น ADM, SGS, SGU
+    const allowedRoleCodes = ['ADM', 'SGS', 'SGU'];
+    const allowedRoleIds = roles.value
+      .filter(role => allowedRoleCodes.includes(role.SR_Code))
+      .map(role => role.SR_ID);
+    
+    // ถ้า allowedRoleIds ว่าง ให้ใช้ fallback (SR_ID = 1, 2, 3)
+    const finalAllowedRoleIds = allowedRoleIds.length > 0 ? allowedRoleIds : [1, 2, 3];
+    
+    securityGuards.value = usersData.filter(user => {
+      const userCompanyId = user.IC_ID !== null && user.IC_ID !== undefined ? Number(user.IC_ID) : null;
+      const targetCompanyId = Number(props.companyId);
+      const matchCompany = userCompanyId === targetCompanyId;
+      const matchRole = finalAllowedRoleIds.includes(user.SR_ID);
+      return matchCompany && matchRole;
+    });
   } catch (error) {
     console.error('[SecuritySettings] Error fetching security guards:', error);
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้');
   } finally {
     securityGuardLoading.value = false;
   }
 };
 
-const openSecurityGuardModal = () => {
+const openSecurityGuardModal = async () => {
   securityGuardModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งาน', id: null };
   securityGuardForm.value = {
     code: '', name1: '', name2: '', username: '', password: '',
-    email: '', active: true, remarks: '', roleId: SYSTEM_ROLES.ADMINISTRATOR
+    email: '', active: true, remarks: '', roleId: null
   };
+  
+  // ตรวจสอบว่า roles ถูกโหลดแล้วหรือยัง
+  if (roles.value.length === 0) {
+    await fetchRoles();
+  }
 };
 
-const editSecurityGuard = (row) => {
+const editSecurityGuard = async (row) => {
   securityGuardModal.value = { show: true, isEdit: true, title: 'แก้ไขผู้ใช้งาน', id: row.SU_ID };
   securityGuardForm.value = {
     code: row.SU_Code,
@@ -1076,10 +1138,21 @@ const editSecurityGuard = (row) => {
     remarks: row.SU_Remarks || '',
     roleId: row.SR_ID
   };
+  
+  // ตรวจสอบว่า roles ถูกโหลดแล้วหรือยัง
+  if (roles.value.length === 0) {
+    await fetchRoles();
+  }
 };
 
 const saveSecurityGuard = async () => {
   try {
+    // Validation: ต้องเลือก Role
+    if (!securityGuardForm.value.roleId) {
+      toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกบทบาท');
+      return;
+    }
+
     const data = {
       code: securityGuardForm.value.code,
       name1: securityGuardForm.value.name1,
@@ -1093,6 +1166,8 @@ const saveSecurityGuard = async () => {
       roleId: securityGuardForm.value.roleId
     };
 
+    console.log('[SecuritySettings] Saving user with data:', data);
+
     if (securityGuardModal.value.isEdit) {
       await usersAPI.update(securityGuardModal.value.id, data);
       toast.success('สำเร็จ', 'แก้ไขข้อมูลสำเร็จ');
@@ -1102,7 +1177,9 @@ const saveSecurityGuard = async () => {
     }
 
     securityGuardModal.value.show = false;
-    fetchSecurityGuards();
+    // รอสักครู่แล้วค่อย refresh เพื่อให้ backend บันทึกข้อมูลเสร็จ
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await fetchSecurityGuards();
   } catch (error) {
     console.error('[SecuritySettings] Error saving security guard:', error);
     toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || error.message);
@@ -1717,13 +1794,24 @@ const saveSettings = async () => {
 };
 
 // Watch companyId changes to reload all data
-watch(() => props.companyId, () => {
-  fetchAdmins();
-  loadSettings();
-  fetchCompanyData();
-  fetchSecurityGuards();
-  fetchDepartments();
-  fetchCompanyDepartments();
+watch(() => props.companyId, (newCompanyId) => {
+  if (newCompanyId) {
+    fetchAdmins();
+    loadSettings();
+    fetchCompanyData();
+    fetchSecurityGuards();
+    fetchDepartments();
+    fetchCompanyDepartments();
+  } else {
+    securityGuards.value = [];
+  }
+});
+
+// Watch activeTab changes to refresh data when switching tabs
+watch(() => activeTab.value, (newTab) => {
+  if (newTab === 'users' && props.companyId) {
+    fetchSecurityGuards();
+  }
 });
 
 // Watch department type changes to refresh available parent departments
@@ -1733,11 +1821,14 @@ watch(() => departmentForm.value.type, () => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
   loadSettings();
   fetchAdmins();
   fetchCompanyData();
-  fetchSecurityGuards();
+  await fetchRoles();
+  if (props.companyId) {
+    await fetchSecurityGuards();
+  }
   fetchDepartments();
   fetchCompanyDepartments();
 });

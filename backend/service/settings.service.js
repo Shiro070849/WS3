@@ -1738,6 +1738,191 @@ class SettingsService {
       throw error;
     }
   }
+
+  // ==================== PERMISSIONS ====================
+
+  // Helper: ดึง IC_ID ของ User
+  async getUserCompanyId(userId) {
+    try {
+      const pool = await dbService.connect();
+      const query = `
+        SELECT IC_ID
+        FROM [dbo].[SystemUser]
+        WHERE SU_ID = @UserId
+      `;
+      const result = await pool.request()
+        .input('UserId', sql.Int, userId)
+        .query(query);
+      return result.recordset[0]?.IC_ID || null;
+    } catch (error) {
+      console.error('Error getting user company ID:', error);
+      throw error;
+    }
+  }
+
+  // ดึงรายการ Screens ทั้งหมด
+  async getAllScreens() {
+    try {
+      const pool = await dbService.connect();
+
+      const query = `
+        SELECT SS_ID, SS_Name, SS_RelativePath, SS_IsActive
+        FROM [dbo].[SystemScreen]
+        WHERE SS_IsActive = 1
+        ORDER BY SS_ID
+      `;
+
+      const result = await pool.request().query(query);
+      return result.recordset;
+    } catch (error) {
+      console.error('Error getting screens:', error);
+      throw error;
+    }
+  }
+
+  // ดึง Permissions ของ Role (พร้อม IC_ID)
+  async getRolePermissions(roleId, companyId = null) {
+    try {
+      const pool = await dbService.connect();
+
+      let query;
+      let request = pool.request().input('SR_ID', sql.Int, roleId);
+
+      if (companyId === null || companyId === undefined) {
+        // Super Admin: ดึง Permissions ทั้งหมด (Global + Company-specific)
+        query = `
+          SELECT 
+            SRSS.SR_ID,
+            SRSS.SS_ID,
+            SRSS.IC_ID,
+            SS.SS_Name,
+            SS.SS_RelativePath,
+            IC.IC_LocalName AS CompanyName
+          FROM [dbo].[SystemRoleSystemScreen] SRSS
+          INNER JOIN [dbo].[SystemScreen] SS ON SRSS.SS_ID = SS.SS_ID
+          LEFT JOIN [dbo].[InternalCompany] IC ON SRSS.IC_ID = IC.IC_ID
+          WHERE SRSS.SR_ID = @SR_ID
+            AND SS.SS_IsActive = 1
+          ORDER BY SRSS.IC_ID, SRSS.SS_ID
+        `;
+      } else {
+        // Company Admin: ดึง Permissions เฉพาะบริษัทตัวเอง (Global + Company-specific)
+        query = `
+          SELECT 
+            SRSS.SR_ID,
+            SRSS.SS_ID,
+            SRSS.IC_ID,
+            SS.SS_Name,
+            SS.SS_RelativePath,
+            IC.IC_LocalName AS CompanyName
+          FROM [dbo].[SystemRoleSystemScreen] SRSS
+          INNER JOIN [dbo].[SystemScreen] SS ON SRSS.SS_ID = SS.SS_ID
+          LEFT JOIN [dbo].[InternalCompany] IC ON SRSS.IC_ID = IC.IC_ID
+          WHERE SRSS.SR_ID = @SR_ID
+            AND SS.SS_IsActive = 1
+            AND (SRSS.IC_ID IS NULL OR SRSS.IC_ID = @CompanyId)
+          ORDER BY SRSS.IC_ID, SRSS.SS_ID
+        `;
+        request.input('CompanyId', sql.Int, companyId);
+      }
+
+      const result = await request.query(query);
+      return result.recordset;
+    } catch (error) {
+      console.error('Error getting role permissions:', error);
+      throw error;
+    }
+  }
+
+  // เพิ่ม Permission (Role + Screen + Company)
+  async addPermission(roleId, screenId, companyId = null) {
+    try {
+      const pool = await dbService.connect();
+
+      // ตรวจสอบว่ามี Permission อยู่แล้วหรือไม่
+      const checkQuery = `
+        SELECT SRSS_ID
+        FROM [dbo].[SystemRoleSystemScreen]
+        WHERE SR_ID = @SR_ID
+          AND SS_ID = @SS_ID
+          AND (IC_ID = @IC_ID OR (IC_ID IS NULL AND @IC_ID IS NULL))
+      `;
+
+      const checkRequest = pool.request()
+        .input('SR_ID', sql.Int, roleId)
+        .input('SS_ID', sql.Int, screenId);
+
+      if (companyId === null || companyId === undefined) {
+        checkRequest.input('IC_ID', sql.Int, null);
+      } else {
+        checkRequest.input('IC_ID', sql.Int, companyId);
+      }
+
+      const checkResult = await checkRequest.query(checkQuery);
+
+      if (checkResult.recordset.length > 0) {
+        throw new Error('Permission already exists');
+      }
+
+      // เพิ่ม Permission
+      const insertQuery = `
+        INSERT INTO [dbo].[SystemRoleSystemScreen] (SR_ID, SS_ID, IC_ID, SRSS_HiddenFieldIds, SRSS_ReadOnlyFieldIds)
+        VALUES (@SR_ID, @SS_ID, @IC_ID, '', '')
+      `;
+
+      const insertRequest = pool.request()
+        .input('SR_ID', sql.Int, roleId)
+        .input('SS_ID', sql.Int, screenId);
+
+      if (companyId === null || companyId === undefined) {
+        insertRequest.input('IC_ID', sql.Int, null);
+      } else {
+        insertRequest.input('IC_ID', sql.Int, companyId);
+      }
+
+      await insertRequest.query(insertQuery);
+
+      return { success: true, message: 'Permission added successfully' };
+    } catch (error) {
+      console.error('Error adding permission:', error);
+      throw error;
+    }
+  }
+
+  // ลบ Permission
+  async deletePermission(roleId, screenId, companyId = null) {
+    try {
+      const pool = await dbService.connect();
+
+      const deleteQuery = `
+        DELETE FROM [dbo].[SystemRoleSystemScreen]
+        WHERE SR_ID = @SR_ID
+          AND SS_ID = @SS_ID
+          AND (IC_ID = @IC_ID OR (IC_ID IS NULL AND @IC_ID IS NULL))
+      `;
+
+      const request = pool.request()
+        .input('SR_ID', sql.Int, roleId)
+        .input('SS_ID', sql.Int, screenId);
+
+      if (companyId === null || companyId === undefined) {
+        request.input('IC_ID', sql.Int, null);
+      } else {
+        request.input('IC_ID', sql.Int, companyId);
+      }
+
+      const result = await request.query(deleteQuery);
+
+      if (result.rowsAffected[0] === 0) {
+        throw new Error('Permission not found');
+      }
+
+      return { success: true, message: 'Permission deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting permission:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new SettingsService();

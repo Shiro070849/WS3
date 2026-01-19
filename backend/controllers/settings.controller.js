@@ -49,8 +49,18 @@ class SettingsController {
 
   async getUserAccessibleCompanies(req, res) {
     try {
-      // ดึง userId จาก query parameter (frontend ส่งมา)
-      const userId = req.query.userId || req.user?.SU_ID;
+      // ดึง userId จาก query parameter, header, หรือ req.user
+      let userId = req.query.userId || req.headers['x-user-id'] || req.user?.SU_ID;
+
+      // ถ้า userId เป็น array (เกิดจาก query string ซ้ำ) → ใช้ตัวแรก
+      if (Array.isArray(userId)) {
+        userId = userId[0];
+      }
+
+      // ถ้า userId เป็น string "null" หรือ "undefined" → แปลงเป็น null
+      if (userId === 'null' || userId === 'undefined' || userId === '') {
+        userId = null;
+      }
 
       if (!userId) {
         return res.status(400).json({
@@ -59,7 +69,16 @@ class SettingsController {
         });
       }
 
-      const companies = await settingsService.getUserAccessibleCompanies(userId);
+      // แปลง userId เป็น integer
+      const userIdInt = parseInt(userId);
+      if (isNaN(userIdInt)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid userId format'
+        });
+      }
+
+      const companies = await settingsService.getUserAccessibleCompanies(userIdInt);
       res.status(200).json({
         success: true,
         count: companies.length,
@@ -1139,6 +1158,146 @@ class SettingsController {
       res.status(500).json({
         success: false,
         message: 'Error getting roles',
+        error: error.message
+      });
+    }
+  }
+
+  // ==================== PERMISSIONS ====================
+
+  // ดึงรายการ Screens ทั้งหมด
+  async getAllScreens(req, res) {
+    try {
+      const result = await settingsService.getAllScreens();
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in getAllScreens:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting screens',
+        error: error.message
+      });
+    }
+  }
+
+  // ดึง Permissions ของ Role
+  async getRolePermissions(req, res) {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const userId = req.query.userId || req.headers['x-user-id'];
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'userId is required'
+        });
+      }
+
+      // ดึง IC_ID ของ User
+      const userCompanyId = await settingsService.getUserCompanyId(parseInt(userId));
+
+      // Super Admin: companyId = null, Company Admin: companyId = userCompanyId
+      const companyId = userCompanyId === null || userCompanyId === undefined ? null : userCompanyId;
+
+      const result = await settingsService.getRolePermissions(roleId, companyId);
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in getRolePermissions:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting role permissions',
+        error: error.message
+      });
+    }
+  }
+
+  // เพิ่ม Permission
+  async addPermission(req, res) {
+    try {
+      const { roleId, screenId, companyId } = req.body;
+      const userId = req.query.userId || req.headers['x-user-id'];
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'userId is required'
+        });
+      }
+
+      if (!roleId || !screenId) {
+        return res.status(400).json({
+          success: false,
+          message: 'roleId and screenId are required'
+        });
+      }
+
+      // ดึง IC_ID ของ User
+      const userCompanyId = await settingsService.getUserCompanyId(parseInt(userId));
+
+      // Super Admin: companyId = null (Global), Company Admin: companyId = userCompanyId
+      const finalCompanyId = userCompanyId === null || userCompanyId === undefined 
+        ? (companyId || null) 
+        : userCompanyId;
+
+      const result = await settingsService.addPermission(roleId, screenId, finalCompanyId);
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in addPermission:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error adding permission',
+        error: error.message
+      });
+    }
+  }
+
+  // ลบ Permission
+  async deletePermission(req, res) {
+    try {
+      const { roleId, screenId } = req.params;
+      const userId = req.query.userId || req.headers['x-user-id'];
+      const companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'userId is required'
+        });
+      }
+
+      // ดึง IC_ID ของ User
+      const userCompanyId = await settingsService.getUserCompanyId(parseInt(userId));
+
+      // Super Admin: companyId = null (Global), Company Admin: companyId = userCompanyId
+      const finalCompanyId = userCompanyId === null || userCompanyId === undefined 
+        ? companyId 
+        : userCompanyId;
+
+      const result = await settingsService.deletePermission(parseInt(roleId), parseInt(screenId), finalCompanyId);
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in deletePermission:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error deleting permission',
         error: error.message
       });
     }
