@@ -286,10 +286,14 @@ class SettingsController {
   async getAllUsers(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 25;
+      const limit = parseInt(req.query.limit) || 15; // เปลี่ยนจาก 25 เป็น 15
       const search = req.query.search || '';
+      const companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+      const roleId = req.query.roleId ? parseInt(req.query.roleId) : null;
 
-      const result = await settingsService.getAllUsers(page, limit, search);
+      console.log(`📥 GET /api/settings/users - page: ${page}, limit: ${limit}, search: "${search}", companyId: ${companyId}, roleId: ${roleId}`);
+
+      const result = await settingsService.getAllUsers(page, limit, search, companyId, roleId);
 
       // ไม่ส่ง password กลับไป
       const usersWithoutPassword = result.data.map(user => {

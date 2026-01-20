@@ -297,20 +297,41 @@ class SettingsService {
   // ==================== USERS ====================
 
   // ดึงรายการ User ทั้งหมด (พร้อมชื่อบริษัทและ Role)
-  async getAllUsers(page = 1, limit = 25, search = '') {
+  async getAllUsers(page = 1, limit = 25, search = '', companyId = null, roleId = null) {
     try {
       const pool = await dbService.connect();
       const offset = (page - 1) * limit;
+
+      // สร้าง WHERE conditions
+      const conditions = [];
+
+      // เพิ่มเงื่อนไข search
+      if (search) {
+        conditions.push(`(SU.SU_Code LIKE @search OR SU.SU_Name1 LIKE @search OR SU.SU_Username LIKE @search OR SU.SU_Email LIKE @search)`);
+      }
+
+      // เพิ่มเงื่อนไข companyId
+      if (companyId !== null && companyId !== undefined) {
+        conditions.push(`SU.IC_ID = @companyId`);
+      }
+
+      // เพิ่มเงื่อนไข roleId (รองรับเฉพาะ SystemUser.SR_ID)
+      if (roleId !== null && roleId !== undefined) {
+        conditions.push(`SU.SR_ID = @roleId`);
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
       // Query นับจำนวนทั้งหมด
       let countQuery = `
         SELECT COUNT(*) AS total
         FROM [dbo].[SystemUser] SU
         LEFT JOIN [dbo].[InternalCompany] IC ON SU.IC_ID = IC.IC_ID
-        LEFT JOIN [dbo].[SystemRole] SR ON SU.SR_ID = SR.SR_ID
+        ${whereClause}
       `;
 
       // Query ดึงข้อมูลพร้อม pagination
+      // รองรับทั้ง SystemUser.SR_ID และ SystemUserSystemRole (ใช้ subquery)
       let dataQuery = `
         SELECT
           SU.SU_ID,
@@ -324,26 +345,17 @@ class SettingsService {
           SU.SU_PinCode,
           SU.SU_Remarks,
           SU.IC_ID,
-          SU.SR_ID,
+          -- ใช้ SR_ID จาก SystemUser ถ้ามี, ถ้าไม่มีหาจาก SystemUserSystemRole (TOP 1)
+          COALESCE(SU.SR_ID, (SELECT TOP 1 SR_ID FROM [dbo].[SystemUserSystemRole] WHERE SU_ID = SU.SU_ID)) AS SR_ID,
           IC.IC_LocalName AS CompanyName,
-          SR.SR_Name,
-          SR.SR_Code
+          -- ใช้ Role จาก SystemUser.SR_ID ถ้ามี, ถ้าไม่มีหาจาก SystemUserSystemRole
+          COALESCE(SR1.SR_Name, (SELECT TOP 1 SR.SR_Name FROM [dbo].[SystemUserSystemRole] SUSR JOIN [dbo].[SystemRole] SR ON SUSR.SR_ID = SR.SR_ID WHERE SUSR.SU_ID = SU.SU_ID)) AS SR_Name,
+          COALESCE(SR1.SR_Code, (SELECT TOP 1 SR.SR_Code FROM [dbo].[SystemUserSystemRole] SUSR JOIN [dbo].[SystemRole] SR ON SUSR.SR_ID = SR.SR_ID WHERE SUSR.SU_ID = SU.SU_ID)) AS SR_Code
         FROM [dbo].[SystemUser] SU
         LEFT JOIN [dbo].[InternalCompany] IC ON SU.IC_ID = IC.IC_ID
-        LEFT JOIN [dbo].[SystemRole] SR ON SU.SR_ID = SR.SR_ID
+        LEFT JOIN [dbo].[SystemRole] SR1 ON SU.SR_ID = SR1.SR_ID
+        ${whereClause}
       `;
-
-      // เพิ่ม WHERE clause ถ้ามี search
-      if (search) {
-        const whereClause = `
-          WHERE SU.SU_Code LIKE @search
-          OR SU.SU_Name1 LIKE @search
-          OR SU.SU_Username LIKE @search
-          OR SU.SU_Email LIKE @search
-        `;
-        countQuery += whereClause;
-        dataQuery += whereClause;
-      }
 
       dataQuery += `
         ORDER BY SU.SU_Code ASC
@@ -359,13 +371,41 @@ class SettingsService {
         request.input('search', sql.NVarChar, `%${search}%`);
       }
 
+      if (companyId !== null && companyId !== undefined) {
+        request.input('companyId', sql.Int, companyId);
+      }
+
+      if (roleId !== null && roleId !== undefined) {
+        request.input('roleId', sql.Int, roleId);
+      }
+
+      // สร้าง request สำหรับ count query
+      const countRequest = pool.request();
+      if (search) {
+        countRequest.input('search', sql.NVarChar, `%${search}%`);
+      }
+      if (companyId !== null && companyId !== undefined) {
+        countRequest.input('companyId', sql.Int, companyId);
+      }
+      if (roleId !== null && roleId !== undefined) {
+        countRequest.input('roleId', sql.Int, roleId);
+      }
+
       const [countResult, dataResult] = await Promise.all([
-        pool.request().input('search', sql.NVarChar, search ? `%${search}%` : '').query(countQuery),
+        countRequest.query(countQuery),
         request.query(dataQuery)
       ]);
 
       const total = countResult.recordset[0].total;
       const totalPages = Math.ceil(total / limit);
+
+      // Debug: Log ข้อมูลที่ได้
+      console.log(`[getAllUsers] Found ${dataResult.recordset.length} users (Total: ${total})`);
+      if (dataResult.recordset.length > 0) {
+        // แสดงตัวอย่างข้อมูล user แรก
+        const sample = dataResult.recordset[0];
+        console.log(`[getAllUsers] Sample: ${sample.SU_Username} (SR_ID: ${sample.SR_ID}, SR_Code: ${sample.SR_Code}, IC_ID: ${sample.IC_ID})`);
+      }
 
       return {
         data: dataResult.recordset,
