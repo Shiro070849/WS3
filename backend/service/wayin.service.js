@@ -64,7 +64,7 @@ class WayInService {
 
       // เพิ่ม parameters
       request.input('WI_Barcode', sql.NVarChar, data.barcode || null);
-      request.input('WI_CardID', sql.Int, data.cardId !== undefined ? data.cardId : null);
+      request.input('WI_CardID', sql.NVarChar, data.cardId || null);
       request.input('WI_FullName', sql.NVarChar, data.fullName || null);
       request.input('WI_Gender', sql.NVarChar, data.gender || null);
       request.input('WI_Address', sql.NVarChar, data.address || null);
@@ -199,10 +199,17 @@ class WayInService {
           su.SU_Name1 as SystemUserName,
           su.SU_Code as SystemUserCode,
           wo.WO_ID,
-          wo.WO_RecordedOn as CheckOutTime
+          wo.WO_RecordedOn as CheckOutTime,
+          ic.IC_LogoPath,
+          ic.IC_LocalName,
+          ic.IC_EnglishName,
+          vt.VT_LocalName,
+          vt.VT_EnglishName
         FROM [dbo].[WayIn] wi
         LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
         LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
+        LEFT JOIN [dbo].[InternalCompany] ic ON wi.IC_ID = ic.IC_ID
+        LEFT JOIN [dbo].[VisitType] vt ON wi.VT_ID = vt.VT_ID
         WHERE wi.WI_Barcode = @Barcode
       `;
 
@@ -221,11 +228,27 @@ class WayInService {
       const pool = await dbService.connect();
       const request = pool.request();
 
+      // อ่านข้อมูลเดิมก่อน เพื่อไม่ให้ overwrite ค่าที่เป็น null/undefined
+      const existingData = await this.getWayInById(id);
+      if (!existingData) {
+        throw new Error('WayIn record not found');
+      }
+
+      // Helper function: ใช้ค่าใหม่ถ้ามี ไม่เช่นนั้นใช้ค่าเดิม
+      const getValue = (newValue, oldValue) => {
+        // ถ้า newValue เป็น undefined หรือ null ให้ใช้ oldValue
+        if (newValue === undefined || newValue === null) {
+          return oldValue;
+        }
+        return newValue;
+      };
+
       const query = `
         UPDATE [dbo].[WayIn]
         SET
           [WI_FullName] = @WI_FullName,
           [WI_CardID] = @WI_CardID,
+          [WI_Gender] = @WI_Gender,
           [WI_Address] = @WI_Address,
           [WI_LicensePlate] = @WI_LicensePlate,
           [WI_LicenseProvince] = @WI_LicenseProvince,
@@ -233,7 +256,9 @@ class WayInService {
           [VT_ID] = @VT_ID,
           [WI_InternalDivision] = @WI_InternalDivision,
           [WI_Follower] = @WI_Follower,
-          [WI_Remarks] = @WI_Remarks
+          [WI_Remarks] = @WI_Remarks,
+          [WI_FromCompany] = @WI_FromCompany,
+          [WI_ContactName] = @WI_ContactName
         WHERE [WI_ID] = @WI_ID;
 
         SELECT
@@ -246,16 +271,19 @@ class WayInService {
       `;
 
       request.input('WI_ID', sql.Int, id);
-      request.input('WI_FullName', sql.NVarChar, data.fullName || null);
-      request.input('WI_CardID', sql.NVarChar, data.cardId || null);
-      request.input('WI_Address', sql.NVarChar, data.address || null);
-      request.input('WI_LicensePlate', sql.NVarChar, data.licensePlate || null);
-      request.input('WI_LicenseProvince', sql.NVarChar, data.licenseProvince || null);
-      request.input('WI_VehicleType', sql.NVarChar, data.vehicleType || null);
-      request.input('VT_ID', sql.Int, data.visitTypeId || null);
-      request.input('WI_InternalDivision', sql.NVarChar, data.internalDivision || null);
-      request.input('WI_Follower', sql.Int, data.follower !== undefined ? data.follower : null);
-      request.input('WI_Remarks', sql.NVarChar, data.remarks || null);
+      request.input('WI_FullName', sql.NVarChar, getValue(data.fullName, existingData.WI_FullName));
+      request.input('WI_CardID', sql.NVarChar, getValue(data.cardId, existingData.WI_CardID));
+      request.input('WI_Gender', sql.NVarChar, getValue(data.gender, existingData.WI_Gender));
+      request.input('WI_Address', sql.NVarChar, getValue(data.address, existingData.WI_Address));
+      request.input('WI_LicensePlate', sql.NVarChar, getValue(data.licensePlate, existingData.WI_LicensePlate));
+      request.input('WI_LicenseProvince', sql.NVarChar, getValue(data.licenseProvince, existingData.WI_LicenseProvince));
+      request.input('WI_VehicleType', sql.NVarChar, getValue(data.vehicleType, existingData.WI_VehicleType));
+      request.input('VT_ID', sql.Int, getValue(data.visitTypeId, existingData.VT_ID));
+      request.input('WI_InternalDivision', sql.NVarChar, getValue(data.internalDivision, existingData.WI_InternalDivision));
+      request.input('WI_Follower', sql.Int, getValue(data.follower, existingData.WI_Follower));
+      request.input('WI_Remarks', sql.NVarChar, getValue(data.remarks, existingData.WI_Remarks));
+      request.input('WI_FromCompany', sql.NVarChar, getValue(data.fromCompany, existingData.WI_FromCompany));
+      request.input('WI_ContactName', sql.NVarChar, getValue(data.contactName, existingData.WI_ContactName));
 
       const result = await request.query(query);
       return result.recordset[0];

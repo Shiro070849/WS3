@@ -470,8 +470,47 @@ const onVisitTypeChange = async () => {
 };
 
 // พิมพ์สลิป
-const printSlip = () => {
-  window.print();
+const printSlip = async () => {
+  // บันทึกข้อมูลก่อนพิมพ์ (เผื่อมีการแก้ไขข้อมูลใน modal)
+  try {
+    const vehicle = reprintData.value.vehicle;
+
+    console.log('[REPRINT] Saving data before print...');
+    console.log('[REPRINT] Vehicle ID:', vehicle.WI_ID);
+    console.log('[REPRINT] CardID:', vehicle.WI_CardID);
+    console.log('[REPRINT] Full data:', vehicle);
+
+    const updateData = {
+      fullName: vehicle.WI_FullName,
+      cardId: vehicle.WI_CardID,
+      gender: vehicle.WI_Gender,
+      address: vehicle.WI_Address,
+      licensePlate: vehicle.WI_LicensePlate,
+      licenseProvince: vehicle.WI_LicenseProvince,
+      vehicleType: vehicle.WI_VehicleType,
+      visitTypeId: reprintData.value.visitTypeId || vehicle.VT_ID,
+      internalDivision: vehicle.WI_InternalDivision,
+      follower: vehicle.WI_Follower,
+      remarks: vehicle.WI_Remarks,
+      fromCompany: vehicle.WI_FromCompany,
+      contactName: vehicle.WI_ContactName
+    };
+
+    console.log('[REPRINT] Update data:', updateData);
+
+    const response = await wayinAPI.update(vehicle.WI_ID, updateData);
+    console.log('[REPRINT] Update response:', response);
+
+    toast.success('สำเร็จ', 'บันทึกข้อมูลก่อนพิมพ์สำเร็จ');
+
+    // พิมพ์หลังจากบันทึกสำเร็จ
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  } catch (error) {
+    console.error('[REPRINT] Error saving before print:', error);
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลก่อนพิมพ์ได้: ' + (error.response?.data?.message || error.message));
+  }
 };
 
 // Format DateTime
@@ -506,7 +545,202 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Slip Styles - เหมือนกับ VehicleView.vue */
+/* Browser Modal Styles */
+.browser-modal {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  width: 90vw;
+  max-width: 1000px;
+}
+
+.browser-modal-large {
+  max-width: 1200px;
+}
+
+/* Browser Tabs Header */
+.tabs-head {
+  background: #0D47A1;
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 8px;
+}
+
+.tabs-head .tabs {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  align-items: flex-end;
+}
+
+.tabs-head .tab-open {
+  min-width: 110px;
+  max-width: 200px;
+  height: 26px;
+  border-radius: 5px 5px 0 0;
+  background-color: #1565C0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.tabs-head .tab-open span {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabs-head .tab-open .close-tab {
+  color: #fff;
+  font-size: 13px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: all 0.2s;
+  opacity: 0.8;
+}
+
+.tabs-head .tab-open .close-tab:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+.tabs-head .window-opt {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 100%;
+}
+
+.tabs-head .window-opt button {
+  height: 24px;
+  width: 24px;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 12px;
+  opacity: 0.9;
+  transition: 0.15s;
+}
+
+.tabs-head .window-opt button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.tabs-head .window-opt .window-close:hover {
+  background-color: #dc3545;
+}
+
+/* Browser URL Bar */
+.head-browser {
+  width: 100%;
+  height: 42px;
+  background-color: #1565C0;
+  padding: 5px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.head-browser button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: 0.15s;
+}
+
+.head-browser button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.head-browser button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.head-browser .url-bar {
+  background-color: rgba(255, 255, 255, 0.15);
+  height: 30px;
+  border-radius: 15px;
+  padding: 0 14px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: 0.15s;
+}
+
+.head-browser .url-bar:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.head-browser .url-text {
+  color: #fff;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.head-browser .star {
+  color: #fff;
+  font-size: 16px;
+  opacity: 0.7;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s;
+}
+
+.head-browser .star:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+/* Browser Content */
+.browser-content {
+  background: #fff;
+  padding: 32px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Slip Styles */
 .slip-80mm-preview {
   width: 80mm;
   max-width: 100%;

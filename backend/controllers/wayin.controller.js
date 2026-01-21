@@ -193,6 +193,7 @@ class WayInController {
       const id = req.params.id;
       const data = {
         fullName: req.body.fullName,
+        cardId: req.body.cardId,
         gender: req.body.gender,
         address: req.body.address,
         licensePlate: req.body.licensePlate,
