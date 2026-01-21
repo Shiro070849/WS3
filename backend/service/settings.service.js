@@ -5,7 +5,7 @@ const { encrypt, decrypt } = require('../utils/encryption');
 class SettingsService {
   // ==================== COMPANIES ====================
 
-  // ดึงรายการบริษัททั้งหมด
+  // ดึงรายการบริษัททั้งหมด (เฉพาะที่เปิดใช้งาน)
   async getAllCompanies() {
     try {
       const pool = await dbService.connect();
@@ -20,6 +20,7 @@ class SettingsService {
           IC_LogoPath,
           Company_Sequence
         FROM [dbo].[InternalCompany]
+        WHERE IC_IsActive = 1
         ORDER BY
           CASE
             WHEN Company_Sequence IS NULL THEN 999999
@@ -641,7 +642,7 @@ class SettingsService {
 
   // ==================== DEPARTMENTS ====================
 
-  // ดึงรายการแผนกทั้งหมด
+  // ดึงรายการแผนกทั้งหมด (เฉพาะที่เปิดใช้งาน)
   async getAllDepartments() {
     try {
       const pool = await dbService.connect();
@@ -654,6 +655,7 @@ class SettingsService {
           ID_IsActive,
           ID_Remarks
         FROM [dbo].[InternalDepartment]
+        WHERE ID_IsActive = 1
         ORDER BY ID_Code ASC
       `;
       const result = await pool.request().query(query);

@@ -290,7 +290,7 @@
 
             <div v-else class="space-y-4">
               <CompanyTreeNode
-                v-for="company in companies"
+                v-for="company in activeCompanies"
                 :key="company.IC_ID"
                 :company="company"
                 @add-child="handleAddChild"
