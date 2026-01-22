@@ -288,8 +288,19 @@ class SettingsController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 15; // เปลี่ยนจาก 25 เป็น 15
       const search = req.query.search || '';
-      const companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
+      let companyId = req.query.companyId ? parseInt(req.query.companyId) : null;
       const roleId = req.query.roleId ? parseInt(req.query.roleId) : null;
+
+      // ตรวจสอบว่า User ที่ request เป็น Admin ย่อยหรือไม่
+      const userId = req.query.userId || req.headers['x-user-id'] || req.user?.SU_ID;
+      if (userId) {
+        const userCompanyId = await settingsService.getUserCompanyId(parseInt(userId));
+        // ถ้าเป็น Admin ย่อย (IC_ID มีค่า) บังคับกรองเฉพาะบริษัทตัวเอง
+        if (userCompanyId !== null && userCompanyId !== undefined) {
+          companyId = userCompanyId;
+          console.log(`🔒 [Admin ย่อย] User ${userId} บังคับกรองเฉพาะบริษัท IC_ID = ${companyId}`);
+        }
+      }
 
       console.log(`📥 GET /api/settings/users - page: ${page}, limit: ${limit}, search: "${search}", companyId: ${companyId}, roleId: ${roleId}`);
 
@@ -502,7 +513,20 @@ class SettingsController {
 
   async getAllDepartments(req, res) {
     try {
-      const departments = await settingsService.getAllDepartments();
+      // ตรวจสอบว่า User ที่ request เป็น Admin ย่อยหรือไม่
+      const userId = req.query.userId || req.headers['x-user-id'] || req.user?.SU_ID;
+      let companyId = null;
+
+      if (userId) {
+        const userCompanyId = await settingsService.getUserCompanyId(parseInt(userId));
+        // ถ้าเป็น Admin ย่อย (IC_ID มีค่า) บังคับกรองเฉพาะแผนกของบริษัทตัวเอง
+        if (userCompanyId !== null && userCompanyId !== undefined) {
+          companyId = userCompanyId;
+          console.log(`🔒 [Admin ย่อย] User ${userId} บังคับกรองแผนกเฉพาะบริษัท IC_ID = ${companyId}`);
+        }
+      }
+
+      const departments = await settingsService.getAllDepartments(companyId);
       res.status(200).json({
         success: true,
         count: departments.length,
@@ -697,7 +721,20 @@ class SettingsController {
 
   async getCompanyDepartments(req, res) {
     try {
-      const companyDepartments = await settingsService.getCompanyDepartments();
+      // ตรวจสอบว่า User ที่ request เป็น Admin ย่อยหรือไม่
+      const userId = req.query.userId || req.headers['x-user-id'] || req.user?.SU_ID;
+      let companyId = null;
+
+      if (userId) {
+        const userCompanyId = await settingsService.getUserCompanyId(parseInt(userId));
+        // ถ้าเป็น Admin ย่อย (IC_ID มีค่า) บังคับกรองเฉพาะบริษัทตัวเอง
+        if (userCompanyId !== null && userCompanyId !== undefined) {
+          companyId = userCompanyId;
+          console.log(`🔒 [Admin ย่อย] User ${userId} บังคับกรอง CompanyDepartments เฉพาะบริษัท IC_ID = ${companyId}`);
+        }
+      }
+
+      const companyDepartments = await settingsService.getCompanyDepartments(companyId);
       res.status(200).json({
         success: true,
         count: companyDepartments.length,

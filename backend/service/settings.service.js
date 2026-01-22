@@ -99,7 +99,8 @@ class SettingsService {
             IC_EnglishName,
             IC_ShortLocalName,
             IC_ShortEnglishName,
-            IC_LogoPath
+            IC_LogoPath,
+            IC_IsActive
           FROM [dbo].[InternalCompany]
           WHERE IC_IsActive = 1
           ORDER BY IC_Code ASC
@@ -116,7 +117,8 @@ class SettingsService {
             IC_EnglishName,
             IC_ShortLocalName,
             IC_ShortEnglishName,
-            IC_LogoPath
+            IC_LogoPath,
+            IC_IsActive
           FROM [dbo].[InternalCompany]
           WHERE IC_ID = @CompanyId AND IC_IsActive = 1
           ORDER BY IC_Code ASC
@@ -643,23 +645,51 @@ class SettingsService {
   // ==================== DEPARTMENTS ====================
 
   // ดึงรายการแผนกทั้งหมด (เฉพาะที่เปิดใช้งาน)
-  async getAllDepartments() {
+  async getAllDepartments(companyId = null) {
     try {
       const pool = await dbService.connect();
-      const query = `
-        SELECT
-          ID_ID,
-          ID_Code,
-          ID_LocalName,
-          ID_EnglishName,
-          ID_IsActive,
-          ID_Remarks
-        FROM [dbo].[InternalDepartment]
-        WHERE ID_IsActive = 1
-        ORDER BY ID_Code ASC
-      `;
-      const result = await pool.request().query(query);
-      return result.recordset;
+
+      let query;
+      if (companyId !== null && companyId !== undefined) {
+        // Admin ย่อย: เห็นเฉพาะแผนกที่ assign ให้บริษัทตัวเอง
+        query = `
+          SELECT DISTINCT
+            d.ID_ID,
+            d.ID_Code,
+            d.ID_LocalName,
+            d.ID_EnglishName,
+            d.ID_IsActive,
+            d.ID_Remarks
+          FROM [dbo].[InternalDepartment] d
+          INNER JOIN [dbo].[InternalCompanyDepartment] icd ON d.ID_ID = icd.ID_ID
+          WHERE d.ID_IsActive = 1
+            AND icd.IC_ID = @CompanyId
+            AND icd.ICD_IsActive = 1
+          ORDER BY d.ID_Code ASC
+        `;
+        const result = await pool.request()
+          .input('CompanyId', sql.Int, companyId)
+          .query(query);
+        console.log(`✅ [Admin ย่อย IC_ID=${companyId}] คืนแผนก ${result.recordset.length} แผนก`);
+        return result.recordset;
+      } else {
+        // Super Admin: เห็นทุกแผนก
+        query = `
+          SELECT
+            ID_ID,
+            ID_Code,
+            ID_LocalName,
+            ID_EnglishName,
+            ID_IsActive,
+            ID_Remarks
+          FROM [dbo].[InternalDepartment]
+          WHERE ID_IsActive = 1
+          ORDER BY ID_Code ASC
+        `;
+        const result = await pool.request().query(query);
+        console.log(`✅ [Super Admin] คืนทุกแผนก ${result.recordset.length} แผนก`);
+        return result.recordset;
+      }
     } catch (error) {
       console.error('Error getting all departments:', error);
       throw error;
@@ -972,20 +1002,43 @@ class SettingsService {
   // ==================== COMPANY DEPARTMENTS (JUNCTION TABLE) ====================
 
   // ดึงความสัมพันธ์บริษัท-แผนก (InternalCompanyDepartment)
-  async getCompanyDepartments() {
+  async getCompanyDepartments(companyId = null) {
     try {
       const pool = await dbService.connect();
-      const query = `
-        SELECT
-          ICD_ID,
-          IC_ID,
-          ID_ID,
-          ICD_IsActive
-        FROM [dbo].[InternalCompanyDepartment]
-        ORDER BY IC_ID, ID_ID
-      `;
-      const result = await pool.request().query(query);
-      return result.recordset;
+
+      let query;
+      if (companyId !== null && companyId !== undefined) {
+        // Admin ย่อย: เห็นเฉพาะ CompanyDepartment ของบริษัทตัวเอง
+        query = `
+          SELECT
+            ICD_ID,
+            IC_ID,
+            ID_ID,
+            ICD_IsActive
+          FROM [dbo].[InternalCompanyDepartment]
+          WHERE IC_ID = @CompanyId
+          ORDER BY IC_ID, ID_ID
+        `;
+        const result = await pool.request()
+          .input('CompanyId', sql.Int, companyId)
+          .query(query);
+        console.log(`✅ [Admin ย่อย IC_ID=${companyId}] คืน CompanyDepartment ${result.recordset.length} records`);
+        return result.recordset;
+      } else {
+        // Super Admin: เห็นทุก CompanyDepartment
+        query = `
+          SELECT
+            ICD_ID,
+            IC_ID,
+            ID_ID,
+            ICD_IsActive
+          FROM [dbo].[InternalCompanyDepartment]
+          ORDER BY IC_ID, ID_ID
+        `;
+        const result = await pool.request().query(query);
+        console.log(`✅ [Super Admin] คืนทุก CompanyDepartment ${result.recordset.length} records`);
+        return result.recordset;
+      }
     } catch (error) {
       console.error('Error getting company-department relations:', error);
       throw error;

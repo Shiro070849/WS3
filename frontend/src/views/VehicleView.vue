@@ -943,9 +943,9 @@ const loggedInCompanyId = localStorage.getItem('companyId');
 const isSuperAdmin = !loggedInCompanyId || loggedInCompanyId === 'null' || loggedInCompanyId === 'undefined';
 const userRoleCode = localStorage.getItem('roleCode');
 
-// Check if user can reprint (Super Admin or ADM role)
+// Check if user can reprint (Super Admin, ADM, QA, RCT roles)
 const canReprint = computed(() => {
-  return isSuperAdmin || userRoleCode === 'ADM';
+  return isSuperAdmin || ['ADM', 'QA', 'RCT'].includes(userRoleCode);
 });
 
 // Reprint modal state
@@ -1057,7 +1057,8 @@ const fetchVehicles = async () => {
 
 const fetchCompanies = async () => {
   try {
-    const response = await companiesAPI.getAll();
+    // ใช้ getAccessible แทน getAll เพื่อไม่ต้องการ SETTINGS permission
+    const response = await companiesAPI.getAccessible();
     // Filter only active companies (IC_IsActive can be true, 1, or '1')
     companies.value = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
   } catch (error) {

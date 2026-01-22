@@ -42,7 +42,7 @@
           <!-- Company Filter (Super Admin only) -->
           <div v-if="isSuperAdmin">
             <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
-              บริษัท
+              บริษัท ({{ companies.length }} บริษัท)
             </label>
             <select
               v-model="filters.companyId"
@@ -58,6 +58,9 @@
                 {{ company.IC_LocalName }}
               </option>
             </select>
+            <p v-if="companies.length === 0" class="mt-1 text-xs text-red-500">
+              ⚠️ ไม่พบข้อมูลบริษัท - กรุณาตรวจสอบ Console (F12)
+            </p>
           </div>
 
           <!-- Vehicle Type Filter -->
@@ -232,11 +235,17 @@ const columns = [
 
 const fetchCompanies = async () => {
   try {
-    const response = await companiesAPI.getAll();
-    // Filter only active companies (IC_IsActive can be true, 1, or '1')
-    companies.value = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+    // ใช้ getAccessible แทน getAll เพื่อไม่ต้องการ SETTINGS permission
+    const response = await companiesAPI.getAccessible(userId);
+    console.log('📦 [Dashboard] Companies API Response:', response.data);
+
+    // Backend กรอง IC_IsActive = 1 ให้แล้ว ไม่ต้อง filter ซ้ำ
+    companies.value = response.data.data || [];
+
+    console.log('✅ [Dashboard] Companies Count:', companies.value.length);
+    console.log('📋 [Dashboard] Companies List:', companies.value);
   } catch (error) {
-    console.error('Error fetching companies:', error);
+    console.error('❌ [Dashboard] Error fetching companies:', error);
   }
 };
 

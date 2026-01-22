@@ -7,12 +7,12 @@ const { SYSTEM_SCREENS } = require('../constants/screens');
 module.exports = (app) => {
   // ==================== COMPANIES ====================
 
-  // ดึงรายการบริษัทที่ user มีสิทธิ์เข้าถึง (ต้องอยู่ก่อน /:id)
-  app.get('/api/settings/companies/accessible', checkScreenPermission(SYSTEM_SCREENS.SETTINGS), settingsController.getUserAccessibleCompanies);
-  // ดึงรายการบริษัททั้งหมด
+  // ดึงรายการบริษัทที่ user มีสิทธิ์เข้าถึง (ต้องอยู่ก่อน /:id) - ไม่ต้อง check permission เพราะใช้ทุกหน้า
+  app.get('/api/settings/companies/accessible', settingsController.getUserAccessibleCompanies);
+  // ดึงรายการบริษัททั้งหมด - ต้องมีสิทธิ์ SETTINGS
   app.get('/api/settings/companies', checkScreenPermission(SYSTEM_SCREENS.SETTINGS), settingsController.getAllCompanies);
-  // ดึงข้อมูลบริษัทตาม ID
-  app.get('/api/settings/companies/:id', checkScreenPermission(SYSTEM_SCREENS.SETTINGS), settingsController.getCompanyById);
+  // ดึงข้อมูลบริษัทตาม ID - ไม่ต้อง check permission เพราะใช้แสดง logo, ชื่อบริษัท
+  app.get('/api/settings/companies/:id', settingsController.getCompanyById);
   // สร้างบริษัทใหม่
   app.post('/api/settings/companies', checkScreenPermission(SYSTEM_SCREENS.SETTINGS), settingsController.createCompany);
   // แก้ไขข้อมูลบริษัท
@@ -91,9 +91,9 @@ module.exports = (app) => {
 
   // ==================== APPEARANCE SETTINGS ====================
 
-  // ดึงข้อมูล Appearance Settings
-  app.get('/api/settings/appearance', checkScreenPermission(SYSTEM_SCREENS.SETTINGS), settingsController.getAppearanceSettings);
-  // บันทึก Appearance Settings
+  // ดึงข้อมูล Appearance Settings - ไม่ต้อง check permission เพราะใช้โหลด theme ทุกหน้า
+  app.get('/api/settings/appearance', settingsController.getAppearanceSettings);
+  // บันทึก Appearance Settings - ต้องมีสิทธิ์ SETTINGS
   app.put('/api/settings/appearance', checkScreenPermission(SYSTEM_SCREENS.SETTINGS), settingsController.updateAppearanceSettings);
   // อัปโหลดรูปภาพ (Logo, Favicon)
   app.post('/api/settings/upload-image', checkScreenPermission(SYSTEM_SCREENS.SETTINGS), upload.single('image'), settingsController.uploadImage);

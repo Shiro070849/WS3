@@ -413,7 +413,8 @@ const fetchCompanies = async () => {
     const companyId = localStorage.getItem('companyId');
     const isSuperAdmin = !companyId || companyId === 'null';
 
-    const response = await companiesAPI.getAll();
+    // ใช้ getAccessible แทน getAll เพื่อไม่ต้องการ SETTINGS permission
+    const response = await companiesAPI.getAccessible();
     let filteredCompanies = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
 
     // If sub-admin, show only their own company

@@ -179,6 +179,7 @@ export const authAPI = {
 // ==================== COMPANIES API ====================
 export const companiesAPI = {
   getAll: () => apiClient.get('/settings/companies'),
+  getAccessible: (userId) => apiClient.get('/settings/companies/accessible', { params: userId ? { userId } : {} }),
   getById: (id) => apiClient.get(`/settings/companies/${id}`),
   create: (data) => apiClient.post('/settings/companies', data),
   update: (id, data) => apiClient.put(`/settings/companies/${id}`, data),
