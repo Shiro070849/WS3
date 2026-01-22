@@ -23,7 +23,7 @@ const routes = [
     path: "/vehicle",
     name: "Vehicle",
     component: () => import("@/views/VehicleView.vue"),
-    meta: { requiresAuth: true, screenId: 1101 } // DATA_DAILY
+    meta: { requiresAuth: true, screenId: 1100 } // VISIT
   },
   {
     path: "/vehicle/reprint",
@@ -35,7 +35,7 @@ const routes = [
     path: "/report",
     name: "Report",
     component: () => import("@/views/ReportView.vue"),
-    meta: { requiresAuth: true, screenId: 1101 } // DATA_DAILY
+    meta: { requiresAuth: true, screenId: 1000 } // REPORTS
   },
   {
     path: "/statistics",

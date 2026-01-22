@@ -32,11 +32,14 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const goToDashboard = () => {
-  router.push('/dashboard');
+  // Clear history และ redirect ไป Dashboard
+  router.replace('/dashboard');
 };
 
 const goBack = () => {
-  router.go(-1);
+  // แทนที่จะ go(-1) ที่อาจกลับไปหน้าที่ไม่มีสิทธิ์
+  // ให้ไปที่ Dashboard แทน
+  router.replace('/dashboard');
 };
 </script>
 

@@ -636,8 +636,13 @@ const fetchVehicleTypes = async () => {
 // Fetch companies for dropdown
 const fetchCompanies = async () => {
   try {
-    const response = await companiesAPI.getAll();
-    let filteredCompanies = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+    const userId = localStorage.getItem('userId');
+
+    // ใช้ getAccessible แทน getAll เพื่อไม่ต้องการ SETTINGS permission
+    const response = await companiesAPI.getAccessible(userId);
+
+    // Backend กรอง IC_IsActive = 1 ให้แล้ว ไม่ต้อง filter ซ้ำ
+    let filteredCompanies = response.data.data || [];
 
     // If sub-admin, show only their own company
     const isSuperAdmin = !userCompanyId || userCompanyId === 'null';
