@@ -3,21 +3,21 @@ const { checkScreenPermission } = require('../middleware/permission');
 const { SYSTEM_SCREENS } = require('../constants/screens');
 
 module.exports = (app) => {
-  // ดึงรายการรถทั้งหมด พร้อมกรอง
-  app.get('/api/vehicles', checkScreenPermission(SYSTEM_SCREENS.DATA_DAILY), vehicleController.getAllVehicles);
+  // ดึงรายการรถทั้งหมด พร้อมกรอง - ใช้ VISIT (1100)
+  app.get('/api/vehicles', checkScreenPermission(SYSTEM_SCREENS.VISIT), vehicleController.getAllVehicles);
 
-  // ดึงข้อมูลรถตาม ID
-  app.get('/api/vehicles/:id', checkScreenPermission(SYSTEM_SCREENS.DATA_DAILY), vehicleController.getVehicleById);
+  // ดึงข้อมูลรถตาม ID - ใช้ VISIT (1100)
+  app.get('/api/vehicles/:id', checkScreenPermission(SYSTEM_SCREENS.VISIT), vehicleController.getVehicleById);
 
-  // สร้างรายการรถเข้าใหม่
-  app.post('/api/vehicles', checkScreenPermission(SYSTEM_SCREENS.DATA_DAILY), vehicleController.createVehicle);
+  // สร้างรายการรถเข้าใหม่ - ใช้ VISIT (1100)
+  app.post('/api/vehicles', checkScreenPermission(SYSTEM_SCREENS.VISIT), vehicleController.createVehicle);
 
-  // แก้ไขข้อมูลรถ
-  app.put('/api/vehicles/:id', checkScreenPermission(SYSTEM_SCREENS.DATA_DAILY), vehicleController.updateVehicle);
+  // แก้ไขข้อมูลรถ - ใช้ VISIT (1100)
+  app.put('/api/vehicles/:id', checkScreenPermission(SYSTEM_SCREENS.VISIT), vehicleController.updateVehicle);
 
-  // ลบรายการรถ
-  app.delete('/api/vehicles/:id', checkScreenPermission(SYSTEM_SCREENS.DATA_DAILY), vehicleController.deleteVehicle);
+  // ลบรายการรถ - ใช้ VISIT (1100)
+  app.delete('/api/vehicles/:id', checkScreenPermission(SYSTEM_SCREENS.VISIT), vehicleController.deleteVehicle);
 
-  // บันทึกรถออก (Checkout)
-  app.post('/api/vehicles/:id/checkout', checkScreenPermission(SYSTEM_SCREENS.DATA_DAILY), vehicleController.checkoutVehicle);
+  // บันทึกรถออก (Checkout) - ใช้ VISIT (1100)
+  app.post('/api/vehicles/:id/checkout', checkScreenPermission(SYSTEM_SCREENS.VISIT), vehicleController.checkoutVehicle);
 };

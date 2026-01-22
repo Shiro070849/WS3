@@ -98,8 +98,13 @@
           <!-- บริษัท -->
           <div class="mb-3">
             <label class="block text-sm font-semibold text-gray-700 mb-2 font-prompt">บริษัท</label>
-            <select v-model="exportFilters.companyId" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] font-prompt bg-white">
-              <option value="">ทั้งหมด</option>
+            <select
+              v-model="exportFilters.companyId"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3] font-prompt bg-white"
+              :disabled="isCompanyAdmin && companies.length === 1"
+            >
+              <!-- Super Admin เท่านั้นที่เห็น "ทั้งหมด" -->
+              <option v-if="!isCompanyAdmin" value="">ทั้งหมด</option>
               <option
                 v-for="company in companies"
                 :key="company.IC_ID"
@@ -243,6 +248,10 @@ const props = defineProps({
   totalRecords: {
     type: Number,
     default: 0
+  },
+  isCompanyAdmin: {
+    type: Boolean,
+    default: false
   }
 });
 

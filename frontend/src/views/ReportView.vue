@@ -35,8 +35,10 @@
               v-model="filters.companyId"
               class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @change="fetchReport"
+              :disabled="isCompanyAdmin && companies.length === 1"
             >
-              <option value="">ทั้งหมด</option>
+              <!-- Super Admin เท่านั้นที่เห็น "ทั้งหมด" -->
+              <option v-if="!isCompanyAdmin" value="">ทั้งหมด</option>
               <option
                 v-for="company in companies"
                 :key="company.IC_ID"
@@ -104,6 +106,7 @@
         :companies="companies"
         :vehicle-types="vehicleTypes"
         :total-records="summary.total"
+        :is-company-admin="isCompanyAdmin"
         @close="closeExportModal"
         @export="handleExport"
       />
@@ -374,6 +377,12 @@ const summary = ref({
 
 // ==================== COMPUTED ====================
 
+// ตรวจสอบว่าเป็น Company Admin หรือไม่
+const isCompanyAdmin = computed(() => {
+  const companyId = localStorage.getItem('companyId');
+  return companyId && companyId !== 'null';
+});
+
 // คำนวณหน้าที่จะแสดงใน pagination
 const visiblePages = computed(() => {
   const current = pagination.value.page;
@@ -410,21 +419,17 @@ const fetchVehicleTypes = async () => {
 
 const fetchCompanies = async () => {
   try {
-    const companyId = localStorage.getItem('companyId');
-    const isSuperAdmin = !companyId || companyId === 'null';
+    const userId = localStorage.getItem('userId');
 
-    // ใช้ getAccessible แทน getAll เพื่อไม่ต้องการ SETTINGS permission
-    const response = await companiesAPI.getAccessible();
-    let filteredCompanies = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+    // ใช้ getAccessible เพื่อให้ Backend กรองตาม User Company
+    const response = await companiesAPI.getAccessible(userId);
 
-    // If sub-admin, show only their own company
-    if (!isSuperAdmin) {
-      filteredCompanies = filteredCompanies.filter(c => c.IC_ID.toString() === companyId.toString());
-    }
+    // Backend กรอง IC_IsActive = 1 ให้แล้ว ไม่ต้อง filter ซ้ำ
+    companies.value = response.data.data || [];
 
-    companies.value = filteredCompanies;
+    console.log('📦 [Report] Companies Count:', companies.value.length);
   } catch (error) {
-    console.error('Error fetching companies:', error);
+    console.error('❌ [Report] Error fetching companies:', error);
   }
 };
 
@@ -498,7 +503,14 @@ const handleExport = async (exportData) => {
   try {
     const { format, filters: exportFilters, options } = exportData;
 
+    // ดึง userId จาก localStorage
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('userId is required');
+    }
+
     const params = new URLSearchParams({
+      userId, // เพิ่ม userId
       ...(exportFilters.startDate && { startDate: exportFilters.startDate }),
       ...(exportFilters.endDate && { endDate: exportFilters.endDate }),
       ...(exportFilters.companyId && { companyId: exportFilters.companyId }),
@@ -575,7 +587,7 @@ const formatDateTime = (dateTime) => {
   });
 };
 
-onMounted(() => {
+onMounted(async () => {
   // โหลด stored filters จาก localStorage
   filterStore.initializeFromLocalStorage();
 
@@ -595,17 +607,16 @@ onMounted(() => {
     filterStore.persistToLocalStorage();
   }
 
-  // Auto-fill companyId จาก localStorage (สำหรับ multi-company)
-  const companyId = localStorage.getItem('companyId');
-  // Super Admin (IC_ID = NULL) ไม่ต้อง filter ตามบริษัท
-  // Check for null, empty string, or string 'null' from localStorage or API
-  const isSuperAdmin = !companyId || companyId === 'null';
-  if (!isSuperAdmin) {
-    filters.value.companyId = companyId;
+  // โหลด companies ก่อน
+  await fetchCompanies();
+  fetchVehicleTypes();
+
+  // Auto-fill companyId สำหรับ Company Admin
+  if (isCompanyAdmin.value && companies.value.length > 0) {
+    filters.value.companyId = companies.value[0].IC_ID;
+    console.log('🔒 [Report] Company Admin - Auto-selected company:', companies.value[0].IC_LocalName);
   }
 
-  fetchCompanies();
-  fetchVehicleTypes();
   fetchReport();
 });
 </script>
