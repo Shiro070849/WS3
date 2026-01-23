@@ -191,6 +191,13 @@ class WayInController {
   async update(req, res) {
     try {
       const id = req.params.id;
+      
+      console.log('[WAYIN CONTROLLER] Update request:', {
+        id: id,
+        body: req.body,
+        reprintOn: req.body.reprintOn
+      });
+      
       const data = {
         fullName: req.body.fullName,
         cardId: req.body.cardId,
@@ -204,7 +211,8 @@ class WayInController {
         follower: req.body.follower,
         remarks: req.body.remarks,
         fromCompany: req.body.fromCompany,
-        contactName: req.body.contactName
+        contactName: req.body.contactName,
+        reprintOn: req.body.reprintOn // เวลารีปริ้น (ISO string จาก frontend)
       };
 
       const result = await wayInService.updateWayIn(id, data);

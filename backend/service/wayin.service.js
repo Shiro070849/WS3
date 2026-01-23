@@ -75,7 +75,9 @@ class WayInService {
       request.input('WI_Follower', sql.Int, data.follower !== undefined ? data.follower : null);
       request.input('WI_Remarks', sql.NVarChar, data.remarks || null);
       request.input('SU_ID', sql.Int, data.systemUserId);
-      request.input('WI_RecordedOn', sql.DateTime, data.recordedOn || new Date());
+      // ใช้เวลาปัจจุบันจาก Server เสมอ เพื่อให้เวลาเข้า (WI_RecordedOn) ตรงกับข้อมูลจริงใน DB
+      // และไม่ขึ้นกับ timezone/clock ของอุปกรณ์ที่ส่งข้อมูลมา
+      request.input('WI_RecordedOn', sql.DateTime, new Date());
       request.input('IC_ID', sql.Int, data.icId !== undefined ? data.icId : null);
       request.input('ID_ID', sql.Int, data.idId !== undefined ? data.idId : null);
       request.input('VT_ID', sql.Int, data.vtId !== undefined ? data.vtId : null);
@@ -105,9 +107,13 @@ class WayInService {
         SELECT
           wi.*,
           su.SU_Name1 as SystemUserName,
-          su.SU_Code as SystemUserCode
+          su.SU_Code as SystemUserCode,
+          wo.WO_ID,
+          wo.WO_RecordedOn,
+          wo.WO_RecordedOn as CheckOutTime
         FROM [dbo].[WayIn] wi
         LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
+        LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
         WHERE wi.WI_ID = @WI_ID
       `;
 
@@ -258,15 +264,20 @@ class WayInService {
           [WI_Follower] = @WI_Follower,
           [WI_Remarks] = @WI_Remarks,
           [WI_FromCompany] = @WI_FromCompany,
-          [WI_ContactName] = @WI_ContactName
+          [WI_ContactName] = @WI_ContactName,
+          [WI_ReprintOn] = CASE WHEN @ShouldUpdateReprintOn = 1 THEN GETDATE() ELSE [WI_ReprintOn] END
         WHERE [WI_ID] = @WI_ID;
 
         SELECT
           wi.*,
           su.SU_Name1 as SystemUserName,
-          su.SU_Code as SystemUserCode
+          su.SU_Code as SystemUserCode,
+          wo.WO_ID,
+          wo.WO_RecordedOn,
+          wo.WO_RecordedOn as CheckOutTime
         FROM [dbo].[WayIn] wi
         LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
+        LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
         WHERE wi.WI_ID = @WI_ID
       `;
 
@@ -284,6 +295,20 @@ class WayInService {
       request.input('WI_Remarks', sql.NVarChar, getValue(data.remarks, existingData.WI_Remarks));
       request.input('WI_FromCompany', sql.NVarChar, getValue(data.fromCompany, existingData.WI_FromCompany));
       request.input('WI_ContactName', sql.NVarChar, getValue(data.contactName, existingData.WI_ContactName));
+      // WI_ReprintOn:
+      // - ถ้ามีการขออัพเดท (data.reprintOn มีค่า) ให้ใช้ GETDATE() ของ SQL Server โดยตรง
+      //   เพื่อให้ได้เวลาปัจจุบันตาม timezone ของ SQL Server (ควรเป็นเวลาไทย)
+      //   และสามารถบันทึกทับค่าเดิมได้
+      // - ถ้าไม่มีการขออัพเดท ให้ใช้ค่าเดิมจาก DB
+      const shouldUpdateReprintOn = data.reprintOn ? 1 : 0;
+      request.input('ShouldUpdateReprintOn', sql.Bit, shouldUpdateReprintOn);
+      
+      if (shouldUpdateReprintOn) {
+        console.log('[WAYIN SERVICE] Updating WI_ReprintOn with SQL Server GETDATE():', {
+          previous: existingData.WI_ReprintOn,
+          willUse: 'GETDATE() from SQL Server (current server time)'
+        });
+      }
 
       const result = await request.query(query);
       return result.recordset[0];

@@ -128,6 +128,7 @@ class VehicleService {
           WI.WI_Follower,
           WI.WI_Remarks,
           WI.WI_RecordedOn,
+          WI.WI_ReprintOn,
           WI.WI_FromCompany,
           WI.WI_ContactName,
           WI.WI_InternalDivision,

@@ -155,6 +155,9 @@
                 <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   เวลาออก
                 </th>
+                <th v-if="canReprint" class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
+                  เวลารีปริ้น
+                </th>
                 <th class="px-6 py-5 text-sm font-bold text-left text-gray-700 font-prompt">
                   สถานะ
                 </th>
@@ -165,7 +168,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="loading" class="bg-white">
-                <td :colspan="canReprint ? 10 : 9" class="px-6 py-10 text-center text-gray-500">
+                <td :colspan="canReprint ? 11 : 10" class="px-6 py-10 text-center text-gray-500">
                   <div class="flex items-center justify-center">
                     <svg class="animate-spin h-6 w-6 mr-3 text-[#0090D3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -176,7 +179,7 @@
                 </td>
               </tr>
               <tr v-else-if="vehicles.length === 0" class="bg-white">
-                <td :colspan="canReprint ? 10 : 9" class="px-6 py-10 text-base text-center text-gray-500 font-prompt">
+                <td :colspan="canReprint ? 11 : 10" class="px-6 py-10 text-base text-center text-gray-500 font-prompt">
                   ไม่พบข้อมูล
                 </td>
               </tr>
@@ -222,6 +225,11 @@
                 <td class="px-6 py-5 whitespace-nowrap">
                   <div class="text-base font-medium text-gray-700 font-prompt">
                     {{ vehicle.WO_RecordedOn ? formatDateTime(vehicle.WO_RecordedOn) : '-' }}
+                  </div>
+                </td>
+                <td v-if="canReprint" class="px-6 py-5 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-600 font-prompt">
+                    {{ vehicle.WI_ReprintOn ? formatDateTime(vehicle.WI_ReprintOn) : '-' }}
                   </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
@@ -1275,11 +1283,30 @@ const saveCheckout = async () => {
 
 const formatDateTime = (dateTime) => {
   if (!dateTime) return '-';
-  // Remove 'Z' to force local time interpretation
-  const dateStr = dateTime.replace('Z', '');
-  const date = new Date(dateStr);
+
+  /**
+   * BACKEND → FRONTEND DATETIME FORMAT (สำคัญมาก)
+   *
+   * - MSSQL เก็บค่าเป็น `datetime` (ไม่มี timezone) เช่น: 2026-01-23 15:15:47.677
+   * - mssql driver ใน Node คืนค่าเป็น Date (local time ของ server)
+   * - ตอนส่งมาที่ Frontend ผ่าน JSON/axios มันถูก serialize เป็น ISO string แบบมี 'Z'
+   *     เช่น "2026-01-23T15:15:47.677Z"
+   *   แต่ความหมายที่คุณต้องการคือ "15:15 น. ตามที่เห็นใน SSMS" ไม่ใช่ 22:15 (UTC+7)
+   *
+   * เพราะฉะนั้นฝั่ง Frontend เราต้อง "ตีความ string นี้เป็น local time ตรง ๆ"
+   * โดยการตัด 'Z' ทิ้ง แล้วให้ new Date() มองว่าเป็นเวลา local
+   */
+
+  let date;
+
+  if (typeof dateTime === 'string') {
+    const clean = dateTime.endsWith('Z') ? dateTime.slice(0, -1) : dateTime;
+    date = new Date(clean);
+  } else {
+    date = new Date(dateTime);
+  }
+
   return date.toLocaleString('th-TH', {
-    timeZone: 'Asia/Bangkok',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -1307,10 +1334,18 @@ const openReprintModal = async (vehicle) => {
   console.log('[REPRINT] VT_LocalName:', vehicle.VT_LocalName);
   console.log('[REPRINT] WI_Barcode:', vehicle.WI_Barcode);
   console.log('[REPRINT] IC_LogoPath:', vehicle.IC_LogoPath);
+  console.log('[REPRINT] WO_RecordedOn:', vehicle.WO_RecordedOn);
+  console.log('[REPRINT] CheckOutTime:', vehicle.CheckOutTime);
   console.log('[REPRINT] Backend Base URL:', getBackendBaseUrl());
 
+  // Map WO_RecordedOn เป็น CheckOutTime เพื่อให้หน้ารีปริ้นแสดงเวลาออกได้
+  const vehicleWithCheckout = {
+    ...vehicle,
+    CheckOutTime: vehicle.CheckOutTime || vehicle.WO_RecordedOn || null
+  };
+
   reprintData.value = {
-    vehicle: vehicle,
+    vehicle: vehicleWithCheckout,
     visitTypeId: vehicle.VT_ID || null,
     qrCodeUrl: '',
     barcodeUrl: ''
@@ -1408,8 +1443,62 @@ const updateVisitType = async () => {
   }
 };
 
-const printSlip = () => {
-  window.print();
+const printSlip = async () => {
+  try {
+    // บันทึกเวลารีปริ้นก่อนพิมพ์
+    const vehicle = reprintData.value.vehicle;
+    if (vehicle && vehicle.WI_ID) {
+      // ส่ง flag reprintOn: true เพื่อให้ backend ใช้ GETDATE() ของ SQL Server
+      // ไม่ต้องส่งเวลาจาก Browser เพราะ backend จะใช้เวลาจาก SQL Server โดยตรง
+      console.log('[REPRINT] Saving reprint timestamp:', {
+        vehicleId: vehicle.WI_ID,
+        willUse: 'SQL Server GETDATE() (current server time)',
+        vehicleData: vehicle
+      });
+
+      // อัพเดท WI_ReprintOn โดยไม่เปลี่ยนข้อมูลอื่น
+      // ส่ง reprintOn: true เพื่อให้ backend ใช้ GETDATE() ของ SQL Server
+      const response = await wayinAPI.update(vehicle.WI_ID, {
+        reprintOn: true
+      });
+
+      console.log('[REPRINT] API Response:', response);
+      console.log('[REPRINT] Reprint timestamp saved successfully');
+      
+      // อัพเดทข้อมูลใน reprintData เพื่อให้แสดงผลถูกต้อง
+      // ใช้ค่าจาก response ที่ backend ส่งกลับมา (ซึ่งเป็นเวลาจาก SQL Server GETDATE())
+      if (response.data && response.data.data && response.data.data.WI_ReprintOn) {
+        reprintData.value.vehicle.WI_ReprintOn = response.data.data.WI_ReprintOn;
+      }
+      
+      // อัพเดทข้อมูลใน vehicles list และ refresh ข้อมูล
+      const vehicleIndex = vehicles.value.findIndex(v => v.WI_ID === vehicle.WI_ID);
+      if (vehicleIndex !== -1) {
+        vehicles.value[vehicleIndex].WI_ReprintOn = reprintData.value.vehicle.WI_ReprintOn;
+      }
+      
+      // แสดง success message
+      toast.success('สำเร็จ', 'บันทึกเวลารีปริ้นสำเร็จ');
+    }
+
+    // พิมพ์หลังจากบันทึกสำเร็จ
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  } catch (error) {
+    console.error('[REPRINT] Error saving reprint timestamp:', error);
+    console.error('[REPRINT] Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    // แสดง error แต่ยังพิมพ์ได้ (ไม่ block การพิมพ์)
+    toast.error('เกิดข้อผิดพลาด', error.response?.data?.message || 'ไม่สามารถบันทึกเวลารีปริ้นได้ แต่ยังสามารถพิมพ์ได้');
+    // พิมพ์ต่อไปแม้บันทึกไม่สำเร็จ
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  }
 };
 
 const fetchVehicleTypes = async () => {
