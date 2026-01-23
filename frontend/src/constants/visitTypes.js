@@ -24,8 +24,12 @@ export const REPRINT_CONFIG = {
     VISIT_TYPE_IDS.DEPOSIT_WITHDRAW, // 40
   ],
 
-  // URL Template (อิงจาก VUE_APP_QR_URL จาก .env หรือใช้ค่า default)
+  // URL Template - เลือกใช้ตามบริษัทที่ Deploy
+  // สำหรับ Ruxchai:
   QR_URL_TEMPLATE: process.env.VUE_APP_QR_URL || 'https://smartsecurity.ruxchai.co.th/index.php?param=',
+
+  // สำหรับ MRG Shrimp:
+  // QR_URL_TEMPLATE: process.env.VUE_APP_QR_URL || 'https://smartsecurity.mrgshrimp.com/',
 
   // Footer Warning Text
   FOOTER_WARNING_TEXT: {
