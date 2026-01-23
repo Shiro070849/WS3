@@ -359,7 +359,15 @@ class SettingsController {
 
   async createUser(req, res) {
     try {
-      const { code, name1, name2, email, username, password, active, pinCode, remarks, companyId, roleId } = req.body;
+      const { code, name1, name2, email, username, password, active, pinCode, remarks, companyId, companyIds, roleId, createdBy } = req.body;
+
+      // Debug: ตรวจสอบค่าที่รับมา
+      console.log('[CREATE USER] Received data:', {
+        companyId,
+        companyIds,
+        companyIdsType: Array.isArray(companyIds) ? 'Array' : typeof companyIds,
+        companyIdsLength: Array.isArray(companyIds) ? companyIds.length : 'N/A'
+      });
 
       // Validate required fields
       if (!code || !name1 || !username || !password) {
@@ -369,11 +377,22 @@ class SettingsController {
         });
       }
 
-      // Validate companyId
-      if (!companyId) {
+      // Validate companyIds หรือ companyId (รองรับทั้ง Array และ single)
+      // ถ้า companyIds เป็น Array ว่าง [] → ใช้ companyId แทน
+      // ถ้า companyIds เป็น undefined หรือ null → ใช้ companyId แทน
+      let finalCompanyIds = [];
+      if (Array.isArray(companyIds) && companyIds.length > 0) {
+        finalCompanyIds = companyIds;
+      } else if (companyId) {
+        finalCompanyIds = [companyId];
+      }
+
+      console.log('[CREATE USER] Final companyIds:', finalCompanyIds);
+
+      if (finalCompanyIds.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'Company ID is required'
+          message: 'Company ID is required (ต้องเลือกบริษัทอย่างน้อย 1 บริษัท)'
         });
       }
 
@@ -395,8 +414,10 @@ class SettingsController {
         active,
         pinCode,
         remarks,
-        companyId,
-        roleId
+        companyId: companyId || finalCompanyIds[0], // Backward compatible (ใช้ค่าแรก)
+        companyIds: finalCompanyIds, // Multi-select (Array)
+        roleId,
+        createdBy: createdBy || req.user?.userId || null
       });
 
       res.status(201).json({
@@ -417,7 +438,7 @@ class SettingsController {
   async updateUser(req, res) {
     try {
       const id = req.params.id;
-      const { code, name1, name2, email, username, active, pinCode, remarks, companyId, roleId } = req.body;
+      const { code, name1, name2, email, username, active, pinCode, remarks, companyId, companyIds, roleId, updatedBy } = req.body;
 
       // Validate required fields
       if (!code || !name1 || !username) {
@@ -425,6 +446,16 @@ class SettingsController {
           success: false,
           message: 'Code, Name, and Username are required'
         });
+      }
+
+      // ถ้ามี companyIds ส่งมา → ใช้ companyIds (Array)
+      // ถ้าไม่มี companyIds แต่มี companyId → แปลงเป็น Array
+      // ถ้าไม่มีทั้งคู่ → ไม่ต้องอัปเดต company (ใช้ค่าเดิม)
+      let finalCompanyIds = undefined;
+      if (companyIds !== undefined) {
+        finalCompanyIds = Array.isArray(companyIds) ? companyIds : [companyIds];
+      } else if (companyId !== undefined) {
+        finalCompanyIds = [companyId];
       }
 
       await settingsService.updateUser(id, {
@@ -436,8 +467,10 @@ class SettingsController {
         active,
         pinCode,
         remarks,
-        companyId,
-        roleId
+        companyId: companyId || (finalCompanyIds && finalCompanyIds.length > 0 ? finalCompanyIds[0] : undefined), // Backward compatible
+        companyIds: finalCompanyIds, // Multi-select (Array)
+        roleId,
+        updatedBy: updatedBy || req.user?.userId || null
       });
 
       res.status(200).json({

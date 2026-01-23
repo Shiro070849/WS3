@@ -67,29 +67,29 @@ class SettingsService {
     try {
       const pool = await dbService.connect();
 
-      // ดึง IC_ID ของ user ก่อน
+      // ดึง IC_ID ของ user จาก SystemUser (เพื่อตรวจสอบ Super Admin)
       const userQuery = `
         SELECT IC_ID
         FROM [dbo].[SystemUser]
-        WHERE SU_ID = @UserId
+        WHERE SU_ID = @UserId AND SU_Active = 1
       `;
       const userResult = await pool.request()
         .input('UserId', sql.Int, userId)
         .query(userQuery);
 
       if (userResult.recordset.length === 0) {
-        throw new Error('User not found');
+        throw new Error('User not found or inactive');
       }
 
       const userCompanyId = userResult.recordset[0].IC_ID;
-      console.log(`📌 User ${userId} belongs to company IC_ID: ${userCompanyId}`);
+      const isSuperAdmin = userCompanyId === null || userCompanyId === undefined;
+      
+      console.log(`📌 User ${userId} - IC_ID: ${userCompanyId === null ? 'NULL (Super Admin)' : userCompanyId}`);
 
-      // ถ้าเป็น Super Admin (IC_ID = NULL) ให้เห็นทุกบริษัท
-      // ถ้าเป็น Admin ย่อย ให้เห็นเฉพาะบริษัทตัวเอง
       let query;
       let result;
 
-      if (userCompanyId === null || userCompanyId === undefined) {
+      if (isSuperAdmin) {
         // Super Admin (IC_ID = NULL): เห็นทุกบริษัท
         query = `
           SELECT
@@ -108,25 +108,28 @@ class SettingsService {
         result = await pool.request().query(query);
         console.log(`✅ Super Admin (IC_ID = NULL): คืนทุกบริษัท (${result.recordset.length} บริษัท)`);
       } else {
-        // Admin ย่อย: เห็นเฉพาะบริษัทตัวเอง
+        // User ปกติ: ดึง Company จาก SystemUserCompany (หลาย Company)
         query = `
-          SELECT
-            IC_ID,
-            IC_Code,
-            IC_LocalName,
-            IC_EnglishName,
-            IC_ShortLocalName,
-            IC_ShortEnglishName,
-            IC_LogoPath,
-            IC_IsActive
-          FROM [dbo].[InternalCompany]
-          WHERE IC_ID = @CompanyId AND IC_IsActive = 1
-          ORDER BY IC_Code ASC
+          SELECT DISTINCT
+            IC.IC_ID,
+            IC.IC_Code,
+            IC.IC_LocalName,
+            IC.IC_EnglishName,
+            IC.IC_ShortLocalName,
+            IC.IC_ShortEnglishName,
+            IC.IC_LogoPath,
+            IC.IC_IsActive
+          FROM [dbo].[SystemUserCompany] SUC
+          INNER JOIN [dbo].[InternalCompany] IC ON SUC.IC_ID = IC.IC_ID
+          WHERE SUC.SU_ID = @UserId
+            AND SUC.SUC_IsActive = 1
+            AND IC.IC_IsActive = 1
+          ORDER BY IC.IC_Code ASC
         `;
         result = await pool.request()
-          .input('CompanyId', sql.Int, userCompanyId)
+          .input('UserId', sql.Int, userId)
           .query(query);
-        console.log(`✅ Admin ย่อย: คืนเฉพาะบริษัท IC_ID = ${userCompanyId}`);
+        console.log(`✅ User ${userId}: คืน ${result.recordset.length} บริษัทจาก SystemUserCompany`);
       }
 
       return result.recordset;
@@ -429,7 +432,9 @@ class SettingsService {
   async getUserById(id) {
     try {
       const pool = await dbService.connect();
-      const query = `
+      
+      // 1. ดึงข้อมูล User
+      const userQuery = `
         SELECT
           SU_ID,
           SU_Code,
@@ -440,14 +445,41 @@ class SettingsService {
           SU_Active,
           SU_LogOn,
           SU_PinCode,
-          SU_Remarks
+          SU_Remarks,
+          IC_ID,
+          SR_ID
         FROM [dbo].[SystemUser]
         WHERE SU_ID = @SU_ID
       `;
-      const result = await pool.request()
+      const userResult = await pool.request()
         .input('SU_ID', sql.Int, id)
-        .query(query);
-      return result.recordset[0];
+        .query(userQuery);
+
+      if (userResult.recordset.length === 0) {
+        return null;
+      }
+
+      const user = userResult.recordset[0];
+
+      // 2. ดึง Company IDs จาก SystemUserCompany
+      const companyQuery = `
+        SELECT IC_ID
+        FROM [dbo].[SystemUserCompany]
+        WHERE SU_ID = @SU_ID AND SUC_IsActive = 1
+        ORDER BY IC_ID
+      `;
+      const companyResult = await pool.request()
+        .input('SU_ID', sql.Int, id)
+        .query(companyQuery);
+
+      const companyIds = companyResult.recordset.map(row => row.IC_ID);
+
+      // 3. รวมข้อมูล
+      return {
+        ...user,
+        companyId: user.IC_ID, // Backward compatible (ค่าแรกหรือ null)
+        companyIds: companyIds // Array ของ Company IDs
+      };
     } catch (error) {
       console.error('Error getting user by ID:', error);
       throw error;
@@ -458,7 +490,15 @@ class SettingsService {
   async createUser(data) {
     try {
       const pool = await dbService.connect();
-      const query = `
+      const transaction = pool.transaction();
+      await transaction.begin();
+
+      // รับ companyIds (Array) หรือ companyId (single) สำหรับ backward compatibility
+      const companyIds = data.companyIds || (data.companyId ? [data.companyId] : []);
+      const primaryCompanyId = companyIds.length > 0 ? companyIds[0] : null; // ใช้ค่าแรกสำหรับ backward compatibility
+
+      // 1. สร้าง User ใน SystemUser
+      const userQuery = `
         INSERT INTO [dbo].[SystemUser] (
           SU_Code,
           SU_Name1,
@@ -489,7 +529,8 @@ class SettingsService {
         );
         SELECT SCOPE_IDENTITY() AS SU_ID;
       `;
-      const result = await pool.request()
+      const userRequest = transaction.request();
+      const userResult = await userRequest
         .input('SU_Code', sql.NVarChar, data.code)
         .input('SU_Name1', sql.NVarChar, data.name1)
         .input('SU_Name2', sql.NVarChar, data.name2 || null)
@@ -499,11 +540,37 @@ class SettingsService {
         .input('SU_Active', sql.Bit, data.active !== undefined ? data.active : 1)
         .input('SU_PinCode', sql.NVarChar, data.pinCode || null)
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
-        .input('IC_ID', sql.Int, data.companyId)
+        .input('IC_ID', sql.Int, primaryCompanyId)
         .input('SR_ID', sql.Int, data.roleId || null)
-        .query(query);
-      return result.recordset[0];
+        .query(userQuery);
+
+      const newUserId = userResult.recordset[0].SU_ID;
+
+      // 2. เพิ่ม Company assignments ใน SystemUserCompany (ถ้ามี)
+      if (companyIds.length > 0) {
+        for (const companyId of companyIds) {
+          const companyRequest = transaction.request();
+          await companyRequest
+            .input('SU_ID', sql.Int, newUserId)
+            .input('IC_ID', sql.Int, parseInt(companyId))
+            .input('SUC_IsActive', sql.Bit, 1)
+            .input('SUC_CreatedBy', sql.Int, data.createdBy || newUserId)
+            .query(`
+              INSERT INTO [dbo].[SystemUserCompany] (
+                SU_ID, IC_ID, SUC_IsActive, SUC_CreatedAt, SUC_CreatedBy
+              )
+              VALUES (
+                @SU_ID, @IC_ID, @SUC_IsActive, GETDATE(), @SUC_CreatedBy
+              )
+            `);
+        }
+        console.log(`✅ Created user ${newUserId} with ${companyIds.length} company assignments: [${companyIds.join(', ')}]`);
+      }
+
+      await transaction.commit();
+      return { SU_ID: newUserId };
     } catch (error) {
+      await transaction.rollback();
       console.error('Error creating user:', error);
       throw error;
     }
@@ -513,7 +580,15 @@ class SettingsService {
   async updateUser(id, data) {
     try {
       const pool = await dbService.connect();
-      const query = `
+      const transaction = pool.transaction();
+      await transaction.begin();
+
+      // รับ companyIds (Array) หรือ companyId (single) สำหรับ backward compatibility
+      const companyIds = data.companyIds || (data.companyId ? [data.companyId] : []);
+      const primaryCompanyId = companyIds.length > 0 ? companyIds[0] : null; // ใช้ค่าแรกสำหรับ backward compatibility
+
+      // 1. อัปเดต User ใน SystemUser
+      const userQuery = `
         UPDATE [dbo].[SystemUser]
         SET
           SU_Code = @SU_Code,
@@ -528,7 +603,8 @@ class SettingsService {
           SR_ID = @SR_ID
         WHERE SU_ID = @SU_ID
       `;
-      await pool.request()
+      const userRequest = transaction.request();
+      await userRequest
         .input('SU_ID', sql.Int, id)
         .input('SU_Code', sql.NVarChar, data.code)
         .input('SU_Name1', sql.NVarChar, data.name1)
@@ -538,11 +614,44 @@ class SettingsService {
         .input('SU_Active', sql.Bit, data.active)
         .input('SU_PinCode', sql.NVarChar, data.pinCode || null)
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
-        .input('IC_ID', sql.Int, data.companyId)
+        .input('IC_ID', sql.Int, primaryCompanyId)
         .input('SR_ID', sql.Int, data.roleId || null)
-        .query(query);
+        .query(userQuery);
+
+      // 2. อัปเดต Company assignments ใน SystemUserCompany (ถ้ามี companyIds)
+      if (data.companyIds !== undefined) {
+        // ลบ Company assignments เก่าทั้งหมด
+        const deleteRequest = transaction.request();
+        await deleteRequest
+          .input('SU_ID', sql.Int, id)
+          .query(`DELETE FROM [dbo].[SystemUserCompany] WHERE SU_ID = @SU_ID`);
+
+        // เพิ่ม Company assignments ใหม่
+        if (companyIds.length > 0) {
+          for (const companyId of companyIds) {
+            const companyRequest = transaction.request();
+            await companyRequest
+              .input('SU_ID', sql.Int, id)
+              .input('IC_ID', sql.Int, parseInt(companyId))
+              .input('SUC_IsActive', sql.Bit, 1)
+              .input('SUC_UpdatedBy', sql.Int, data.updatedBy || id)
+              .query(`
+                INSERT INTO [dbo].[SystemUserCompany] (
+                  SU_ID, IC_ID, SUC_IsActive, SUC_CreatedAt, SUC_CreatedBy, SUC_UpdatedAt, SUC_UpdatedBy
+                )
+                VALUES (
+                  @SU_ID, @IC_ID, @SUC_IsActive, GETDATE(), @SUC_UpdatedBy, GETDATE(), @SUC_UpdatedBy
+                )
+              `);
+          }
+          console.log(`✅ Updated user ${id} with ${companyIds.length} company assignments: [${companyIds.join(', ')}]`);
+        }
+      }
+
+      await transaction.commit();
       return { success: true };
     } catch (error) {
+      await transaction.rollback();
       console.error('Error updating user:', error);
       throw error;
     }
@@ -1836,14 +1945,14 @@ class SettingsService {
 
   // ==================== PERMISSIONS ====================
 
-  // Helper: ดึง IC_ID ของ User
+  // Helper: ดึง IC_ID ของ User (จาก SystemUser - สำหรับ Backward Compatible)
   async getUserCompanyId(userId) {
     try {
       const pool = await dbService.connect();
       const query = `
         SELECT IC_ID
         FROM [dbo].[SystemUser]
-        WHERE SU_ID = @UserId
+        WHERE SU_ID = @UserId AND SU_Active = 1
       `;
       const result = await pool.request()
         .input('UserId', sql.Int, userId)
@@ -1851,6 +1960,56 @@ class SettingsService {
       return result.recordset[0]?.IC_ID || null;
     } catch (error) {
       console.error('Error getting user company ID:', error);
+      throw error;
+    }
+  }
+
+  // Helper: ดึง Array ของ Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+  async getUserAccessibleCompanyIds(userId) {
+    try {
+      const pool = await dbService.connect();
+
+      // ตรวจสอบว่าเป็น Super Admin หรือไม่
+      const userQuery = `
+        SELECT IC_ID
+        FROM [dbo].[SystemUser]
+        WHERE SU_ID = @UserId AND SU_Active = 1
+      `;
+      const userResult = await pool.request()
+        .input('UserId', sql.Int, userId)
+        .query(userQuery);
+
+      if (userResult.recordset.length === 0) {
+        throw new Error('User not found or inactive');
+      }
+
+      const userCompanyId = userResult.recordset[0].IC_ID;
+      const isSuperAdmin = userCompanyId === null || userCompanyId === undefined;
+
+      if (isSuperAdmin) {
+        // Super Admin: return null (หมายถึงเห็นทุก Company)
+        return null;
+      }
+
+      // User ปกติ: ดึง Company IDs จาก SystemUserCompany
+      const query = `
+        SELECT SUC.IC_ID
+        FROM [dbo].[SystemUserCompany] SUC
+        INNER JOIN [dbo].[InternalCompany] IC ON SUC.IC_ID = IC.IC_ID
+        WHERE SUC.SU_ID = @UserId
+          AND SUC.SUC_IsActive = 1
+          AND IC.IC_IsActive = 1
+        ORDER BY SUC.IC_ID
+      `;
+      const result = await pool.request()
+        .input('UserId', sql.Int, userId)
+        .query(query);
+
+      const companyIds = result.recordset.map(row => row.IC_ID);
+      console.log(`📌 User ${userId} accessible company IDs: [${companyIds.join(', ')}]`);
+      return companyIds;
+    } catch (error) {
+      console.error('Error getting user accessible company IDs:', error);
       throw error;
     }
   }

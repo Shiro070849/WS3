@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const dbService = require('./db.service');
+const settingsService = require('./settings.service');
 
 class PermissionService {
   /**
@@ -43,27 +44,40 @@ class PermissionService {
       }
 
       // 3. ถ้าไม่ใช่ Super Admin → ดึง Screen จาก SystemRoleSystemScreen
+      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      const accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(userId);
+      
+      if (!accessibleCompanyIds || accessibleCompanyIds.length === 0) {
+        console.log(`[PERMISSION] User ${userId}: No accessible companies, returning empty screens`);
+        return [];
+      }
+
       // ดึง Permissions ที่:
       // - IC_ID = NULL (Global) → ใช้ได้ทุกบริษัท
-      // - IC_ID = user.IC_ID (Company-specific) → ใช้ได้เฉพาะบริษัทของ User
+      // - IC_ID IN (accessibleCompanyIds) (Company-specific) → ใช้ได้เฉพาะบริษัทที่ User เห็นได้
+      const companyIdsPlaceholder = accessibleCompanyIds.map((_, index) => `@CompanyId${index}`).join(', ');
       const permissionQuery = `
         SELECT DISTINCT SRSS.SS_ID
         FROM [dbo].[SystemRoleSystemScreen] SRSS
         INNER JOIN [dbo].[SystemScreen] SS ON SRSS.SS_ID = SS.SS_ID
         WHERE SRSS.SR_ID = @SR_ID
           AND SS.SS_IsActive = 1
-          AND (SRSS.IC_ID IS NULL OR SRSS.IC_ID = @CompanyId)
+          AND (SRSS.IC_ID IS NULL OR SRSS.IC_ID IN (${companyIdsPlaceholder}))
         ORDER BY SRSS.SS_ID
       `;
 
-      const permissionResult = await pool.request()
-        .input('SR_ID', sql.Int, user.SR_ID)
-        .input('CompanyId', sql.Int, user.IC_ID)
-        .query(permissionQuery);
+      const permissionRequest = pool.request()
+        .input('SR_ID', sql.Int, user.SR_ID);
+      
+      accessibleCompanyIds.forEach((companyId, index) => {
+        permissionRequest.input(`CompanyId${index}`, sql.Int, companyId);
+      });
+
+      const permissionResult = await permissionRequest.query(permissionQuery);
 
       const accessibleScreenIds = permissionResult.recordset.map(row => row.SS_ID);
 
-      console.log(`[PERMISSION] User ${userId} (SR_ID: ${user.SR_ID}, IC_ID: ${user.IC_ID}): Access to ${accessibleScreenIds.length} screens: [${accessibleScreenIds.join(', ')}]`);
+      console.log(`[PERMISSION] User ${userId} (SR_ID: ${user.SR_ID}, Companies: [${accessibleCompanyIds.join(', ')}]): Access to ${accessibleScreenIds.length} screens: [${accessibleScreenIds.join(', ')}]`);
 
       return accessibleScreenIds;
     } catch (error) {

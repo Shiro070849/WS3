@@ -27,10 +27,10 @@ class StatisticsController {
   async getOverview(req, res) {
     try {
       const { period, userId, companyId, vehicleType } = req.query;
-      const userCompanyId = await this.getUserCompanyId(userId);
-      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+      const userIdInt = userId ? parseInt(userId) : null;
+      const filterCompanyId = companyId ? parseInt(companyId) : null;
 
-      const overview = await statisticsService.getOverviewStats(period || 'week', finalCompanyId, vehicleType || null);
+      const overview = await statisticsService.getOverviewStats(period || 'week', userIdInt, filterCompanyId, vehicleType || null);
 
       res.status(200).json({
         success: true,
@@ -50,10 +50,10 @@ class StatisticsController {
   async getVehicleTypes(req, res) {
     try {
       const { period, userId, companyId, vehicleType } = req.query;
-      const userCompanyId = await this.getUserCompanyId(userId);
-      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+      const userIdInt = userId ? parseInt(userId) : null;
+      const filterCompanyId = companyId ? parseInt(companyId) : null;
 
-      const vehicleTypes = await statisticsService.getVehicleTypeStats(period || 'week', finalCompanyId, vehicleType || null);
+      const vehicleTypes = await statisticsService.getVehicleTypeStats(period || 'week', userIdInt, filterCompanyId, vehicleType || null);
 
       res.status(200).json({
         success: true,
@@ -73,10 +73,10 @@ class StatisticsController {
   async getPeakHours(req, res) {
     try {
       const { period, userId, companyId, vehicleType } = req.query;
-      const userCompanyId = await this.getUserCompanyId(userId);
-      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+      const userIdInt = userId ? parseInt(userId) : null;
+      const filterCompanyId = companyId ? parseInt(companyId) : null;
 
-      const peakHours = await statisticsService.getPeakHoursStats(period || 'week', finalCompanyId, vehicleType || null);
+      const peakHours = await statisticsService.getPeakHoursStats(period || 'week', userIdInt, filterCompanyId, vehicleType || null);
 
       res.status(200).json({
         success: true,
@@ -96,13 +96,14 @@ class StatisticsController {
   async getTopCompanies(req, res) {
     try {
       const { period, limit, userId, companyId, vehicleType } = req.query;
-      const userCompanyId = await this.getUserCompanyId(userId);
-      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+      const userIdInt = userId ? parseInt(userId) : null;
+      const filterCompanyId = companyId ? parseInt(companyId) : null;
 
       const topCompanies = await statisticsService.getTopCompaniesStats(
         period || 'week',
         parseInt(limit) || 5,
-        finalCompanyId,
+        userIdInt,
+        filterCompanyId,
         vehicleType || null
       );
 
@@ -124,10 +125,10 @@ class StatisticsController {
   async getTrafficTrend(req, res) {
     try {
       const { period, userId, companyId, vehicleType } = req.query;
-      const userCompanyId = await this.getUserCompanyId(userId);
-      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+      const userIdInt = userId ? parseInt(userId) : null;
+      const filterCompanyId = companyId ? parseInt(companyId) : null;
 
-      const trend = await statisticsService.getTrafficTrendStats(period || 'week', finalCompanyId, vehicleType || null);
+      const trend = await statisticsService.getTrafficTrendStats(period || 'week', userIdInt, filterCompanyId, vehicleType || null);
 
       res.status(200).json({
         success: true,
@@ -147,10 +148,10 @@ class StatisticsController {
   async getAdditionalStats(req, res) {
     try {
       const { period, userId, companyId, vehicleType } = req.query;
-      const userCompanyId = await this.getUserCompanyId(userId);
-      const finalCompanyId = this.getFinalCompanyId(userCompanyId, companyId ? parseInt(companyId) : null);
+      const userIdInt = userId ? parseInt(userId) : null;
+      const filterCompanyId = companyId ? parseInt(companyId) : null;
 
-      const additional = await statisticsService.getAdditionalStats(period || 'week', finalCompanyId, vehicleType || null);
+      const additional = await statisticsService.getAdditionalStats(period || 'week', userIdInt, filterCompanyId, vehicleType || null);
 
       res.status(200).json({
         success: true,

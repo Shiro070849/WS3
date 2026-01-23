@@ -1,27 +1,44 @@
 const sql = require('mssql');
 const dbService = require('./db.service');
+const settingsService = require('./settings.service');
 
 class DashboardService {
   // ดึงสถิติรวมของวันนี้
-  // userCompanyId: IC_ID ของ user ที่ login (null = Super Admin)
+  // userId: SU_ID ของ user (ใช้ดึง Company IDs จาก SystemUserCompany)
   // filterCompanyId: IC_ID ที่ user เลือกจาก dropdown (Super Admin เท่านั้น)
-  async getTodayStats(userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null, vehicleType = null) {
+  async getTodayStats(userId = null, filterCompanyId = null, dateFrom = null, dateTo = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
 
-      // กำหนด companyId สุดท้าย
-      let finalCompanyId;
-      if (userCompanyId === null || userCompanyId === undefined) {
-        // Super Admin: ใช้ filterCompanyId ที่เลือกจาก dropdown
-        finalCompanyId = filterCompanyId;
-        console.log(`📊 [SUPER ADMIN] Filter by companyId: ${finalCompanyId || 'ALL'}`);
-      } else {
-        // Company Admin: บังคับใช้ IC_ID ของตัวเอง
-        finalCompanyId = userCompanyId;
-        console.log(`📊 [COMPANY ADMIN] Forced filter by companyId: ${finalCompanyId}`);
+      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      let accessibleCompanyIds = null;
+      if (userId) {
+        accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(userId);
       }
 
-      const companyId = finalCompanyId;
+      // กำหนด companyId สุดท้าย (ตาม role)
+      let finalCompanyIds = null;
+      if (accessibleCompanyIds === null) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+        if (filterCompanyId) {
+          finalCompanyIds = [parseInt(filterCompanyId)];
+          console.log(`📊 [SUPER ADMIN] Filter by companyId: ${filterCompanyId}`);
+        } else {
+          finalCompanyIds = null; // เห็นทุก Company
+          console.log(`📊 [SUPER ADMIN] Filter: ALL companies`);
+        }
+      } else {
+        // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
+        // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+        // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+        if (filterCompanyId && accessibleCompanyIds.includes(parseInt(filterCompanyId))) {
+          finalCompanyIds = [parseInt(filterCompanyId)];
+          console.log(`📊 [USER] Filter by selected companyId: ${filterCompanyId}`);
+        } else {
+          finalCompanyIds = accessibleCompanyIds;
+          console.log(`📊 [USER] Filter by accessible companies: [${accessibleCompanyIds.join(', ')}]`);
+        }
+      }
 
       // กำหนด date range
       // หมายเหตุ: Date จะใช้ timezone ของ server (local time)
@@ -49,9 +66,12 @@ class DashboardService {
         WHERE WI_RecordedOn >= @StartDate
           AND WI_RecordedOn <= @EndDate`;
 
-      if (companyId) {
-        wayInRequest.input('CompanyId', sql.Int, parseInt(companyId));
-        wayInQuery += ' AND IC_ID = @CompanyId';
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const placeholders = finalCompanyIds.map((_, index) => `@CompanyId${index}`).join(', ');
+        wayInQuery += ` AND IC_ID IN (${placeholders})`;
+        finalCompanyIds.forEach((companyId, index) => {
+          wayInRequest.input(`CompanyId${index}`, sql.Int, companyId);
+        });
       }
 
       if (vehicleType) {
@@ -73,9 +93,12 @@ class DashboardService {
         WHERE WO.WO_RecordedOn >= @StartDate
           AND WO.WO_RecordedOn <= @EndDate`;
 
-      if (companyId) {
-        wayOutRequest.input('CompanyId', sql.Int, parseInt(companyId));
-        wayOutQuery += ' AND WI.IC_ID = @CompanyId';
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const placeholders = finalCompanyIds.map((_, index) => `@CompanyId${index}`).join(', ');
+        wayOutQuery += ` AND WI.IC_ID IN (${placeholders})`;
+        finalCompanyIds.forEach((companyId, index) => {
+          wayOutRequest.input(`CompanyId${index}`, sql.Int, companyId);
+        });
       }
 
       if (vehicleType) {
@@ -93,9 +116,12 @@ class DashboardService {
         FROM [dbo].[WayIn]
         WHERE WI_ID NOT IN (SELECT WI_ID FROM [dbo].[WayOut] WHERE WI_ID IS NOT NULL)`;
 
-      if (companyId) {
-        pendingRequest.input('CompanyId', sql.Int, parseInt(companyId));
-        pendingQuery += ' AND IC_ID = @CompanyId';
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const placeholders = finalCompanyIds.map((_, index) => `@CompanyId${index}`).join(', ');
+        pendingQuery += ` AND IC_ID IN (${placeholders})`;
+        finalCompanyIds.forEach((companyId, index) => {
+          pendingRequest.input(`CompanyId${index}`, sql.Int, companyId);
+        });
       }
 
       if (vehicleType) {
@@ -106,15 +132,18 @@ class DashboardService {
       const pendingResult = await pendingRequest.query(pendingQuery);
 
       // นับจำนวนบริษัทที่ใช้งาน
-      const companiesResult = companyId
-        ? { recordset: [{ count: 1 }] }
-        : await pool.request().query(`
-            SELECT COUNT(DISTINCT IC_ID) as count
-            FROM [dbo].[InternalCompany]
-            WHERE IC_IsActive = 1
-          `);
+      let companiesResult;
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        companiesResult = { recordset: [{ count: finalCompanyIds.length }] };
+      } else {
+        companiesResult = await pool.request().query(`
+          SELECT COUNT(DISTINCT IC_ID) as count
+          FROM [dbo].[InternalCompany]
+          WHERE IC_IsActive = 1
+        `);
+      }
 
-      console.log(`📊 Dashboard Stats for Company ${companyId || 'ALL'}`);
+      console.log(`📊 Dashboard Stats for Companies: ${finalCompanyIds ? `[${finalCompanyIds.join(', ')}]` : 'ALL'}`);
 
       return {
         wayInToday: wayInResult.recordset[0].count,
@@ -129,30 +158,47 @@ class DashboardService {
   }
 
   // ดึงรายการเข้า-ออกล่าสุด
-  async getRecentActivities(limit = 10, userCompanyId = null, filterCompanyId = null, dateFrom = null, dateTo = null, search = null, vehicleType = null) {
+  async getRecentActivities(limit = 10, userId = null, filterCompanyId = null, dateFrom = null, dateTo = null, search = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const request = pool.request();
 
-      // กำหนด companyId สุดท้าย
-      let finalCompanyId;
-      if (userCompanyId === null || userCompanyId === undefined) {
-        // Super Admin: ใช้ filterCompanyId ที่เลือกจาก dropdown
-        finalCompanyId = filterCompanyId;
-      } else {
-        // Company Admin: บังคับใช้ IC_ID ของตัวเอง
-        finalCompanyId = userCompanyId;
+      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      let accessibleCompanyIds = null;
+      if (userId) {
+        accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(userId);
       }
 
-      const companyId = finalCompanyId;
+      // กำหนด companyId สุดท้าย (ตาม role)
+      let finalCompanyIds = null;
+      if (accessibleCompanyIds === null) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+        if (filterCompanyId) {
+          finalCompanyIds = [parseInt(filterCompanyId)];
+        } else {
+          finalCompanyIds = null; // เห็นทุก Company
+        }
+      } else {
+        // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
+        // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+        // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+        if (filterCompanyId && accessibleCompanyIds.includes(parseInt(filterCompanyId))) {
+          finalCompanyIds = [parseInt(filterCompanyId)];
+        } else {
+          finalCompanyIds = accessibleCompanyIds;
+        }
+      }
 
       // สร้าง WHERE conditions
       const conditions = [];
 
-      // กรอง company
-      if (companyId) {
-        conditions.push('WI.IC_ID = @CompanyId');
-        request.input('CompanyId', sql.Int, parseInt(companyId));
+      // กรอง company (ใช้ IN แทน = เพื่อรองรับหลาย Company)
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const placeholders = finalCompanyIds.map((_, index) => `@CompanyId${index}`).join(', ');
+        conditions.push(`WI.IC_ID IN (${placeholders})`);
+        finalCompanyIds.forEach((companyId, index) => {
+          request.input(`CompanyId${index}`, sql.Int, companyId);
+        });
       }
 
       // กรอง date range

@@ -11,18 +11,7 @@ class DashboardController {
       const dateTo = req.query.dateTo || null;
       const vehicleType = req.query.vehicleType || null;
 
-      // ดึง IC_ID ของ user จาก database
-      let userCompanyId = null;
-      if (userId) {
-        const pool = await require('../service/db.service').connect();
-        const userQuery = `SELECT IC_ID FROM [dbo].[SystemUser] WHERE SU_ID = @UserId`;
-        const userResult = await pool.request()
-          .input('UserId', require('mssql').Int, userId)
-          .query(userQuery);
-        userCompanyId = userResult.recordset[0]?.IC_ID || null;
-      }
-
-      const stats = await dashboardService.getTodayStats(userCompanyId, filterCompanyId, dateFrom, dateTo, vehicleType);
+      const stats = await dashboardService.getTodayStats(userId, filterCompanyId, dateFrom, dateTo, vehicleType);
 
       res.status(200).json({
         success: true,
@@ -49,18 +38,7 @@ class DashboardController {
       const search = req.query.search || null;
       const vehicleType = req.query.vehicleType || null;
 
-      // ดึง IC_ID ของ user จาก database
-      let userCompanyId = null;
-      if (userId) {
-        const pool = await require('../service/db.service').connect();
-        const userQuery = `SELECT IC_ID FROM [dbo].[SystemUser] WHERE SU_ID = @UserId`;
-        const userResult = await pool.request()
-          .input('UserId', require('mssql').Int, userId)
-          .query(userQuery);
-        userCompanyId = userResult.recordset[0]?.IC_ID || null;
-      }
-
-      const activities = await dashboardService.getRecentActivities(limit, userCompanyId, filterCompanyId, dateFrom, dateTo, search, vehicleType);
+      const activities = await dashboardService.getRecentActivities(limit, userId, filterCompanyId, dateFrom, dateTo, search, vehicleType);
 
       res.status(200).json({
         success: true,

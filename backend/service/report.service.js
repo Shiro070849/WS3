@@ -1,5 +1,6 @@
 const sql = require("mssql");
 const dbService = require("./db.service");
+const settingsService = require("./settings.service");
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
@@ -10,6 +11,32 @@ class ReportService {
   static async getReports(filters = {}) {
     try {
       const pool = await dbService.connect();
+
+      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      let accessibleCompanyIds = null;
+      if (filters.userId) {
+        accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(filters.userId);
+      }
+
+      // กำหนด companyId สุดท้าย (ตาม role)
+      let finalCompanyIds = null;
+      if (accessibleCompanyIds === null) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+        if (filters.companyId && filters.companyId !== 'undefined') {
+          finalCompanyIds = [parseInt(filters.companyId)];
+        } else {
+          finalCompanyIds = null; // เห็นทุก Company
+        }
+      } else {
+        // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
+        // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+        // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+        if (filters.companyId && filters.companyId !== 'undefined' && accessibleCompanyIds.includes(parseInt(filters.companyId))) {
+          finalCompanyIds = [parseInt(filters.companyId)];
+        } else {
+          finalCompanyIds = accessibleCompanyIds;
+        }
+      }
 
       let query = `
         SELECT
@@ -48,8 +75,10 @@ class ReportService {
         query += ` AND CAST(WI.WI_RecordedOn AS DATE) <= '${filters.endDate}'`;
       }
 
-      if (filters.companyId && filters.companyId !== 'undefined') {
-        query += ` AND WI.IC_ID = ${parseInt(filters.companyId)}`;
+      // Filter by company (ใช้ IN แทน = เพื่อรองรับหลาย Company)
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        query += ` AND WI.IC_ID IN (${companyIdsStr})`;
       }
 
       if (filters.vehicleType) {
@@ -293,6 +322,32 @@ class ReportService {
     try {
       const pool = await dbService.connect();
 
+      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      let accessibleCompanyIds = null;
+      if (filters.userId) {
+        accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(filters.userId);
+      }
+
+      // กำหนด companyId สุดท้าย (ตาม role)
+      let finalCompanyIds = null;
+      if (accessibleCompanyIds === null) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+        if (filters.companyId && filters.companyId !== 'undefined') {
+          finalCompanyIds = [parseInt(filters.companyId)];
+        } else {
+          finalCompanyIds = null; // เห็นทุก Company
+        }
+      } else {
+        // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
+        // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+        // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+        if (filters.companyId && filters.companyId !== 'undefined' && accessibleCompanyIds.includes(parseInt(filters.companyId))) {
+          finalCompanyIds = [parseInt(filters.companyId)];
+        } else {
+          finalCompanyIds = accessibleCompanyIds;
+        }
+      }
+
       let query = `
         SELECT
           COUNT(*) AS TotalVehicles,
@@ -313,9 +368,10 @@ class ReportService {
         query += ` AND CAST(WI.WI_RecordedOn AS DATE) <= '${filters.endDate}'`;
       }
 
-      // เพิ่ม company filter
-      if (filters.companyId && filters.companyId !== 'undefined') {
-        query += ` AND WI.IC_ID = ${parseInt(filters.companyId)}`;
+      // Filter by company (ใช้ IN แทน = เพื่อรองรับหลาย Company)
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        query += ` AND WI.IC_ID IN (${companyIdsStr})`;
       }
 
       if (filters.vehicleType) {

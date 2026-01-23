@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const dbService = require('./db.service');
+const settingsService = require('./settings.service');
 
 class StatisticsService {
   // Helper function สำหรับคำนวณวันที่ตาม period
@@ -38,8 +39,40 @@ class StatisticsService {
     return (((current - previous) / previous) * 100).toFixed(1);
   }
 
+  // Helper function: ดึง Company IDs ที่ User เห็นได้
+  async getFinalCompanyIds(userId, filterCompanyId) {
+    // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+    let accessibleCompanyIds = null;
+    if (userId) {
+      accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(userId);
+    }
+
+    // กำหนด companyId สุดท้าย (ตาม role)
+    let finalCompanyIds = null;
+    if (accessibleCompanyIds === null) {
+      // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+      if (filterCompanyId) {
+        finalCompanyIds = [parseInt(filterCompanyId)];
+      } else {
+        finalCompanyIds = null; // เห็นทุก Company
+      }
+    } else {
+      // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
+      // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+      // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+      if (filterCompanyId && accessibleCompanyIds.includes(parseInt(filterCompanyId))) {
+        finalCompanyIds = [parseInt(filterCompanyId)];
+      } else {
+        finalCompanyIds = accessibleCompanyIds;
+      }
+    }
+
+    return finalCompanyIds;
+  }
+
   // Helper function: สร้าง WHERE clause สำหรับกรอง company และ date range
-  buildWhereClause(companyId, startDate, endDate, vehicleType) {
+  // companyIds: Array ของ Company IDs (null = Super Admin เห็นทุก Company)
+  buildWhereClause(companyIds, startDate, endDate, vehicleType) {
     const conditions = [];
 
     if (startDate && endDate) {
@@ -47,9 +80,15 @@ class StatisticsService {
       conditions.push(`WI.WI_RecordedOn <= '${endDate.toISOString()}'`);
     }
 
-    if (companyId) {
-      conditions.push(`WI.IC_ID = ${parseInt(companyId)}`);
+    if (companyIds && companyIds.length > 0) {
+      // ใช้ IN สำหรับหลาย Company
+      const companyIdsStr = companyIds.map(id => parseInt(id)).join(', ');
+      conditions.push(`WI.IC_ID IN (${companyIdsStr})`);
+    } else if (companyIds === null) {
+      // Super Admin: ไม่ต้อง filter (เห็นทุก Company)
+      // ไม่ต้องเพิ่ม condition
     }
+    // ถ้า companyIds = [] (empty array) → ไม่เห็น Company ไหนเลย (ไม่ควรเกิด)
 
     if (vehicleType) {
       conditions.push(`WI.WI_VehicleType = N'${vehicleType}'`);
@@ -59,15 +98,19 @@ class StatisticsService {
   }
 
   // 1. ดึงสถิติภาพรวม
-  async getOverviewStats(period = 'week', companyId = null, vehicleType = null) {
+  async getOverviewStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
+      // ดึง Company IDs ที่ User เห็นได้
+      const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
+
       // สร้าง company และ vehicleType filter
       let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        companyFilter = `AND WI.IC_ID IN (${companyIdsStr})`;
       }
       if (vehicleType) {
         companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
@@ -154,15 +197,19 @@ class StatisticsService {
   }
 
   // 2. ดึงข้อมูลประเภทรถ
-  async getVehicleTypeStats(period = 'week', companyId = null, vehicleType = null) {
+  async getVehicleTypeStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
+      // ดึง Company IDs ที่ User เห็นได้
+      const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
+
       // สร้าง company และ vehicleType filter
       let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND IC_ID = ${parseInt(companyId)}`;
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        companyFilter = `AND IC_ID IN (${companyIdsStr})`;
       }
       if (vehicleType) {
         companyFilter += ` AND WI_VehicleType = N'${vehicleType}'`;
@@ -205,15 +252,19 @@ class StatisticsService {
   }
 
   // 3. ดึงข้อมูลช่วงเวลาเร่งด่วน
-  async getPeakHoursStats(period = 'week', companyId = null, vehicleType = null) {
+  async getPeakHoursStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
+      // ดึง Company IDs ที่ User เห็นได้
+      const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
+
       // สร้าง company และ vehicleType filter
       let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND IC_ID = ${parseInt(companyId)}`;
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        companyFilter = `AND IC_ID IN (${companyIdsStr})`;
       }
       if (vehicleType) {
         companyFilter += ` AND WI_VehicleType = N'${vehicleType}'`;
@@ -247,15 +298,19 @@ class StatisticsService {
   }
 
   // 4. ดึงข้อมูลบริษัทที่ใช้บริการบ่อยที่สุด
-  async getTopCompaniesStats(period = 'week', limit = 5, companyId = null, vehicleType = null) {
+  async getTopCompaniesStats(period = 'week', limit = 5, userId = null, filterCompanyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
+      // ดึง Company IDs ที่ User เห็นได้
+      const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
+
       // สร้าง company และ vehicleType filter
       let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        companyFilter = `AND WI.IC_ID IN (${companyIdsStr})`;
       }
       if (vehicleType) {
         companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
@@ -290,15 +345,19 @@ class StatisticsService {
   }
 
   // 5. ดึงข้อมูลแนวโน้มการเข้า-ออก (สำหรับกราฟ)
-  async getTrafficTrendStats(period = 'week', companyId = null, vehicleType = null) {
+  async getTrafficTrendStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
+      // ดึง Company IDs ที่ User เห็นได้
+      const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
+
       // สร้าง company และ vehicleType filter
       let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        companyFilter = `AND WI.IC_ID IN (${companyIdsStr})`;
       }
       if (vehicleType) {
         companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
@@ -349,15 +408,19 @@ class StatisticsService {
   }
 
   // 6. ดึงสถิติเพิ่มเติม
-  async getAdditionalStats(period = 'week', companyId = null, vehicleType = null) {
+  async getAdditionalStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
     try {
       const pool = await dbService.connect();
       const { startDate, endDate } = this.getDateRange(period);
 
+      // ดึง Company IDs ที่ User เห็นได้
+      const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
+
       // สร้าง company และ vehicleType filter
       let companyFilter = '';
-      if (companyId) {
-        companyFilter = `AND WI.IC_ID = ${parseInt(companyId)}`;
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        companyFilter = `AND WI.IC_ID IN (${companyIdsStr})`;
       }
       if (vehicleType) {
         companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
@@ -378,14 +441,15 @@ class StatisticsService {
       const avgMinutes = avgTimeResult.recordset[0].avgMinutes || 0;
       const avgHours = (avgMinutes / 60).toFixed(1);
 
-      // นับจำนวนบริษัททั้งหมด (ถ้ากรองตาม company จะแสดง 1 บริษัท)
+      // นับจำนวนบริษัททั้งหมด (ถ้ากรองตาม company จะแสดงจำนวนบริษัทที่ User เห็นได้)
       let companyResult;
-      if (companyId) {
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
         companyResult = await pool.request()
           .query(`
             SELECT COUNT(DISTINCT IC_ID) as count
             FROM [dbo].[InternalCompany]
-            WHERE IC_IsActive = 1 AND IC_ID = ${parseInt(companyId)}
+            WHERE IC_IsActive = 1 AND IC_ID IN (${companyIdsStr})
           `);
       } else {
         companyResult = await pool.request()

@@ -35,10 +35,10 @@
               v-model="filters.companyId"
               class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @change="fetchReport"
-              :disabled="isCompanyAdmin && companies.length === 1"
+              :disabled="companies.length === 1"
             >
-              <!-- Super Admin เท่านั้นที่เห็น "ทั้งหมด" -->
-              <option v-if="!isCompanyAdmin" value="">ทั้งหมด</option>
+              <!-- แสดง "ทั้งหมด" เมื่อมีหลายบริษัท -->
+              <option v-if="companies.length > 1" value="">ทั้งหมด</option>
               <option
                 v-for="company in companies"
                 :key="company.IC_ID"

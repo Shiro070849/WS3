@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const dbService = require('./db.service');
+const settingsService = require('./settings.service');
 
 class VehicleService {
   /**
@@ -15,16 +16,43 @@ class VehicleService {
 
       const offset = (page - 1) * limit;
 
+      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      let accessibleCompanyIds = null;
+      if (filters.userId) {
+        accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(filters.userId);
+      }
+
+      console.log(`🚗 [VEHICLE SERVICE] Input: userId=${filters.userId}, companyId=${filters.companyId}, accessibleCompanyIds=${accessibleCompanyIds === null ? 'null (Super Admin)' : `[${accessibleCompanyIds.join(', ')}]`}`);
+
       // กำหนด companyId สุดท้าย (ตาม role)
-      let finalCompanyId;
-      if (filters.userCompanyId === null || filters.userCompanyId === undefined) {
-        // Super Admin: ใช้ filterCompanyId ที่เลือก
-        finalCompanyId = filters.companyId;
-        console.log(`🚗 [SUPER ADMIN] Vehicle filter by companyId: ${finalCompanyId || 'ALL'}`);
+      let finalCompanyIds = null;
+      if (accessibleCompanyIds === null) {
+        // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+        if (filters.companyId) {
+          finalCompanyIds = [parseInt(filters.companyId)];
+          console.log(`🚗 [SUPER ADMIN] Vehicle filter by companyId: ${filters.companyId}`);
+        } else {
+          finalCompanyIds = null; // เห็นทุก Company
+          console.log(`🚗 [SUPER ADMIN] Vehicle filter: ALL companies`);
+        }
       } else {
-        // Company Admin: บังคับใช้ IC_ID ของตัวเอง
-        finalCompanyId = filters.userCompanyId;
-        console.log(`🚗 [COMPANY ADMIN] Vehicle forced filter by companyId: ${finalCompanyId}`);
+        // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
+        // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+        // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+        const requestedCompanyId = filters.companyId ? parseInt(filters.companyId) : null;
+        console.log(`🚗 [USER] Requested companyId: ${requestedCompanyId}, Accessible: [${accessibleCompanyIds.join(', ')}]`);
+        
+        if (requestedCompanyId && accessibleCompanyIds.includes(requestedCompanyId)) {
+          finalCompanyIds = [requestedCompanyId];
+          console.log(`🚗 [USER] Vehicle filter by selected companyId: ${requestedCompanyId}`);
+        } else {
+          finalCompanyIds = accessibleCompanyIds;
+          if (requestedCompanyId) {
+            console.log(`⚠️ [USER] Requested companyId ${requestedCompanyId} not in accessible list, using all accessible companies`);
+          } else {
+            console.log(`🚗 [USER] Vehicle filter by accessible companies: [${accessibleCompanyIds.join(', ')}]`);
+          }
+        }
       }
 
       // Base query
@@ -65,10 +93,14 @@ class VehicleService {
         request.input('DateTo', sql.DateTime, endOfDay);
       }
 
-      // Filter by company (ใช้ finalCompanyId แทน filters.companyId)
-      if (finalCompanyId) {
-        whereConditions.push('WI.IC_ID = @CompanyId');
-        request.input('CompanyId', sql.Int, parseInt(finalCompanyId));
+      // Filter by company (ใช้ IN แทน = เพื่อรองรับหลาย Company)
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        // สร้าง IN clause สำหรับหลาย Company IDs
+        const placeholders = finalCompanyIds.map((_, index) => `@CompanyId${index}`).join(', ');
+        whereConditions.push(`WI.IC_ID IN (${placeholders})`);
+        finalCompanyIds.forEach((companyId, index) => {
+          request.input(`CompanyId${index}`, sql.Int, companyId);
+        });
       }
 
       // Filter by vehicle type
@@ -140,31 +172,68 @@ class VehicleService {
 
       const result = await request.query(query);
 
-      // Count total records
-      const countQuery = `
-        SELECT COUNT(*) as Total
-        FROM [dbo].[WayIn] WI
-        LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
-        ${whereClause}
-      `;
-
+      // Count total records (ใช้ whereConditions เดียวกัน)
+      const countWhereConditions = [];
       const countRequest = pool.request();
-      if (filters.search) {
-        countRequest.input('Search', sql.NVarChar, `%${filters.search}%`);
+
+      // Filter by status
+      if (filters.status) {
+        if (filters.status === 'pending') {
+          countWhereConditions.push('WO.WO_ID IS NULL');
+        } else if (filters.status === 'in') {
+          countWhereConditions.push('WO.WO_ID IS NULL');
+        } else if (filters.status === 'out') {
+          countWhereConditions.push('WO.WO_ID IS NOT NULL');
+        }
       }
+
+      // Filter by search
+      if (filters.search) {
+        countWhereConditions.push(
+          "(WI.WI_LicensePlate LIKE @SearchCount OR WI.WI_Barcode LIKE @SearchCount OR WI.WI_FullName LIKE @SearchCount OR CAST(WI.WI_Sequence AS NVARCHAR) LIKE @SearchCount)"
+        );
+        countRequest.input('SearchCount', sql.NVarChar, `%${filters.search}%`);
+      }
+
+      // Filter by date range
       if (filters.dateFrom) {
         const startOfDay = new Date(filters.dateFrom);
         startOfDay.setHours(0, 0, 0, 0);
-        countRequest.input('DateFrom', sql.DateTime, startOfDay);
+        countWhereConditions.push('WI.WI_RecordedOn >= @DateFromCount');
+        countRequest.input('DateFromCount', sql.DateTime, startOfDay);
       }
       if (filters.dateTo) {
         const endOfDay = new Date(filters.dateTo);
         endOfDay.setHours(23, 59, 59, 999);
-        countRequest.input('DateTo', sql.DateTime, endOfDay);
+        countWhereConditions.push('WI.WI_RecordedOn <= @DateToCount');
+        countRequest.input('DateToCount', sql.DateTime, endOfDay);
       }
-      if (finalCompanyId) {
-        countRequest.input('CompanyId', sql.Int, parseInt(finalCompanyId));
+
+      // Filter by company (ใช้ IN แทน =)
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const placeholders = finalCompanyIds.map((_, index) => `@CompanyIdCount${index}`).join(', ');
+        countWhereConditions.push(`WI.IC_ID IN (${placeholders})`);
+        finalCompanyIds.forEach((companyId, index) => {
+          countRequest.input(`CompanyIdCount${index}`, sql.Int, companyId);
+        });
       }
+
+      // Filter by vehicle type
+      if (filters.vehicleType) {
+        countWhereConditions.push('WI.WI_VehicleType = @VehicleTypeCount');
+        countRequest.input('VehicleTypeCount', sql.NVarChar, filters.vehicleType);
+      }
+
+      const countWhereClause = countWhereConditions.length > 0
+        ? 'WHERE ' + countWhereConditions.join(' AND ')
+        : '';
+
+      const countQuery = `
+        SELECT COUNT(*) as Total
+        FROM [dbo].[WayIn] WI
+        LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
+        ${countWhereClause}
+      `;
       if (filters.vehicleType) {
         countRequest.input('VehicleType', sql.NVarChar, filters.vehicleType);
       }

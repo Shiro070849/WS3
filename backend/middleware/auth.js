@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const dbService = require('../service/db.service');
+const settingsService = require('../service/settings.service');
 
 /**
  * Middleware สำหรับดึงข้อมูล User และ IC_ID จาก userId
@@ -36,17 +37,31 @@ async function getUserCompanyInfo(req, res, next) {
     }
 
     const user = result.recordset[0];
+    const isSuperAdmin = user.IC_ID === null || user.IC_ID === undefined;
+
+    // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+    let accessibleCompanyIds = null;
+    if (!isSuperAdmin) {
+      try {
+        accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(user.SU_ID);
+      } catch (error) {
+        console.error('[AUTH] Error getting accessible company IDs:', error);
+        // ถ้า error ให้ใช้ IC_ID เดิมเป็น fallback
+        accessibleCompanyIds = user.IC_ID ? [user.IC_ID] : [];
+      }
+    }
 
     // เก็บข้อมูล user ใน req สำหรับใช้ใน controller/service
     req.user = {
       userId: user.SU_ID,
       username: user.SU_Username,
       name: user.SU_Name1,
-      companyId: user.IC_ID, // null สำหรับ Super Admin
-      isSuperAdmin: user.IC_ID === null || user.IC_ID === undefined
+      companyId: user.IC_ID, // null สำหรับ Super Admin (backward compatible)
+      accessibleCompanyIds: accessibleCompanyIds, // Array ของ Company IDs ที่ User เห็นได้
+      isSuperAdmin: isSuperAdmin
     };
 
-    console.log(`[AUTH] User: ${user.SU_Username}, IC_ID: ${user.IC_ID === null ? 'NULL (Super Admin)' : user.IC_ID}`);
+    console.log(`[AUTH] User: ${user.SU_Username}, IC_ID: ${user.IC_ID === null ? 'NULL (Super Admin)' : user.IC_ID}, Accessible Companies: ${accessibleCompanyIds === null ? 'ALL' : `[${accessibleCompanyIds.join(', ')}]`}`);
 
     next();
   } catch (error) {

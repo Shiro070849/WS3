@@ -37,8 +37,8 @@
             />
           </div>
 
-          <!-- Company Filter (Super Admin only) -->
-          <div v-if="isSuperAdmin">
+          <!-- Company Filter (แสดงเมื่อมีหลายบริษัท) -->
+          <div v-if="companies.length > 1">
             <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               บริษัท
             </label>
@@ -1023,11 +1023,23 @@ const visiblePages = computed(() => {
 const fetchVehicles = async () => {
   loading.value = true;
   try {
-    // Super Admin: ใช้ companyId จาก dropdown filter, Company Admin: ส่ง userId ให้ Backend query IC_ID
-    const filterCompanyId = isSuperAdmin ? (filters.value.companyId || undefined) : undefined;
+    // ส่ง companyId เมื่อ:
+    // 1. Super Admin → ส่ง companyId จาก dropdown (ถ้าเลือก)
+    // 2. User ที่มีหลาย Company → ส่ง companyId จาก dropdown (ถ้าเลือก)
+    // 3. User ที่มี 1 Company → ไม่ต้องส่ง (Backend จะใช้ accessibleCompanyIds อัตโนมัติ)
+    const filterCompanyId = (companies.value.length > 1 && filters.value.companyId) 
+      ? filters.value.companyId 
+      : undefined;
+
+    console.log('[VehicleView] Fetch vehicles with:', {
+      userId,
+      companyId: filterCompanyId,
+      companiesCount: companies.value.length,
+      selectedCompanyId: filters.value.companyId
+    });
 
     const params = {
-      userId: userId, // ส่ง userId ไปให้ Backend query IC_ID
+      userId: userId, // ส่ง userId ไปให้ Backend query accessibleCompanyIds
       search: filters.value.search || undefined,
       status: filters.value.status || undefined,
       vehicleType: filters.value.vehicleType || undefined,
@@ -1035,7 +1047,7 @@ const fetchVehicles = async () => {
       dateTo: filters.value.dateTo || undefined,
       page: pagination.value.page,
       limit: pagination.value.limit,
-      companyId: filterCompanyId, // Super Admin: dropdown filter, Company Admin: undefined
+      companyId: filterCompanyId, // ส่งเมื่อมีหลายบริษัทและเลือกแล้ว
     };
 
     const response = await vehiclesAPI.getAll(params);
@@ -1057,12 +1069,18 @@ const fetchVehicles = async () => {
 
 const fetchCompanies = async () => {
   try {
-    // ใช้ getAccessible แทน getAll เพื่อไม่ต้องการ SETTINGS permission
-    const response = await companiesAPI.getAccessible();
-    // Filter only active companies (IC_IsActive can be true, 1, or '1')
-    companies.value = response.data.data.filter(c => c.IC_IsActive === true || c.IC_IsActive === 1 || c.IC_IsActive === '1');
+    // ใช้ getAccessible พร้อม userId เพื่อให้ Backend ดึงบริษัทที่ User เข้าถึงได้
+    const response = await companiesAPI.getAccessible(userId);
+    console.log('[VehicleView] Fetched companies:', response.data.data);
+    // Backend กรอง IC_IsActive = 1 ให้แล้ว ไม่ต้อง filter ซ้ำ
+    companies.value = response.data.data || [];
+    console.log('[VehicleView] Companies count:', companies.value.length);
+    
+    // ถ้ามีหลายบริษัท → แสดง dropdown
+    // ถ้ามี 1 บริษัท → ไม่แสดง dropdown (จะใช้บริษัทนั้นอัตโนมัติ)
   } catch (error) {
     console.error('Error fetching companies:', error);
+    toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดรายการบริษัทได้');
   }
 };
 

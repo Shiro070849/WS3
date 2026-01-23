@@ -39,8 +39,8 @@
             />
           </div>
 
-          <!-- Company Filter (Super Admin only) -->
-          <div v-if="isSuperAdmin">
+          <!-- Company Filter (แสดงเมื่อมีหลายบริษัท) -->
+          <div v-if="companies.length > 1">
             <label class="block mb-2 text-base font-semibold text-gray-700 font-prompt">
               บริษัท ({{ companies.length }} บริษัท)
             </label>
@@ -58,10 +58,10 @@
                 {{ company.IC_LocalName }}
               </option>
             </select>
-            <p v-if="companies.length === 0" class="mt-1 text-xs text-red-500">
-              ⚠️ ไม่พบข้อมูลบริษัท - กรุณาตรวจสอบ Console (F12)
-            </p>
           </div>
+          <p v-if="companies.length === 0" class="mt-1 text-xs text-red-500">
+            ⚠️ ไม่พบข้อมูลบริษัท - กรุณาตรวจสอบ Console (F12)
+          </p>
 
           <!-- Vehicle Type Filter -->
           <div>

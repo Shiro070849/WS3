@@ -8,6 +8,7 @@ exports.getReports = async (req, res) => {
     const filters = {
       startDate: req.query.startDate,
       endDate: req.query.endDate,
+      userId: req.query.userId ? parseInt(req.query.userId) : null,
       companyId: req.query.companyId,
       status: req.query.status,
       vehicleType: req.query.vehicleType,
@@ -105,6 +106,7 @@ exports.getStatistics = async (req, res) => {
     const filters = {
       startDate: req.query.startDate,
       endDate: req.query.endDate,
+      userId: req.query.userId ? parseInt(req.query.userId) : null,
       companyId: req.query.companyId,
       vehicleType: req.query.vehicleType,
     };

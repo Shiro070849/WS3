@@ -398,23 +398,40 @@
     <!-- MODAL: ผู้ใช้งาน -->
     <BaseModal :show="userModal.show" :title="userModal.title" @close="closeUserModal" size="lg">
       <div class="space-y-4">
-        <!-- เลือกบริษัท (สำหรับ Super Admin เท่านั้น) -->
+        <!-- เลือกบริษัท (สำหรับ Super Admin เท่านั้น) - Multi-select -->
         <div v-if="isMainAdmin">
           <label class="block text-sm font-medium text-gray-700 mb-1.5">
             บริษัท <span class="text-red-500">*</span>
+            <span class="text-xs text-gray-500 font-normal ml-2">(สามารถเลือกหลายบริษัทได้)</span>
           </label>
-          <select
-            v-model="userForm.companyId"
-            class="block w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
-            required
-          >
-            <option value="">เลือกบริษัท</option>
-            <template v-for="company in companies" :key="company.IC_ID">
-              <option v-if="company.IC_IsActive" :value="company.IC_ID" style="font-size: 14px;">
-                {{ company.IC_Code }} - {{ company.IC_LocalName }}
-              </option>
-            </template>
-          </select>
+          <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
+            <div v-if="companies.filter(c => c.IC_IsActive).length === 0" class="text-sm text-gray-500 text-center py-2">
+              ไม่มีบริษัทที่ใช้งาน
+            </div>
+            <div v-else class="space-y-2">
+              <label
+                v-for="company in companies.filter(c => c.IC_IsActive)"
+                :key="company.IC_ID"
+                class="flex items-center p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  :value="company.IC_ID"
+                  v-model="userForm.companyIds"
+                  class="w-4 h-4 text-[#0090D3] border-gray-300 rounded focus:ring-[#0090D3] cursor-pointer"
+                />
+                <span class="ml-2 text-sm text-gray-700">
+                  {{ company.IC_Code }} - {{ company.IC_LocalName }}
+                </span>
+              </label>
+            </div>
+          </div>
+          <p class="mt-1 text-xs text-gray-500">
+            เลือกบริษัทที่ผู้ใช้งานนี้สามารถเข้าถึงได้ (สามารถเลือกหลายบริษัท)
+          </p>
+          <p v-if="userForm.companyIds && userForm.companyIds.length > 0" class="mt-1 text-xs text-blue-600">
+            เลือกแล้ว {{ userForm.companyIds.length }} บริษัท
+          </p>
         </div>
 
         <BaseInput v-model="userForm.code" label="รหัสพนักงาน" placeholder="เช่น 100001" required />
@@ -965,7 +982,7 @@ const users = ref([]);
 const userLoading = ref(false);
 const userSaving = ref(false);
 const userModal = ref({ show: false, isEdit: false, title: '', id: null });
-const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: null, roleId: null });
+const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: null, companyIds: [], roleId: null });
 const roles = ref([]);
 const userPagination = ref({ page: 1, limit: 25, total: 0, totalPages: 0 });
 const userSearch = ref('');
@@ -1079,7 +1096,19 @@ const openUserModal = async () => {
   userModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งานใหม่', id: null };
   // ถ้าไม่ใช่ Super Admin ให้ใช้ company ของตัวเอง
   const defaultCompanyId = isMainAdmin.value ? null : selectedCompanyId.value;
-  userForm.value = { code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: defaultCompanyId, roleId: null };
+  userForm.value = { 
+    code: '', 
+    name1: '', 
+    name2: '', 
+    username: '', 
+    password: '', 
+    email: '', 
+    active: true, 
+    remarks: '', 
+    companyId: defaultCompanyId, // Backward compatible
+    companyIds: isMainAdmin.value ? [] : (defaultCompanyId ? [defaultCompanyId] : []), // Multi-select
+    roleId: null 
+  };
   
   // ตรวจสอบว่า roles ถูกโหลดแล้วหรือยัง
   if (roles.value.length === 0) {
@@ -1095,6 +1124,21 @@ const editUser = async (row) => {
   }
 
   userModal.value = { show: true, isEdit: true, title: 'แก้ไขผู้ใช้งาน', id: row.SU_ID };
+  
+  // ดึงข้อมูล User เพิ่มเติม (เพื่อได้ companyIds)
+  let companyIds = [];
+  try {
+    const userResponse = await usersAPI.getById(row.SU_ID);
+    if (userResponse.data.success && userResponse.data.data) {
+      companyIds = userResponse.data.data.companyIds || [];
+      console.log('[EDIT USER] Loaded companyIds:', companyIds);
+    }
+  } catch (error) {
+    console.warn('[EDIT USER] Could not load companyIds, using fallback:', error);
+    // Fallback: ใช้ IC_ID เดิม
+    companyIds = row.IC_ID ? [row.IC_ID] : [];
+  }
+
   userForm.value = {
     code: row.SU_Code,
     name1: row.SU_Name1,
@@ -1104,7 +1148,8 @@ const editUser = async (row) => {
     email: row.SU_Email || '',
     active: row.SU_Active,
     remarks: row.SU_Remarks || '',
-    companyId: row.IC_ID || null,
+    companyId: row.IC_ID || null, // Backward compatible
+    companyIds: companyIds, // Multi-select
     roleId: row.SR_ID || null
   };
 
@@ -1119,15 +1164,16 @@ const closeUserModal = () => {
 };
 
 const saveUser = async () => {
-  // Validation: ถ้าเป็น Super Admin ต้องเลือกบริษัท
-  if (isMainAdmin.value && !userForm.value.companyId) {
-    toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกบริษัท');
+  // Validation: ถ้าเป็น Super Admin ต้องเลือกบริษัทอย่างน้อย 1 บริษัท
+  if (isMainAdmin.value && (!userForm.value.companyIds || userForm.value.companyIds.length === 0)) {
+    toast.warning('ข้อมูลไม่ครบ', 'กรุณาเลือกบริษัทอย่างน้อย 1 บริษัท');
     return;
   }
 
   // Validation: Company Admin ต้องใช้บริษัทของตัวเองเท่านั้น
   if (!isMainAdmin.value) {
-    userForm.value.companyId = selectedCompanyId.value;
+    userForm.value.companyIds = [selectedCompanyId.value];
+    userForm.value.companyId = selectedCompanyId.value; // Backward compatible
   }
 
   // Validation: ต้องเลือก Role
@@ -1138,6 +1184,24 @@ const saveUser = async () => {
 
   userSaving.value = true;
   try {
+    // Debug: ตรวจสอบค่าก่อนสร้าง payload
+    console.log('[SAVE USER] userForm.companyIds:', userForm.value.companyIds);
+    console.log('[SAVE USER] userForm.companyId:', userForm.value.companyId);
+    console.log('[SAVE USER] isMainAdmin:', isMainAdmin.value);
+
+    // กำหนด companyId (single) จาก companyIds (Array) สำหรับ Backward Compatible
+    const primaryCompanyId = userForm.value.companyIds && userForm.value.companyIds.length > 0 
+      ? userForm.value.companyIds[0] 
+      : userForm.value.companyId;
+
+    console.log('[SAVE USER] primaryCompanyId:', primaryCompanyId);
+    console.log('[SAVE USER] final companyIds:', userForm.value.companyIds);
+
+    // ตรวจสอบว่า companyIds มีค่าหรือไม่ (ไม่ใช่ empty array)
+    const finalCompanyIds = (userForm.value.companyIds && userForm.value.companyIds.length > 0) 
+      ? userForm.value.companyIds 
+      : (primaryCompanyId ? [primaryCompanyId] : []);
+
     const payload = {
       code: userForm.value.code,
       name1: userForm.value.name1,
@@ -1146,9 +1210,12 @@ const saveUser = async () => {
       email: userForm.value.email,
       active: userForm.value.active,
       remarks: userForm.value.remarks,
-      companyId: userForm.value.companyId,
+      companyId: primaryCompanyId, // Backward compatible (ใช้ค่าแรกของ Array)
+      companyIds: finalCompanyIds, // Multi-select (ส่ง Array) - ต้องมีอย่างน้อย 1 ตัว
       roleId: userForm.value.roleId
     };
+
+    console.log('[SAVE USER] Final payload:', JSON.stringify(payload, null, 2));
 
     if (userModal.value.isEdit) {
       await usersAPI.update(userModal.value.id, payload);

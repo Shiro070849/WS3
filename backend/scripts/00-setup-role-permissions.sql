@@ -183,3 +183,4 @@ INNER JOIN [dbo].[SystemScreen] ss ON srss.SS_ID = ss.SS_ID
 ORDER BY sr.SR_Code, ss.SS_ID;
 
 PRINT 'Setup completed successfully!';
+
