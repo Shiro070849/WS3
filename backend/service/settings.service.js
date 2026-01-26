@@ -100,10 +100,15 @@ class SettingsService {
             IC_ShortLocalName,
             IC_ShortEnglishName,
             IC_LogoPath,
-            IC_IsActive
+            IC_IsActive,
+            Company_Sequence
           FROM [dbo].[InternalCompany]
           WHERE IC_IsActive = 1
-          ORDER BY IC_Code ASC
+          ORDER BY
+            CASE
+              WHEN Company_Sequence IS NULL THEN 999999
+              ELSE Company_Sequence
+            END ASC
         `;
         result = await pool.request().query(query);
         console.log(`✅ Super Admin (IC_ID = NULL): คืนทุกบริษัท (${result.recordset.length} บริษัท)`);
@@ -118,13 +123,18 @@ class SettingsService {
             IC.IC_ShortLocalName,
             IC.IC_ShortEnglishName,
             IC.IC_LogoPath,
-            IC.IC_IsActive
+            IC.IC_IsActive,
+            IC.Company_Sequence
           FROM [dbo].[SystemUserCompany] SUC
           INNER JOIN [dbo].[InternalCompany] IC ON SUC.IC_ID = IC.IC_ID
           WHERE SUC.SU_ID = @UserId
             AND SUC.SUC_IsActive = 1
             AND IC.IC_IsActive = 1
-          ORDER BY IC.IC_Code ASC
+          ORDER BY
+            CASE
+              WHEN IC.Company_Sequence IS NULL THEN 999999
+              ELSE IC.Company_Sequence
+            END ASC
         `;
         result = await pool.request()
           .input('UserId', sql.Int, userId)
