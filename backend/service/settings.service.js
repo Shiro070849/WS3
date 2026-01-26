@@ -124,17 +124,17 @@ class SettingsService {
             IC.IC_ShortEnglishName,
             IC.IC_LogoPath,
             IC.IC_IsActive,
-            IC.Company_Sequence
+            IC.Company_Sequence,
+            CASE
+              WHEN IC.Company_Sequence IS NULL THEN 999999
+              ELSE IC.Company_Sequence
+            END AS SortOrder
           FROM [dbo].[SystemUserCompany] SUC
           INNER JOIN [dbo].[InternalCompany] IC ON SUC.IC_ID = IC.IC_ID
           WHERE SUC.SU_ID = @UserId
             AND SUC.SUC_IsActive = 1
             AND IC.IC_IsActive = 1
-          ORDER BY
-            CASE
-              WHEN IC.Company_Sequence IS NULL THEN 999999
-              ELSE IC.Company_Sequence
-            END ASC
+          ORDER BY SortOrder ASC
         `;
         result = await pool.request()
           .input('UserId', sql.Int, userId)

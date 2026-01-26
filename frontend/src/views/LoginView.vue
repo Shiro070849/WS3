@@ -119,7 +119,7 @@
 
         <!-- Footer - Tailwind Only -->
         <div class="mt-8 pt-6 border-t border-white/10 text-center text-base text-white/60 font-prompt">
-          <p>©2025 SmartSecurity </p>
+          <p>©{{ currentYear }} SmartSecurity </p>
         </div>
       </div>
     </div>
@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { authAPI } from '../services/api'
 import { useTheme } from '@/composables/useTheme'
@@ -143,6 +143,9 @@ const showPassword = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const isLoading = ref(false)
+
+// ปีปัจจุบันสำหรับ copyright (อัพเดทอัตโนมัติทุกปี)
+const currentYear = computed(() => new Date().getFullYear())
 
 // Generate snowflakes once (static positions)
 const snowflakes = Array.from({ length: 20 }, () => ({

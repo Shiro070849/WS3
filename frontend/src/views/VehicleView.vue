@@ -33,7 +33,6 @@
               placeholder="ทะเบียนรถ, ชื่อคนขับ, Sequence"
               class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt"
               @input="handleSearchInput"
-              @keyup.enter="fetchVehicles"
             />
           </div>
 

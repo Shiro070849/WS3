@@ -110,9 +110,9 @@
               v-model="formData.date_format"
               class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0090D3]"
             >
-              <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2025)</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2025)</option>
-              <option value="YYYY-MM-DD">YYYY-MM-DD (2025-12-31)</option>
+              <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/{{ currentYear }})</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/{{ currentYear }})</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD ({{ currentYear }}-12-31)</option>
             </select>
           </div>
 
@@ -162,7 +162,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import BaseCard from '../base/BaseCard.vue';
 import BaseInput from '../base/BaseInput.vue';
 import BaseButton from '../base/BaseButton.vue';
@@ -194,6 +194,9 @@ const formData = ref({
   date_format: 'DD/MM/YYYY',
   time_format: 'HH:mm'
 });
+
+// ปีปัจจุบันสำหรับตัวอย่างวันที่ (อัพเดทอัตโนมัติทุกปี)
+const currentYear = computed(() => new Date().getFullYear());
 
 const originalData = ref({});
 

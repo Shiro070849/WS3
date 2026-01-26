@@ -170,7 +170,7 @@
               <div class="relative flex-1 min-w-[240px]">
                 <input
                   v-model="userSearch"
-                  @keyup.enter="onUserSearch"
+                  @input="onUserSearch"
                   type="text"
                   placeholder="ค้นหา รหัส, ชื่อ, username..."
                   class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent"
@@ -1080,9 +1080,19 @@ const onUserPageChange = (page) => {
   fetchUsers(page);
 };
 
+// Real-time search with debounce
+let userSearchTimeout = null;
 const onUserSearch = () => {
-  userPagination.value.page = 1;
-  fetchUsers(1);
+  // Clear previous timeout
+  if (userSearchTimeout) {
+    clearTimeout(userSearchTimeout);
+  }
+
+  // Set new timeout (300ms delay)
+  userSearchTimeout = setTimeout(() => {
+    userPagination.value.page = 1;
+    fetchUsers(1);
+  }, 300);
 };
 
 // เมื่อเปลี่ยน filter → รีเซ็ต page เป็น 1 และ fetch ใหม่
@@ -1873,11 +1883,16 @@ onBeforeUnmount(() => {
 
 /* Draggable styles */
 .dragging-ghost {
-  opacity: 0.5;
+  opacity: 0.85;
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 144, 211, 0.35), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  border-color: #0090D3 !important;
+  background-color: rgba(239, 246, 255, 0.95) !important;
 }
 
 .dragging-chosen {
   border-color: #0090D3 !important;
   background-color: #eff6ff !important;
+  box-shadow: 0 4px 12px rgba(0, 144, 211, 0.25);
 }
 </style>
