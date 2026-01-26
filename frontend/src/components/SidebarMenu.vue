@@ -306,6 +306,7 @@ const confirmLogout = () => {
   localStorage.removeItem('roleId')     // ล้าง roleId
   localStorage.removeItem('roleCode')   // ล้าง roleCode
   localStorage.removeItem('roleName')   // ล้าง roleName
+  localStorage.removeItem('lastActivityTime')  // ล้าง idle timeout
 
   console.log('[LOGOUT] User logged out successfully - Theme, Permissions, and Logo cleared')
   showLogoutModal.value = false

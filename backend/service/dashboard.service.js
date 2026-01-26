@@ -250,7 +250,7 @@ class DashboardService {
         ORDER BY WI.WI_RecordedOn DESC
       `);
 
-      console.log(`📋 Recent Activities for Company ${companyId || 'ALL'}: ${result.recordset.length} records`);
+      console.log(`📋 Recent Activities for Company ${filterCompanyId || 'ALL'}: ${result.recordset.length} records`);
 
       return result.recordset;
     } catch (error) {

@@ -183,6 +183,10 @@ const handleLogin = async () => {
       localStorage.setItem('roleCode', userData.SR_Code || '')
       localStorage.setItem('roleName', userData.SR_Name || '')
 
+      // SECURITY: บันทึกเวลาใช้งานล่าสุดสำหรับ Idle Timeout (8 ชั่วโมง)
+      localStorage.setItem('lastActivityTime', Date.now().toString())
+      console.log('[LOGIN] Idle timeout set: 8 hours (resets on activity)')
+
       // STEP 4: Load Theme ตามประเภทของ User
       const isSuperAdmin = !userData.IC_ID || userData.IC_ID === null || userData.IC_ID === undefined
 

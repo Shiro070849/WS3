@@ -66,11 +66,29 @@ const router = createRouter({
   routes
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const isAuthenticated = localStorage.getItem('isLoggedIn') === 'true';
   const permissionStore = usePermissionStore();
 
-  // 1. เช็ค Authentication
+  // 1. เช็ค Idle Timeout (8 ชั่วโมงนับจากการใช้งานล่าสุด)
+  if (isAuthenticated) {
+    const lastActivityTime = localStorage.getItem('lastActivityTime');
+    const idleTimeout = 8 * 60 * 60 * 1000; // 8 hours
+
+    if (lastActivityTime && (Date.now() - parseInt(lastActivityTime) > idleTimeout)) {
+      console.warn('[ROUTER] Session idle timeout (8 hours) - Auto logout');
+      // ล้าง localStorage ทั้งหมด
+      localStorage.clear();
+      // Redirect ไป login
+      next('/login');
+      return;
+    }
+
+    // อัพเดทเวลาใช้งานล่าสุดทุกครั้งที่มี navigation
+    localStorage.setItem('lastActivityTime', Date.now().toString());
+  }
+
+  // 2. เช็ค Authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login');
     return;
