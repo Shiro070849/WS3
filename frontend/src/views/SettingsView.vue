@@ -572,7 +572,7 @@
                     <strong class="font-medium text-blue-900">กฎสาขา:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสำนัก (Office) เพื่อจัดโครงสร้าง Tree
                   </span>
                   <span v-else-if="departmentForm.type === 'department'">
-                    <strong class="font-medium text-blue-900">กฎแผนก:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสาขา (Branch) เพื่อจัดโครงสร้าง Tree
+                    <strong class="font-medium text-blue-900">กฎแผนก:</strong> สามารถเป็น Root ได้ หรือเลือก Parent เป็นสาขา (Branch) หรือสำนัก (Office) เพื่อจัดโครงสร้าง Tree
                   </span>
                 </p>
               </div>
@@ -1589,7 +1589,13 @@ const handleDeleteDepartment = async (payload) => {
 
 // Dropdown สำหรับเลือก Parent (filter ตาม hierarchy rules และบริษัท)
 const availableParents = computed(() => {
+  console.log('🔍 [availableParents] START');
+  console.log('  departments.value.length:', departments.value.length);
+  console.log('  companyDepartments.value.length:', companyDepartments.value.length);
+  console.log('  departmentForm.value:', departmentForm.value);
+
   let filtered = departments.value.filter(d => d.ID_IsActive);
+  console.log('  Step 1 - After active filter:', filtered.length, filtered.map(d => d.ID_Code));
 
   // ถ้าเป็นการแก้ไข: ไม่ให้เลือกตัวเองเป็น Parent
   if (departmentModal.value.isEdit) {
@@ -1598,33 +1604,43 @@ const availableParents = computed(() => {
 
   // Filter ตามบริษัท: แสดงเฉพาะแผนกที่อยู่ในบริษัทเดียวกัน
   if (departmentForm.value.companyIds && departmentForm.value.companyIds.length > 0) {
-    // ดึง companyId แรก (สมมุติว่าเพิ่มแผนกให้กับบริษัทเดียวครั้งละบริษัท)
     const targetCompanyId = departmentForm.value.companyIds[0];
+    console.log('  Target Company ID:', targetCompanyId);
 
-    // หา ID ของแผนกที่อยู่ในบริษัทนี้
     const departmentIdsInCompany = companyDepartments.value
       .filter(cd => cd.IC_ID === targetCompanyId && cd.ICD_IsActive)
       .map(cd => cd.ID_ID);
+    console.log('  Department IDs in company:', departmentIdsInCompany);
 
-    // Filter เฉพาะแผนกที่อยู่ในบริษัทนี้
     filtered = filtered.filter(d => departmentIdsInCompany.includes(d.ID_ID));
+    console.log('  Step 2 - After company filter:', filtered.length, filtered.map(d => `${d.ID_Code}(${d.ID_Type})`));
   }
 
-  // Filter ตาม Type Hierarchy Rules (แนะนำโครงสร้าง Tree)
+  // Filter ตาม Type Hierarchy Rules (ยืดหยุ่น)
   // โครงสร้างแนะนำ: Office → Branch → Department
   // แต่ Parent เป็น optional - สามารถเป็น root level ได้
   const selectedType = departmentForm.value.type;
+  console.log('  Selected Type:', selectedType);
 
   if (selectedType === 'office') {
     // office: can have parent=NULL (root) or parent=office (sub-office)
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (selectedType === 'branch') {
-    // branch: recommended to have parent=office (but optional)
+    // branch: can have parent=office (recommended) or root
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (selectedType === 'department') {
-    // department: recommended to have parent=branch (but optional)
-    filtered = filtered.filter(d => d.ID_Type === 'branch');
+    // department: can have parent=branch (recommended) or parent=office (flexible)
+    console.log('  DEBUG Before type filter:', filtered.map(d => ({code: d.ID_Code, type: d.ID_Type, typeOf: typeof d.ID_Type})));
+    filtered = filtered.filter(d => {
+      const isBranch = d.ID_Type === 'branch';
+      const isOffice = d.ID_Type === 'office';
+      console.log(`    ${d.ID_Code}: ID_Type="${d.ID_Type}" isBranch=${isBranch} isOffice=${isOffice}`);
+      return isBranch || isOffice;
+    });
   }
+
+  console.log('  Step 3 - After type filter:', filtered.length, filtered.map(d => `${d.ID_Code}(${d.ID_Type})`));
+  console.log('  ✅ Final result:', filtered);
 
   return filtered;
 });
@@ -1655,18 +1671,18 @@ const availableParentsForMove = computed(() => {
 
   const deptType = movingDept.ID_Type;
 
-  // Filter ตาม Type Hierarchy Rules (แนะนำโครงสร้าง Tree)
+  // Filter ตาม Type Hierarchy Rules (ยืดหยุ่น)
   // โครงสร้างแนะนำ: Office → Branch → Department
   // แต่ Parent เป็น optional - สามารถเป็น root level ได้
   if (deptType === 'office') {
     // office: can have parent=NULL (root) or parent=office (sub-office)
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (deptType === 'branch') {
-    // branch: recommended to have parent=office (but optional)
+    // branch: can have parent=office (recommended) or root
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (deptType === 'department') {
-    // department: recommended to have parent=branch (but optional)
-    filtered = filtered.filter(d => d.ID_Type === 'branch');
+    // department: can have parent=branch (recommended) or parent=office (flexible)
+    filtered = filtered.filter(d => d.ID_Type === 'branch' || d.ID_Type === 'office');
   }
 
   return filtered;
