@@ -291,7 +291,7 @@
             <div v-else class="space-y-4">
               <CompanyTreeNode
                 v-for="company in activeCompanies"
-                :key="company.IC_ID"
+                :key="`${company.IC_ID}-${companyTreeRefreshKey}`"
                 :company="company"
                 @add-child="handleAddChild"
                 @edit="handleEditDepartment"
@@ -1350,6 +1350,7 @@ const changePassword = async () => {
 // ==================== แผนก (Departments) ====================
 const departments = ref([]);
 const departmentSaving = ref(false);
+const companyTreeRefreshKey = ref(0); // Key สำหรับ force refresh company tree
 const departmentModal = ref({ show: false, isEdit: false, title: '', id: null, isAddChild: false, parentId: null });
 const departmentForm = ref({
   code: '',
@@ -1523,7 +1524,11 @@ const saveDepartment = async () => {
     }
 
     closeDepartmentModal();
-    window.location.reload(); // Reload page to refresh all company trees
+
+    // Refresh data แทนการ reload หน้าเว็บ
+    await fetchDepartments();
+    await fetchCompanyDepartments();
+    companyTreeRefreshKey.value++; // Force refresh company tree
   } catch (err) {
     console.error('Error in saveDepartment:', err);
     error(err.response?.data?.message || err.message);
@@ -1557,7 +1562,11 @@ const saveMove = async () => {
     await departmentsAPI.move(moveModal.value.departmentId, newParentId.value);
     success('ย้ายแผนกสำเร็จ');
     closeMoveModal();
-    window.location.reload(); // Reload page to refresh all company trees
+
+    // Refresh data แทนการ reload หน้าเว็บ
+    await fetchDepartments();
+    await fetchCompanyDepartments();
+    companyTreeRefreshKey.value++; // Force refresh company tree
   } catch (err) {
     console.error('Error:', err);
     error(err.response?.data?.message || err.message);
@@ -1579,8 +1588,11 @@ const handleDeleteDepartment = async (payload) => {
   try {
     await departmentsAPI.delete(node.ID_ID);
     success('ลบแผนกสำเร็จ');
-    // Trigger refresh for this company (will implement refresh mechanism)
-    window.location.reload(); // Temporary: reload page
+
+    // Refresh data แทนการ reload หน้าเว็บ
+    await fetchDepartments();
+    await fetchCompanyDepartments();
+    companyTreeRefreshKey.value++; // Force refresh company tree
   } catch (err) {
     console.error('Error:', err);
     error(err.response?.data?.message || err.message);
@@ -1589,13 +1601,7 @@ const handleDeleteDepartment = async (payload) => {
 
 // Dropdown สำหรับเลือก Parent (filter ตาม hierarchy rules และบริษัท)
 const availableParents = computed(() => {
-  console.log('🔍 [availableParents] START');
-  console.log('  departments.value.length:', departments.value.length);
-  console.log('  companyDepartments.value.length:', companyDepartments.value.length);
-  console.log('  departmentForm.value:', departmentForm.value);
-
   let filtered = departments.value.filter(d => d.ID_IsActive);
-  console.log('  Step 1 - After active filter:', filtered.length, filtered.map(d => d.ID_Code));
 
   // ถ้าเป็นการแก้ไข: ไม่ให้เลือกตัวเองเป็น Parent
   if (departmentModal.value.isEdit) {
@@ -1605,22 +1611,16 @@ const availableParents = computed(() => {
   // Filter ตามบริษัท: แสดงเฉพาะแผนกที่อยู่ในบริษัทเดียวกัน
   if (departmentForm.value.companyIds && departmentForm.value.companyIds.length > 0) {
     const targetCompanyId = departmentForm.value.companyIds[0];
-    console.log('  Target Company ID:', targetCompanyId);
-
     const departmentIdsInCompany = companyDepartments.value
       .filter(cd => cd.IC_ID === targetCompanyId && cd.ICD_IsActive)
       .map(cd => cd.ID_ID);
-    console.log('  Department IDs in company:', departmentIdsInCompany);
-
     filtered = filtered.filter(d => departmentIdsInCompany.includes(d.ID_ID));
-    console.log('  Step 2 - After company filter:', filtered.length, filtered.map(d => `${d.ID_Code}(${d.ID_Type})`));
   }
 
   // Filter ตาม Type Hierarchy Rules (ยืดหยุ่น)
   // โครงสร้างแนะนำ: Office → Branch → Department
   // แต่ Parent เป็น optional - สามารถเป็น root level ได้
   const selectedType = departmentForm.value.type;
-  console.log('  Selected Type:', selectedType);
 
   if (selectedType === 'office') {
     // office: can have parent=NULL (root) or parent=office (sub-office)
@@ -1630,17 +1630,8 @@ const availableParents = computed(() => {
     filtered = filtered.filter(d => d.ID_Type === 'office');
   } else if (selectedType === 'department') {
     // department: can have parent=branch (recommended) or parent=office (flexible)
-    console.log('  DEBUG Before type filter:', filtered.map(d => ({code: d.ID_Code, type: d.ID_Type, typeOf: typeof d.ID_Type})));
-    filtered = filtered.filter(d => {
-      const isBranch = d.ID_Type === 'branch';
-      const isOffice = d.ID_Type === 'office';
-      console.log(`    ${d.ID_Code}: ID_Type="${d.ID_Type}" isBranch=${isBranch} isOffice=${isOffice}`);
-      return isBranch || isOffice;
-    });
+    filtered = filtered.filter(d => d.ID_Type === 'branch' || d.ID_Type === 'office');
   }
-
-  console.log('  Step 3 - After type filter:', filtered.length, filtered.map(d => `${d.ID_Code}(${d.ID_Type})`));
-  console.log('  ✅ Final result:', filtered);
 
   return filtered;
 });
