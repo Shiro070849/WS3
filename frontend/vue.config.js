@@ -4,8 +4,9 @@ const path = require('path'); // Import path module to resolve paths
 module.exports = defineConfig({
   transpileDependencies: true,
 
-  // Define publicPath for production and development
-  publicPath: process.env.NODE_ENV === 'production' ? '/mgssale' : '/',
+  // ให้เว็บรันที่ path ย่อย /smartsecruity เช่น http://192.168.31.36/smartsecruity/
+  // ตอน build production, asset ทั้งหมดจะอ้างอิงจาก /smartsecruity/
+  publicPath: process.env.NODE_ENV === 'production' ? '/smartsecruity/' : '/',
 
-  // Configure alias to ensure '@' maps to 'src' directory correctly
+  // (ถ้าต้องการ alias เพิ่มสามารถใส่ในที่นี่ภายหลังได้)
 });

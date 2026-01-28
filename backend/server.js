@@ -17,8 +17,8 @@ const app = express();
 const corsOptions = {
   origin: ["http://localhost:8080",
            "http://localhost:8081",
-           "https://web.mrgshrimp.com",
-           "*"
+           "http://smartsecurity.ruxchai.co.th",
+           "http://192.168.31.36"
           ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // เพิ่ม: ระบุ methods ที่อนุญาต
@@ -100,7 +100,8 @@ app.use((err, req, res, next) => {
 });
 
 // Server port
-const PORT = parseInt(process.env.PORT) || 8081;
+// ให้ใช้ PORT จาก .env ถ้ามี; ถ้าไม่มีก็ใช้ 8088 (ให้ตรงกับ config ฝั่ง frontend)
+const PORT = parseInt(process.env.PORT) || 8088;
 
 // Database connection test
 const dbService = require('./service/db.service');
