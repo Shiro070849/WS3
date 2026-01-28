@@ -1,9 +1,10 @@
 // VisitType IDs (ตาม Database)
 export const VISIT_TYPE_IDS = {
   CONTACT_COORDINATOR: 18, // ติดต่อประสานงาน
+  SUPPLIER: 39, // อัพพลายเออร์
   DEPOSIT_WITHDRAW: 40, // ฝาก/เบิกสินค้า
+  REQUEST_TO_SEE_PRODUCT: 46, // ขอดูสินค้า
   // เพิ่มอื่นๆตามต้องการในอนาคต
-  // SUPPLIER: 39, // อัพพลายเออร์
   // OPERATOR: 19, // Operator
 };
 
@@ -11,7 +12,9 @@ export const VISIT_TYPE_IDS = {
 export const REPRINT_CONFIG = {
   // VT_ID ที่ใช้ QR Code แบบ URL (เข้าเว็บไซต์)
   QR_URL_TYPE_IDS: [
-    VISIT_TYPE_IDS.CONTACT_COORDINATOR, // 18
+    VISIT_TYPE_IDS.CONTACT_COORDINATOR, // 18 - ติดต่อประสานงาน
+    VISIT_TYPE_IDS.SUPPLIER, // 39 - อัพพลายเออร์
+    VISIT_TYPE_IDS.REQUEST_TO_SEE_PRODUCT, // 46 - ขอดูสินค้า
   ],
 
   // VT_ID ที่แสดง Footer Warning

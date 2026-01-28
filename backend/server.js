@@ -15,11 +15,13 @@ console.log('PORT from .env:', process.env.PORT);
 const app = express();
 
 const corsOptions = {
-  origin: ["http://localhost:8080",
-           "http://localhost:8081",
-           "http://smartsecurity.ruxchai.co.th",
-           "http://192.168.31.36"
-          ],
+  origin: [
+    "http://localhost:8080",
+    "http://localhost:8081",
+    "http://smartsecurity.ruxchai.co.th",
+    "https://smartsecurity.ruxchai.co.th", // เพิ่ม HTTPS support
+    "http://192.168.31.36"
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // เพิ่ม: ระบุ methods ที่อนุญาต
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id'] // เพิ่ม: ระบุ headers ที่อนุญาต (รวม x-user-id สำหรับ Permission System)
