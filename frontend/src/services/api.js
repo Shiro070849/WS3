@@ -284,6 +284,16 @@ export const vehicleTypesAPI = {
   delete: (id) => apiClient.delete(`/vehicle-types/${id}`),
 };
 
+// ==================== LOCATIONS API ====================
+export const locationsAPI = {
+  getAll: (params) => apiClient.get('/locations', { params }),
+  getActive: () => apiClient.get('/locations/active'),
+  getById: (id) => apiClient.get(`/locations/${id}`),
+  create: (data) => apiClient.post('/locations', data),
+  update: (id, data) => apiClient.put(`/locations/${id}`, data),
+  delete: (id) => apiClient.delete(`/locations/${id}`),
+};
+
 // ==================== REPORTS API ====================
 export const reportsAPI = {
   getAll: (params) => apiClient.get('/reports', { params }),

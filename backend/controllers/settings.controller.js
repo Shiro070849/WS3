@@ -359,7 +359,7 @@ class SettingsController {
 
   async createUser(req, res) {
     try {
-      const { code, name1, name2, email, username, password, active, pinCode, remarks, companyId, companyIds, roleId, createdBy } = req.body;
+      const { code, name1, name2, email, username, password, active, pinCode, remarks, companyId, companyIds, roleId, location, createdBy } = req.body;
 
       // Debug: ตรวจสอบค่าที่รับมา
       console.log('[CREATE USER] Received data:', {
@@ -417,6 +417,7 @@ class SettingsController {
         companyId: companyId || finalCompanyIds[0], // Backward compatible (ใช้ค่าแรก)
         companyIds: finalCompanyIds, // Multi-select (Array)
         roleId,
+        location,
         createdBy: createdBy || req.user?.userId || null
       });
 
@@ -438,7 +439,7 @@ class SettingsController {
   async updateUser(req, res) {
     try {
       const id = req.params.id;
-      const { code, name1, name2, email, username, active, pinCode, remarks, companyId, companyIds, roleId, updatedBy } = req.body;
+      const { code, name1, name2, email, username, active, pinCode, remarks, companyId, companyIds, roleId, location, updatedBy } = req.body;
 
       // Validate required fields
       if (!code || !name1 || !username) {
@@ -470,6 +471,7 @@ class SettingsController {
         companyId: companyId || (finalCompanyIds && finalCompanyIds.length > 0 ? finalCompanyIds[0] : undefined), // Backward compatible
         companyIds: finalCompanyIds, // Multi-select (Array)
         roleId,
+        location,
         updatedBy: updatedBy || req.user?.userId || null
       });
 

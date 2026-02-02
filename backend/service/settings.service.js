@@ -361,6 +361,7 @@ class SettingsService {
           SU.SU_PinCode,
           SU.SU_Remarks,
           SU.IC_ID,
+          CAST(SU.User_Location AS NVARCHAR(255)) AS User_Location,
           -- ใช้ SR_ID จาก SystemUser ถ้ามี, ถ้าไม่มีหาจาก SystemUserSystemRole (TOP 1)
           COALESCE(SU.SR_ID, (SELECT TOP 1 SR_ID FROM [dbo].[SystemUserSystemRole] WHERE SU_ID = SU.SU_ID)) AS SR_ID,
           IC.IC_LocalName AS CompanyName,
@@ -457,7 +458,8 @@ class SettingsService {
           SU_PinCode,
           SU_Remarks,
           IC_ID,
-          SR_ID
+          SR_ID,
+          CAST(User_Location AS NVARCHAR(255)) AS User_Location
         FROM [dbo].[SystemUser]
         WHERE SU_ID = @SU_ID
       `;
@@ -521,7 +523,8 @@ class SettingsService {
           SU_Remarks,
           IC_ID,
           SR_ID,
-          SU_LogOn
+          SU_LogOn,
+          User_Location
         )
         VALUES (
           @SU_Code,
@@ -535,7 +538,8 @@ class SettingsService {
           @SU_Remarks,
           @IC_ID,
           @SR_ID,
-          GETDATE()
+          GETDATE(),
+          @User_Location
         );
         SELECT SCOPE_IDENTITY() AS SU_ID;
       `;
@@ -552,6 +556,7 @@ class SettingsService {
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
         .input('IC_ID', sql.Int, primaryCompanyId)
         .input('SR_ID', sql.Int, data.roleId || null)
+        .input('User_Location', sql.Text, data.location || null)
         .query(userQuery);
 
       const newUserId = userResult.recordset[0].SU_ID;
@@ -610,7 +615,8 @@ class SettingsService {
           SU_PinCode = @SU_PinCode,
           SU_Remarks = @SU_Remarks,
           IC_ID = @IC_ID,
-          SR_ID = @SR_ID
+          SR_ID = @SR_ID,
+          User_Location = @User_Location
         WHERE SU_ID = @SU_ID
       `;
       const userRequest = transaction.request();
@@ -626,6 +632,7 @@ class SettingsService {
         .input('SU_Remarks', sql.NVarChar, data.remarks || null)
         .input('IC_ID', sql.Int, primaryCompanyId)
         .input('SR_ID', sql.Int, data.roleId || null)
+        .input('User_Location', sql.Text, data.location || null)
         .query(userQuery);
 
       // 2. อัปเดต Company assignments ใน SystemUserCompany (ถ้ามี companyIds)

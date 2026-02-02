@@ -77,6 +77,7 @@ require("./routes/auth.routes")(app);
 require("./routes/wayin.routes")(app);
 require("./routes/wayout.routes")(app);
 require("./routes/settings.routes")(app);
+require("./routes/location.routes")(app);  // Location Management
 require("./routes/dashboard.routes")(app);
 require("./routes/vehicle.routes")(app);
 require("./routes/vehicleType.routes")(app);

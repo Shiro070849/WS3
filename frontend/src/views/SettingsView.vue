@@ -307,6 +307,11 @@
         <template #vehicleTypes>
           <VehicleTypeSettings />
         </template>
+
+        <!-- TAB: จัดการสถานที่ -->
+        <template #locations>
+          <LocationSettings />
+        </template>
       </BaseTabs>
     </div>
 
@@ -457,6 +462,25 @@
           </select>
           <p class="mt-1 text-xs text-gray-500">
             เลือกบทบาทของผู้ใช้งานในระบบ
+          </p>
+        </div>
+
+        <!-- เลือกสถานที่ (แสดงเฉพาะ SGS/SGU) -->
+        <div v-if="userForm.roleId === 2 || userForm.roleId === 3">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
+            สถานที่
+          </label>
+          <select
+            v-model="userForm.location"
+            class="block w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0090D3]/20 focus:border-[#0090D3] transition-all duration-200"
+          >
+            <option :value="null">ไม่ระบุสถานที่</option>
+            <option v-for="location in availableLocations" :key="location.GL_ID" :value="location.GL_Code">
+              {{ location.GL_Code }} - {{ location.GL_Name }}
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-gray-500">
+            เลือกสถานที่ประจำการของยาม (ถ้ามี)
           </p>
         </div>
 
@@ -743,8 +767,9 @@ import BaseModal from '../components/base/BaseModal.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import AppearanceSettings from '../components/settings/AppearanceSettings.vue';
 import VehicleTypeSettings from '../components/settings/VehicleTypeSettings.vue';
+import LocationSettings from '../components/settings/LocationSettings.vue';
 import CompanyTreeNode from '../components/settings/CompanyTreeNode.vue';
-import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI, rolesAPI } from '../services/api';
+import { companiesAPI, usersAPI, departmentsAPI, systemSettingsAPI, rolesAPI, locationsAPI } from '../services/api';
 import { useTheme } from '@/composables/useTheme';
 import { useNotification } from '@/composables/useNotification';
 import { useToast } from '@/composables/useToast';
@@ -829,6 +854,7 @@ const tabs = computed(() => {
       // ซ่อน permissions ออก - ใช้ hardcode ใน Database แทน
       { key: 'departments', label: 'จัดการแผนก', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
       { key: 'vehicleTypes', label: 'จัดการประเภทรถ', icon: 'M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2' },
+      { key: 'locations', label: 'จัดการสถานที่', icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
     ];
   } else {
     // Company Admin: Show General, Appearance, Users, Departments (เห็นเฉพาะบริษัทตัวเอง)
@@ -982,7 +1008,8 @@ const users = ref([]);
 const userLoading = ref(false);
 const userSaving = ref(false);
 const userModal = ref({ show: false, isEdit: false, title: '', id: null });
-const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: null, companyIds: [], roleId: null });
+const userForm = ref({ code: '', name1: '', name2: '', username: '', password: '', email: '', active: true, remarks: '', companyId: null, companyIds: [], roleId: null, location: null });
+const availableLocations = ref([]);
 const roles = ref([]);
 const userPagination = ref({ page: 1, limit: 25, total: 0, totalPages: 0 });
 const userSearch = ref('');
@@ -1022,6 +1049,18 @@ const fetchRoles = async () => {
   } catch (error) {
     console.error('Error fetching roles:', error);
     roles.value = [];
+  }
+};
+
+// ดึงรายการ Locations (สำหรับ dropdown ใน User Form)
+const fetchLocations = async () => {
+  try {
+    const response = await locationsAPI.getActive();
+    availableLocations.value = response.data.data || [];
+    console.log('[SETTINGS] Fetched locations:', availableLocations.value.length, 'locations');
+  } catch (error) {
+    console.error('Error fetching locations:', error);
+    availableLocations.value = [];
   }
 };
 
@@ -1106,18 +1145,19 @@ const openUserModal = async () => {
   userModal.value = { show: true, isEdit: false, title: 'เพิ่มผู้ใช้งานใหม่', id: null };
   // ถ้าไม่ใช่ Super Admin ให้ใช้ company ของตัวเอง
   const defaultCompanyId = isMainAdmin.value ? null : selectedCompanyId.value;
-  userForm.value = { 
-    code: '', 
-    name1: '', 
-    name2: '', 
-    username: '', 
-    password: '', 
-    email: '', 
-    active: true, 
-    remarks: '', 
+  userForm.value = {
+    code: '',
+    name1: '',
+    name2: '',
+    username: '',
+    password: '',
+    email: '',
+    active: true,
+    remarks: '',
     companyId: defaultCompanyId, // Backward compatible
     companyIds: isMainAdmin.value ? [] : (defaultCompanyId ? [defaultCompanyId] : []), // Multi-select
-    roleId: null 
+    roleId: null,
+    location: null
   };
   
   // ตรวจสอบว่า roles ถูกโหลดแล้วหรือยัง
@@ -1160,7 +1200,8 @@ const editUser = async (row) => {
     remarks: row.SU_Remarks || '',
     companyId: row.IC_ID || null, // Backward compatible
     companyIds: companyIds, // Multi-select
-    roleId: row.SR_ID || null
+    roleId: row.SR_ID || null,
+    location: row.User_Location || null
   };
 
   // ตรวจสอบว่า roles ถูกโหลดแล้วหรือยัง
@@ -1222,7 +1263,8 @@ const saveUser = async () => {
       remarks: userForm.value.remarks,
       companyId: primaryCompanyId, // Backward compatible (ใช้ค่าแรกของ Array)
       companyIds: finalCompanyIds, // Multi-select (ส่ง Array) - ต้องมีอย่างน้อย 1 ตัว
-      roleId: userForm.value.roleId
+      roleId: userForm.value.roleId,
+      location: userForm.value.location // เพิ่ม location สำหรับ SGS/SGU
     };
 
     console.log('[SAVE USER] Final payload:', JSON.stringify(payload, null, 2));
@@ -1708,6 +1750,7 @@ onMounted(() => {
   fetchDepartments();
   fetchCompanyDepartments();
   fetchRoles();
+  fetchLocations();
   document.addEventListener('click', handleClickOutside);
 });
 
