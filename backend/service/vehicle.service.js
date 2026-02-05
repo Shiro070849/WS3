@@ -163,7 +163,7 @@ class VehicleService {
         LEFT JOIN [dbo].[SystemUser] SU ON WI.SU_ID = SU.SU_ID
         LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
         ${whereClause}
-        ORDER BY WI.WI_RecordedOn DESC
+        ORDER BY WI.WI_RecordedOn ASC
         OFFSET @Offset ROWS
         FETCH NEXT @Limit ROWS ONLY
       `;

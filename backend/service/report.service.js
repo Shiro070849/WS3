@@ -12,25 +12,25 @@ class ReportService {
     try {
       const pool = await dbService.connect();
 
-      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      // ดึง Company IDs ที่ User เข้าถึงได้ (จาก SystemUserCompany)
       let accessibleCompanyIds = null;
       if (filters.userId) {
         accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(filters.userId);
       }
 
-      // กำหนด companyId สุดท้าย (ตาม role)
+      // รวม companyId ตาม role
       let finalCompanyIds = null;
       if (accessibleCompanyIds === null) {
-        // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+        // Super Admin: ถ้ามี filterCompanyId ที่เลือก (มีค่า) ใช้ null = ทุก Company
         if (filters.companyId && filters.companyId !== 'undefined') {
           finalCompanyIds = [parseInt(filters.companyId)];
         } else {
-          finalCompanyIds = null; // เห็นทุก Company
+          finalCompanyIds = null; // ทุก Company
         }
       } else {
-        // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
-        // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
-        // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+        // User ธรรมดา: ใช้ Company IDs จาก SystemUserCompany
+        // มีค่า filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+        // ไม่มีหรือ filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
         if (filters.companyId && filters.companyId !== 'undefined' && accessibleCompanyIds.includes(parseInt(filters.companyId))) {
           finalCompanyIds = [parseInt(filters.companyId)];
         } else {
@@ -75,7 +75,7 @@ class ReportService {
         query += ` AND CAST(WI.WI_RecordedOn AS DATE) <= '${filters.endDate}'`;
       }
 
-      // Filter by company (ใช้ IN แทน = เพื่อรองรับหลาย Company)
+      // Filter by company (ใช้ IN หมายถึงเฉพาะ Company ที่เลือก)
       if (finalCompanyIds && finalCompanyIds.length > 0) {
         const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
         query += ` AND WI.IC_ID IN (${companyIdsStr})`;
@@ -91,11 +91,11 @@ class ReportService {
         query += ` AND WO.WO_ID IS NOT NULL`;
       }
 
-      query += ` ORDER BY WI.WI_RecordedOn DESC`;
+      query += ` ORDER BY WI.WI_RecordedOn ASC`;
 
       const result = await pool.request().query(query);
 
-      // คำนวณสรุป
+      // สรุปยอด
       const summary = {
         total: result.recordset.length,
         in: result.recordset.filter(r => r.Status === 'เข้า').length,
@@ -114,7 +114,7 @@ class ReportService {
   }
 
   /**
-   * ส่งออกข้อมูลเป็น Excel (จะใช้ library exceljs)
+   * Export ข้อมูลเป็น Excel (จาก library exceljs)
    */
   static async exportExcel(filters = {}) {
     try {
@@ -122,15 +122,15 @@ class ReportService {
 
       // สร้าง workbook และ worksheet
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('รายงานยานพาหนะ');
+      const worksheet = workbook.addWorksheet('รายงาน');
 
       // กำหนด columns
       worksheet.columns = [
         { header: '#', key: 'no', width: 8 },
-        { header: 'ทะเบียนรถ', key: 'licensePlate', width: 15 },
+        { header: 'ทะเบียน', key: 'licensePlate', width: 15 },
         { header: 'จังหวัด', key: 'province', width: 15 },
         { header: 'ประเภทรถ', key: 'vehicleType', width: 15 },
-        { header: 'คนขับ', key: 'driver', width: 20 },
+        { header: 'ชื่อ-นามสกุล', key: 'driver', width: 20 },
         { header: 'บริษัท', key: 'company', width: 25 },
         { header: 'เวลาเข้า', key: 'timeIn', width: 20 },
         { header: 'เวลาออก', key: 'timeOut', width: 20 },
@@ -147,7 +147,7 @@ class ReportService {
       };
       worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-      // เพิ่มข้อมูล
+      // ใส่ข้อมูล
       data.forEach((item, index) => {
         worksheet.addRow({
           no: index + 1,
@@ -174,7 +174,7 @@ class ReportService {
   }
 
   /**
-   * ส่งออกข้อมูลเป็น PDF (จะใช้ library pdfkit)
+   * Export ข้อมูลเป็น PDF (จาก library pdfkit)
    */
   static async exportPDF(filters = {}) {
     try {
@@ -189,7 +189,7 @@ class ReportService {
             margin: 50
           });
 
-          // ลงทะเบียนฟอนต์ภาษาไทย
+          // ลงทะเบียนฟอนต์ไทย
           doc.registerFont('Prompt', 'C:/Windows/Fonts/Prompt-Regular.ttf');
           doc.registerFont('Prompt-Bold', 'C:/Windows/Fonts/Prompt-Bold.ttf');
 
@@ -202,28 +202,28 @@ class ReportService {
           // Header
           doc.font('Prompt-Bold')
              .fontSize(18)
-             .text('รายงานยานพาหนะ', { align: 'center' })
+             .text('รายงาน', { align: 'center' })
              .moveDown();
 
           // Summary
           doc.font('Prompt')
              .fontSize(12)
-             .text(`ทั้งหมด: ${summary.total} | รถเข้า: ${summary.in} | รถออก: ${summary.out} | ค้างอยู่: ${summary.pending}`)
+             .text(`ทั้งหมด: ${summary.total} | รายการเข้า: ${summary.in} | รายการออก: ${summary.out} | ค้างอยู่: ${summary.pending}`)
              .moveDown();
 
-          // Table Header - ปรับ column widths ใหม่ให้เหมาะสม
+          // Table Header - กำหนด column widths ให้รวม 670
           const startY = doc.y;
           const colWidths = [25, 60, 50, 85, 70, 110, 85, 85, 60, 40]; // รวม 670
-          const headers = ['#', 'ทะเบียน', 'จังหวัด', 'ประเภท', 'คนขับ', 'บริษัท', 'เวลาเข้า', 'เวลาออก', 'ระยะเวลา', 'สถานะ'];
+          const headers = ['#', 'ทะเบียน', 'จังหวัด', 'ประเภทรถ', 'ชื่อ-นามสกุล', 'บริษัท', 'เวลาเข้า', 'เวลาออก', 'ระยะเวลา', 'สถานะ'];
 
           let xPos = 50;
-          doc.font('Prompt-Bold').fontSize(9); // ลดขนาดฟอนต์ header
+          doc.font('Prompt-Bold').fontSize(9); // ฟอนต์หัวข้อ header
 
           headers.forEach((header, i) => {
             doc.text(header, xPos, startY, {
               width: colWidths[i],
               align: 'left',
-              lineBreak: false // ป้องกันขึ้นบรรทัดใหม่
+              lineBreak: false // ไม่ตัดคำข้อความยาว
             });
             xPos += colWidths[i];
           });
@@ -233,12 +233,12 @@ class ReportService {
 
           // Table Data
           data.forEach((item, index) => {
-            // ตรวจสอบว่าใกล้หมดหน้าหรือยัง
+            // ขึ้นหน้าใหม่ถ้าถึงขอบล่าง
             if (yPos > 480) {
               doc.addPage();
               yPos = 50;
 
-              // พิมพ์ header ซ้ำในหน้าใหม่
+              // วาด header ซ้ำทุกหน้า
               xPos = 50;
               doc.font('Prompt-Bold').fontSize(9);
               headers.forEach((header, i) => {
@@ -254,7 +254,7 @@ class ReportService {
 
             xPos = 50;
 
-            // จัดรูปแบบวันที่ให้สั้นลง
+            // จัดรูปแบบข้อมูลแต่ละแถว
             const formatDate = (dateStr) => {
               if (!dateStr) return '-';
               const date = new Date(dateStr);
@@ -280,16 +280,16 @@ class ReportService {
               item.Status || '-'
             ];
 
-            doc.font('Prompt').fontSize(7.5); // ลดขนาดฟอนต์ข้อมูล
+            doc.font('Prompt').fontSize(7.5); // ฟอนต์หัวข้อข้อมูล
 
-            const rowHeight = 15; // ความสูงของแต่ละแถว
+            const rowHeight = 15; // ความสูงแต่ละแถว
 
             row.forEach((text, i) => {
               doc.text(text, xPos, yPos, {
                 width: colWidths[i],
                 align: 'left',
-                lineBreak: false, // ป้องกันขึ้นบรรทัดใหม่
-                ellipsis: true // ถ้ายาวเกินให้ใส่ ...
+                lineBreak: false, // ไม่ตัดคำข้อความยาว
+                ellipsis: true // ยาวเกินให้ ...
               });
               xPos += colWidths[i];
             });
@@ -316,31 +316,31 @@ class ReportService {
   }
 
   /**
-   * ดึงข้อมูลสถิติรายงาน
+   * ดึงข้อมูลสรุปรายงาน
    */
   static async getStatistics(filters = {}) {
     try {
       const pool = await dbService.connect();
 
-      // ดึง Company IDs ที่ User เห็นได้ (จาก SystemUserCompany)
+      // ดึง Company IDs ที่ User เข้าถึงได้ (จาก SystemUserCompany)
       let accessibleCompanyIds = null;
       if (filters.userId) {
         accessibleCompanyIds = await settingsService.getUserAccessibleCompanyIds(filters.userId);
       }
 
-      // กำหนด companyId สุดท้าย (ตาม role)
+      // รวม companyId ตาม role
       let finalCompanyIds = null;
       if (accessibleCompanyIds === null) {
-        // Super Admin: ใช้ filterCompanyId ที่เลือก (ถ้ามี) หรือ null (เห็นทุก Company)
+        // Super Admin: ถ้ามี filterCompanyId ที่เลือก (มีค่า) ใช้ null = ทุก Company
         if (filters.companyId && filters.companyId !== 'undefined') {
           finalCompanyIds = [parseInt(filters.companyId)];
         } else {
-          finalCompanyIds = null; // เห็นทุก Company
+          finalCompanyIds = null; // ทุก Company
         }
       } else {
-        // User ปกติ: ใช้ Company IDs จาก SystemUserCompany
-        // ถ้ามี filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
-        // ถ้าไม่มี filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
+        // User ธรรมดา: ใช้ Company IDs จาก SystemUserCompany
+        // มีค่า filterCompanyId และอยู่ใน accessibleCompanyIds → ใช้ filterCompanyId
+        // ไม่มีหรือ filterCompanyId → ใช้ accessibleCompanyIds ทั้งหมด
         if (filters.companyId && filters.companyId !== 'undefined' && accessibleCompanyIds.includes(parseInt(filters.companyId))) {
           finalCompanyIds = [parseInt(filters.companyId)];
         } else {
@@ -368,7 +368,7 @@ class ReportService {
         query += ` AND CAST(WI.WI_RecordedOn AS DATE) <= '${filters.endDate}'`;
       }
 
-      // Filter by company (ใช้ IN แทน = เพื่อรองรับหลาย Company)
+      // Filter by company (ใช้ IN หมายถึงเฉพาะ Company ที่เลือก)
       if (finalCompanyIds && finalCompanyIds.length > 0) {
         const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
         query += ` AND WI.IC_ID IN (${companyIdsStr})`;

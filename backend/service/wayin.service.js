@@ -141,7 +141,7 @@ class WayInService {
         LEFT JOIN [dbo].[SystemUser] su ON wi.SU_ID = su.SU_ID
         LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
         WHERE wo.WO_ID IS NULL
-        ORDER BY wi.WI_RecordedOn DESC
+        ORDER BY wi.WI_RecordedOn ASC
       `;
 
       const result = await request.query(query);
@@ -177,7 +177,7 @@ class WayInService {
         LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
         LEFT JOIN [dbo].[InternalCompany] ic ON wi.IC_ID = ic.IC_ID
         LEFT JOIN [dbo].[VisitType] vt ON wi.VT_ID = vt.VT_ID
-        ORDER BY wi.WI_RecordedOn DESC
+        ORDER BY wi.WI_RecordedOn ASC
         OFFSET @Offset ROWS
         FETCH NEXT @Limit ROWS ONLY
       `;
@@ -362,7 +362,7 @@ class WayInService {
         LEFT JOIN [dbo].[WayOut] wo ON wi.WI_ID = wo.WI_ID
         LEFT JOIN [dbo].[InternalCompany] ic ON wi.IC_ID = ic.IC_ID
         LEFT JOIN [dbo].[VisitType] vt ON wi.VT_ID = vt.VT_ID
-        ORDER BY wi.WI_RecordedOn DESC
+        ORDER BY wi.WI_RecordedOn ASC
       `;
 
       request.input('Limit', sql.Int, limit);

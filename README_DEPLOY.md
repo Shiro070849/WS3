@@ -25,9 +25,58 @@ WS3/
 - **API**: http://localhost:8088/api/
 
 ### Production (บน Server)
-- **Frontend**: http://smartsecurity.ruxchai.co.th/mgssale/
-- **Backend**: http://smartsecurity.ruxchai.co.th:8088/
-- **API**: http://smartsecurity.ruxchai.co.th:8088/api/
+
+#### ✅ รูปแบบที่ 1: ใช้ IP Address + Path
+- **Frontend**: http://192.168.31.36/smartsecruity/
+- **Backend**: http://192.168.31.36:8088/
+- **API**: http://192.168.31.36:8088/api/
+
+#### ✅ รูปแบบที่ 2: ใช้ Subdomain (แนะนำ)
+- **Frontend**: http://smartsecurity.sinchai.ruxchai.local/
+- **Backend**: http://192.168.31.36:8088/
+- **API**: http://192.168.31.36:8088/api/
+
+---
+
+## 🔧 ตั้งค่า Subdomain (ถ้าต้องการใช้ Domain Name)
+
+### วิธีที่ 1: ตั้งค่า Hosts File (สำหรับทดสอบ)
+
+#### บน Windows Server:
+1. เปิด Notepad แบบ **Run as Administrator**
+2. เปิดไฟล์: `C:\Windows\System32\drivers\etc\hosts`
+3. เพิ่มบรรทัดนี้ท้ายไฟล์:
+   ```
+   192.168.31.36    smartsecurity.sinchai.ruxchai.local
+   ```
+4. บันทึกไฟล์
+
+#### บนเครื่องที่ต้องการเข้าถึง (Client):
+ทำเหมือนกันบน server (แก้ไข hosts file)
+
+### วิธีที่ 2: ตั้งค่า DNS Server (สำหรับใช้งานจริง)
+
+ถ้ามี DNS Server ใน network (เช่น Active Directory):
+1. เข้า DNS Manager
+2. สร้าง A Record:
+   - Name: `smartsecurity.sinchai.ruxchai`
+   - IP: `192.168.31.36`
+3. บันทึก
+
+### ตั้งค่า IIS สำหรับ Subdomain
+
+1. เปิด **IIS Manager**
+2. คลิกขวาที่ **Sites** → **Add Website** (หรือแก้ไข site เดิม)
+3. ตั้งค่า:
+   - **Site name**: SmartSecurity
+   - **Physical path**: `C:\inetpub\wwwroot\smartsecruity`
+   - **Binding**:
+     - Type: `http`
+     - IP address: `192.168.31.36` (หรือ All Unassigned)
+     - Port: `80`
+     - Host name: `smartsecurity.sinchai.ruxchai.local`
+4. คลิก **OK**
+5. ทดสอบ: เปิดบราวเซอร์ไปที่ `http://smartsecurity.sinchai.ruxchai.local`
 
 ---
 
@@ -103,27 +152,58 @@ WS3/
 #### **บนเครื่อง Local:**
 
 1. **Build production**
+
+   **✅ วิธีที่ 1: สำหรับ IP + Path (http://192.168.31.36/smartsecruity/)**
    ```cmd
    cd frontend
    build-production.bat
    ```
+   หรือ
+   ```cmd
+   npm run build
+   ```
+
+   **✅ วิธีที่ 2: สำหรับ Subdomain (http://smartsecurity.sinchai.ruxchai.local/)**
+   ```cmd
+   cd frontend
+   build-subdomain.bat
+   ```
+   หรือ
+   ```cmd
+   set VUE_APP_USE_SUBDOMAIN=true
+   npm run build
+   ```
+
    จะได้โฟลเดอร์ `dist/` ที่มีไฟล์ทั้งหมด
+
+   **⚠️ สำคัญ:** ต้องเลือก build แบบที่ตรงกับการ deploy
+   - IP + Path → ใช้ `build-production.bat` (publicPath: `/smartsecruity/`)
+   - Subdomain → ใช้ `build-subdomain.bat` (publicPath: `/`)
 
 #### **บน Server (Remote Desktop):**
 
 2. **สร้างโฟลเดอร์สำหรับ frontend**
+
+   **สำหรับ IP + Path:**
    ```
-   C:\inetpub\wwwroot\mgssale\
+   C:\inetpub\wwwroot\smartsecruity\
    ```
+
+   **สำหรับ Subdomain:**
+   ```
+   C:\inetpub\wwwroot\smartsecruity\
+   ```
+   (ใช้โฟลเดอร์เดียวกัน แต่ต่างกันที่ IIS Binding)
 
 3. **Remote Desktop เข้า Server แล้ว Copy-Paste**
    - Copy โฟลเดอร์ `dist/*` จากเครื่อง local
-   - Paste ไปที่ `C:\inetpub\wwwroot\mgssale\` บน server
+   - Paste ไปที่ `C:\inetpub\wwwroot\smartsecruity\` บน server
 
 4. **Config IIS (ถ้าใช้ IIS)**
    - เปิด IIS Manager
-   - สร้าง Virtual Directory ชื่อ `mgssale`
-   - Point ไปที่ `C:\inetpub\wwwroot\mgssale\`
+   - สร้าง Website หรือ Virtual Directory
+   - Point ไปที่ `C:\inetpub\wwwroot\smartsecruity\`
+   - ตั้งค่า Bindings (ดูหัวข้อ "ตั้งค่า IIS สำหรับ Subdomain" ด้านบน)
    - เพิ่ม URL Rewrite rule สำหรับ Vue Router (ถ้าจำเป็น)
 
 ---

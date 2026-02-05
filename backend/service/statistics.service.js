@@ -3,8 +3,43 @@ const dbService = require('./db.service');
 const settingsService = require('./settings.service');
 
 class StatisticsService {
-  // Helper function สำหรับคำนวณวันที่ตาม period
-  getDateRange(period) {
+  // Format วันที่เป็น string สำหรับ SQL (ใช้ local time ไม่ใช้ UTC เพื่อให้ตรงกับข้อมูลใน DB)
+  formatDateForSQL(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const sec = String(date.getSeconds()).padStart(2, '0');
+    return `${y}-${m}-${d} ${h}:${min}:${sec}`;
+  }
+
+  // Helper function สำหรับคำนวณวันที่: ถ้ามี dateFrom หรือ dateTo (YYYY-MM-DD) ใช้ช่วงวันที่ ไม่ก็ใช้ period
+  getDateRange(period, dateFromStr, dateToStr) {
+    const from = (dateFromStr && typeof dateFromStr === 'string') ? dateFromStr.trim() : '';
+    const to = (dateToStr && typeof dateToStr === 'string') ? dateToStr.trim() : '';
+    const useCustom = from || to;
+
+    if (useCustom) {
+      // มีแค่ dateFrom = จากวันนั้นถึงวันนี้ (เหมือนหน้ารายงาน), มีแค่ dateTo = วันนั้นวันเดียว, มีทั้งคู่ = ใช้ช่วงนั้น
+      let startDate, endDate;
+      if (from && to) {
+        const startStr = from <= to ? from : to;
+        const endStr = from <= to ? to : from;
+        startDate = new Date(startStr + 'T00:00:00');
+        endDate = new Date(endStr + 'T23:59:59.999');
+      } else if (from) {
+        startDate = new Date(from + 'T00:00:00');
+        endDate = new Date(); // ถึงวันนี้ (ปัจจุบัน) เหมือนหน้ารายงาน
+      } else {
+        startDate = new Date(to + 'T00:00:00');
+        endDate = new Date(to + 'T23:59:59.999');
+      }
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        return { startDate, endDate };
+      }
+    }
+
     const now = new Date();
     let startDate, endDate = new Date();
 
@@ -18,11 +53,13 @@ class StatisticsService {
         endDate = new Date();
         break;
       case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        // วันที่ 1 ของเดือนนี้ 00:00:00 ถึงเวลาปัจจุบัน (ตามค่าใน DB / WI_RecordedOn)
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
         endDate = new Date();
         break;
       case 'year':
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        // วันที่ 1 มกราคมของปีนี้ 00:00:00 ถึงเวลาปัจจุบัน (ไม่ดึงทั้งปีที่แล้ว)
+        startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
         endDate = new Date();
         break;
       default:
@@ -76,8 +113,8 @@ class StatisticsService {
     const conditions = [];
 
     if (startDate && endDate) {
-      conditions.push(`WI.WI_RecordedOn >= '${startDate.toISOString()}'`);
-      conditions.push(`WI.WI_RecordedOn <= '${endDate.toISOString()}'`);
+      conditions.push(`WI.WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'`);
+      conditions.push(`WI.WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'`);
     }
 
     if (companyIds && companyIds.length > 0) {
@@ -98,10 +135,10 @@ class StatisticsService {
   }
 
   // 1. ดึงสถิติภาพรวม
-  async getOverviewStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
+  async getOverviewStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null, dateFrom = null, dateTo = null) {
     try {
       const pool = await dbService.connect();
-      const { startDate, endDate } = this.getDateRange(period);
+      const { startDate, endDate } = this.getDateRange(period, dateFrom, dateTo);
 
       // ดึง Company IDs ที่ User เห็นได้
       const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
@@ -125,8 +162,8 @@ class StatisticsService {
             COUNT(DISTINCT CASE WHEN WO.WO_ID IS NULL THEN WI.WI_ID END) as pending
           FROM [dbo].[WayIn] WI
           LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
-          WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
-            AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
+          WHERE WI.WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+            AND WI.WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
             ${companyFilter}
         `);
 
@@ -143,8 +180,8 @@ class StatisticsService {
             COUNT(DISTINCT WO.WO_ID) as totalOut
           FROM [dbo].[WayIn] WI
           LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
-          WHERE WI.WI_RecordedOn >= '${previousStart.toISOString()}'
-            AND WI.WI_RecordedOn <= '${previousEnd.toISOString()}'
+          WHERE WI.WI_RecordedOn >= '${this.formatDateForSQL(previousStart)}'
+            AND WI.WI_RecordedOn <= '${this.formatDateForSQL(previousEnd)}'
             ${companyFilter}
         `);
 
@@ -197,10 +234,10 @@ class StatisticsService {
   }
 
   // 2. ดึงข้อมูลประเภทรถ
-  async getVehicleTypeStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
+  async getVehicleTypeStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null, dateFrom = null, dateTo = null) {
     try {
       const pool = await dbService.connect();
-      const { startDate, endDate } = this.getDateRange(period);
+      const { startDate, endDate } = this.getDateRange(period, dateFrom, dateTo);
 
       // ดึง Company IDs ที่ User เห็นได้
       const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
@@ -221,8 +258,8 @@ class StatisticsService {
             WI_VehicleType as type,
             COUNT(*) as count
           FROM [dbo].[WayIn]
-          WHERE WI_RecordedOn >= '${startDate.toISOString()}'
-            AND WI_RecordedOn <= '${endDate.toISOString()}'
+          WHERE WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+            AND WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
             AND WI_VehicleType IS NOT NULL
             ${companyFilter}
           GROUP BY WI_VehicleType
@@ -251,16 +288,14 @@ class StatisticsService {
     }
   }
 
-  // 3. ดึงข้อมูลช่วงเวลาเร่งด่วน
-  async getPeakHoursStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
+  // 3. ดึงข้อมูลช่วงเวลาเร่งด่วน (ส่ง 24 ชม. เสมอ ชั่วโมงที่ไม่มีข้อมูล = 0 เพื่อให้รู้ว่า "ช่วงไหนมี/ไม่มี" ตอนใช้งานจริง)
+  async getPeakHoursStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null, dateFrom = null, dateTo = null) {
     try {
       const pool = await dbService.connect();
-      const { startDate, endDate } = this.getDateRange(period);
+      const { startDate, endDate } = this.getDateRange(period, dateFrom, dateTo);
 
-      // ดึง Company IDs ที่ User เห็นได้
       const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
 
-      // สร้าง company และ vehicleType filter
       let companyFilter = '';
       if (finalCompanyIds && finalCompanyIds.length > 0) {
         const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
@@ -274,23 +309,32 @@ class StatisticsService {
         .query(`
           SELECT
             DATEPART(HOUR, WI_RecordedOn) as hour,
-            COUNT(*) as traffic
+            COUNT(*) as [count]
           FROM [dbo].[WayIn]
-          WHERE WI_RecordedOn >= '${startDate.toISOString()}'
-            AND WI_RecordedOn <= '${endDate.toISOString()}'
+          WHERE WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+            AND WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
             ${companyFilter}
           GROUP BY DATEPART(HOUR, WI_RecordedOn)
-          ORDER BY traffic DESC
         `);
 
-      const data = result.recordset;
-      const maxTraffic = Math.max(...data.map(d => d.traffic));
+      const byHour = {};
+      (result.recordset || []).forEach(d => {
+        byHour[d.hour] = d.count;
+      });
 
-      // เลือกแค่ช่วงเวลาที่มีการจราจร Top 6
-      return data.slice(0, 6).map(item => ({
-        time: `${String(item.hour).padStart(2, '0')}:00`,
-        traffic: Math.round((item.traffic / maxTraffic) * 100)
-      }));
+      const maxCount = Math.max(1, ...Object.values(byHour));
+
+      // ส่ง 24 ชั่วโมงเสมอ (00:00 - 23:00) ชั่วโมงที่ไม่มีข้อมูล = 0
+      const out = [];
+      for (let h = 0; h < 24; h++) {
+        const count = byHour[h] || 0;
+        out.push({
+          time: `${String(h).padStart(2, '0')}:00`,
+          traffic: Math.round((count / maxCount) * 100),
+          count
+        });
+      }
+      return out;
     } catch (error) {
       console.error('Error getting peak hours stats:', error);
       throw error;
@@ -298,10 +342,10 @@ class StatisticsService {
   }
 
   // 4. ดึงข้อมูลบริษัทที่ใช้บริการบ่อยที่สุด
-  async getTopCompaniesStats(period = 'week', limit = 5, userId = null, filterCompanyId = null, vehicleType = null) {
+  async getTopCompaniesStats(period = 'week', limit = 5, userId = null, filterCompanyId = null, vehicleType = null, dateFrom = null, dateTo = null) {
     try {
       const pool = await dbService.connect();
-      const { startDate, endDate } = this.getDateRange(period);
+      const { startDate, endDate } = this.getDateRange(period, dateFrom, dateTo);
 
       // ดึง Company IDs ที่ User เห็นได้
       const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
@@ -323,8 +367,8 @@ class StatisticsService {
             COUNT(WI.WI_ID) as count
           FROM [dbo].[WayIn] WI
           INNER JOIN [dbo].[InternalCompany] IC ON WI.IC_ID = IC.IC_ID
-          WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
-            AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
+          WHERE WI.WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+            AND WI.WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
             ${companyFilter}
           GROUP BY IC.IC_LocalName
           ORDER BY COUNT(WI.WI_ID) DESC
@@ -345,10 +389,10 @@ class StatisticsService {
   }
 
   // 5. ดึงข้อมูลแนวโน้มการเข้า-ออก (สำหรับกราฟ)
-  async getTrafficTrendStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
+  async getTrafficTrendStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null, dateFrom = null, dateTo = null) {
     try {
       const pool = await dbService.connect();
-      const { startDate, endDate } = this.getDateRange(period);
+      const { startDate, endDate } = this.getDateRange(period, dateFrom, dateTo);
 
       // ดึง Company IDs ที่ User เห็นได้
       const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
@@ -373,8 +417,8 @@ class StatisticsService {
           FROM [dbo].[WayIn] WI
           LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
             AND CAST(WO.WO_RecordedOn AS DATE) = CAST(WI.WI_RecordedOn AS DATE)
-          WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
-            AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
+          WHERE WI.WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+            AND WI.WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
             ${companyFilter}
           GROUP BY CAST(WI.WI_RecordedOn AS DATE)
           ORDER BY CAST(WI.WI_RecordedOn AS DATE)
@@ -408,10 +452,10 @@ class StatisticsService {
   }
 
   // 6. ดึงสถิติเพิ่มเติม
-  async getAdditionalStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null) {
+  async getAdditionalStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null, dateFrom = null, dateTo = null) {
     try {
       const pool = await dbService.connect();
-      const { startDate, endDate } = this.getDateRange(period);
+      const { startDate, endDate } = this.getDateRange(period, dateFrom, dateTo);
 
       // ดึง Company IDs ที่ User เห็นได้
       const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
@@ -433,8 +477,8 @@ class StatisticsService {
             AVG(DATEDIFF(MINUTE, WI.WI_RecordedOn, WO.WO_RecordedOn)) as avgMinutes
           FROM [dbo].[WayIn] WI
           INNER JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
-          WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
-            AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
+          WHERE WI.WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+            AND WI.WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
             ${companyFilter}
         `);
 
@@ -468,8 +512,8 @@ class StatisticsService {
             COUNT(DISTINCT WO.WO_ID) as totalOut
           FROM [dbo].[WayIn] WI
           LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
-          WHERE WI.WI_RecordedOn >= '${startDate.toISOString()}'
-            AND WI.WI_RecordedOn <= '${endDate.toISOString()}'
+          WHERE WI.WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+            AND WI.WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
             ${companyFilter}
         `);
 

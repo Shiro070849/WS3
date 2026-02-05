@@ -18,9 +18,11 @@ const corsOptions = {
   origin: [
     "http://localhost:8080",
     "http://localhost:8081",
-    "http://smartsecurity.ruxchai.co.th",
-    "https://smartsecurity.ruxchai.co.th", // เพิ่ม HTTPS support
-    "http://192.168.31.36"
+    // "http://smartsecurity.ruxchai.co.th",
+    // "https://smartsecurity.ruxchai.co.th", // เพิ่ม HTTPS support
+    "http://192.168.31.36",
+    "http://smartsecurity.sinchai.ruxchai.local", // เพิ่ม subdomain
+    "https://smartsecurity.sinchai.ruxchai.local" // เพิ่ม HTTPS สำหรับ subdomain
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // เพิ่ม OPTIONS สำหรับ preflight requests

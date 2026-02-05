@@ -1,24 +1,31 @@
 <template>
   <div class="w-full max-w-full animate-fadeIn">
     <!-- Page Header - Tailwind Only -->
-    <div class="mb-8">
-      <!-- Keep existing Period Filter -->
-      <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+    <div class="mb-5">
+      <div class="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
-          <h1 class="page-title">สถิติ</h1>
-          <p class="m-0 text-lg font-medium text-slate-500 font-prompt">
+          <h1 class="page-title text-[1.35rem]">สถิติ</h1>
+          <p class="m-0 text-base font-medium text-slate-500 font-prompt">
             สถิติและการวิเคราะห์ข้อมูลคลังสินค้า
           </p>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <!-- Period Filter Buttons - Tailwind Only -->
-          <div class="flex gap-1.5 bg-white p-1 rounded-xl shadow-sm">
+        <div class="flex flex-wrap items-end gap-2">
+          <!-- Date Range (เหมือน Report/Vehicle) -->
+          <DateRangeFilter
+            :dateFrom="customDateFrom"
+            :dateTo="customDateTo"
+            @update:dateFrom="customDateFrom = $event"
+            @update:dateTo="customDateTo = $event"
+            @filter="onCustomDateFilter"
+          />
+          <!-- Period Filter Buttons (กดแล้วล้างช่วงวันที่กำหนดเอง จะใช้ period แทน) -->
+          <div class="flex gap-1 bg-white p-0.5 rounded-lg shadow-sm">
             <button
               v-for="period in periods"
               :key="period.value"
-              @click="selectedPeriod = period.value"
+              @click="onPeriodClick(period.value)"
               :class="selectedPeriod === period.value ? 'period-btn-active' : 'period-btn'"
-              class="px-4 py-2 text-sm font-semibold rounded-lg trsition-anall font-prompt"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md trsition-anall font-prompt"
             >
               {{ period.label }}
             </button>
@@ -27,7 +34,7 @@
           <select
             v-if="!userCompanyId || userCompanyId === 'null'"
             v-model="selectedCompany"
-            class="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt bg-white shadow-sm"
+            class="px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt bg-white shadow-sm"
           >
             <option value="">บริษัททั้งหมด</option>
             <option
@@ -41,7 +48,7 @@
           <!-- Vehicle Type Filter -->
           <select
             v-model="selectedVehicleType"
-            class="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt bg-white shadow-sm"
+            class="px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0090D3] focus:border-transparent transition-all font-prompt bg-white shadow-sm"
           >
             <option value="">ประเภทรถทั้งหมด</option>
             <option
@@ -59,19 +66,19 @@
     <!-- Main Content - Tailwind Layout -->
     <div class="w-full">
       <!-- Overview Stats Cards - Tailwind Grid -->
-      <div class="grid grid-cols-1 gap-5 mb-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div v-for="stat in overviewStats" :key="stat.label" class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-lg">
-          <div class="flex items-center justify-center shadow-lg w-14 h-14 rounded-2xl" :style="{ background: stat.gradient }">
+      <div class="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div v-for="stat in overviewStats" :key="stat.label" class="flex items-center gap-3 p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:-translate-y-0.5 hover:shadow-md">
+          <div class="flex items-center justify-center shadow-md w-11 h-11 rounded-xl" :style="{ background: stat.gradient }">
             <div class="stat-icon" v-html="stat.icon"></div>
           </div>
           <div class="flex-1">
-            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">{{ stat.label }}</p>
-            <p class="text-2xl font-extrabold text-gray-900 mb-1.5 font-prompt leading-none">{{ stat.value }}</p>
-            <div class="flex items-center gap-1 text-sm font-semibold font-prompt" :class="stat.trend === 'up' ? 'text-green-600' : 'text-red-500'">
-              <svg v-if="stat.trend === 'up'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <p class="text-xs text-gray-500 mb-1 font-prompt font-medium">{{ stat.label }}</p>
+            <p class="text-xl font-extrabold text-gray-900 mb-1 font-prompt leading-none">{{ stat.value }}</p>
+            <div class="flex items-center gap-0.5 text-xs font-semibold font-prompt" :class="stat.trend === 'up' ? 'text-green-600' : 'text-red-500'">
+              <svg v-if="stat.trend === 'up'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
               </svg>
-              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
               </svg>
               <span>{{ stat.change }}</span>
@@ -81,84 +88,93 @@
       </div>
 
       <!-- Charts Section - Tailwind Grid -->
-      <div class="grid grid-cols-1 gap-5 mb-6 lg:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 mb-4 lg:grid-cols-2">
         <!-- Traffic Trend Chart -->
-        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-          <div class="flex items-center justify-between mb-5">
-            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">แนวโน้มการเข้า-ออกรถ</h3>
+        <div class="p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="m-0 text-base font-bold text-gray-900 font-prompt">แนวโน้มการเข้า-ออกรถ</h3>
           </div>
-          <div class="w-full h-64 p-2">
+          <div class="w-full p-1.5" style="height: 240px;">
             <Line v-if="trafficChartData" :data="trafficChartData" :options="trafficChartOptions" />
           </div>
         </div>
 
         <!-- Vehicle Types Chart -->
-        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-          <div class="flex items-center justify-between mb-5">
-            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">ประเภทรถที่เข้าใช้บริการ</h3>
+        <div class="p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="m-0 text-base font-bold text-gray-900 font-prompt">ประเภทรถที่เข้าใช้บริการ</h3>
           </div>
-          <div class="w-full h-64 p-2">
+          <div class="w-full p-1.5" style="height: 240px;">
             <Bar v-if="vehicleChartData" :data="vehicleChartData" :options="vehicleChartOptions" />
           </div>
         </div>
 
         <!-- Peak Hours Chart -->
-        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-          <div class="flex items-center justify-between mb-5">
-            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">ช่วงเวลาเร่งด่วน</h3>
-            <span class="chart-badge">24 ชั่วโมง</span>
+        <div class="p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="m-0 text-base font-bold text-gray-900 font-prompt">ช่วงเวลาเร่งด่วน</h3>
+              <p class="m-0 mt-0.5 text-xs text-slate-500 font-prompt">
+                {{ peakHoursHasData ? 'แสดงช่วงเวลาที่หนาแน่นที่สุด (เรียงตามปริมาณ)' : 'ไม่มีข้อมูลการเข้าในช่วงเวลาที่เลือก' }}
+              </p>
+            </div>
+            <span class="chart-badge">{{ peakHoursHasData ? 'Top 10' : '0 ครั้ง' }}</span>
           </div>
-          <div class="w-full h-64 p-2">
+          <div v-if="!peakHoursHasData" class="flex flex-col items-center justify-center w-full py-8 text-center rounded-lg bg-slate-50" style="height: 280px;">
+            <p class="text-sm font-medium text-slate-600 font-prompt">ยังไม่มีข้อมูลการเข้ายานพาหนะในช่วงเวลานี้</p>
+            <p class="mt-1 text-xs text-slate-500 font-prompt">ลองเปลี่ยนช่วงเวลา (วันนี้/สัปดาห์นี้/เดือนนี้/ปีนี้) หรือบริษัท/ประเภทรถ</p>
+          </div>
+          <div v-else class="w-full p-1.5" style="height: 280px;">
             <Bar v-if="peakHoursChartData" :data="peakHoursChartData" :options="peakHoursChartOptions" />
           </div>
         </div>
 
         <!-- Top Companies -->
-        <div class="p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-          <div class="flex items-center justify-between mb-5">
-            <h3 class="m-0 text-lg font-bold text-gray-900 font-prompt">บริษัทที่ใช้บริการบ่อยที่สุด</h3>
+        <div class="p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="m-0 text-base font-bold text-gray-900 font-prompt">บริษัทที่ใช้บริการบ่อยที่สุด</h3>
           </div>
-          <div class="w-full h-64 p-2">
+          <div class="w-full p-1.5" style="height: 240px;">
             <Bar v-if="companiesChartData" :data="companiesChartData" :options="companiesChartOptions" />
           </div>
         </div>
       </div>
 
       <!-- Additional Stats - Tailwind Grid -->
-      <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <div class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-md">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="flex items-center gap-3 p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:-translate-y-0.5 hover:shadow-md">
           <div class="stat-box-icon-blue">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
           <div class="flex-1">
-            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">เวลาเฉลี่ยที่อยู่ในคลัง</p>
-            <p class="m-0 text-2xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.averageTime }}</p>
+            <p class="text-xs text-gray-500 mb-1 font-prompt font-medium">เวลาเฉลี่ยที่อยู่ในคลัง</p>
+            <p class="m-0 text-xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.averageTime }}</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-md">
+        <div class="flex items-center gap-3 p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:-translate-y-0.5 hover:shadow-md">
           <div class="stat-box-icon-green">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
           </div>
           <div class="flex-1">
-            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">ประสิทธิภาพการทำงาน</p>
-            <p class="m-0 text-2xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.efficiency }}</p>
+            <p class="text-xs text-gray-500 mb-1 font-prompt font-medium">ประสิทธิภาพการทำงาน</p>
+            <p class="m-0 text-xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.efficiency }}</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-4 p-5 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-2xl hover:-translate-y-1 hover:shadow-md">
+        <div class="flex items-center gap-3 p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:-translate-y-0.5 hover:shadow-md">
           <div class="stat-box-icon-sky">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
           </div>
           <div class="flex-1">
-            <p class="text-sm text-gray-500 mb-1.5 font-prompt font-medium">จำนวนบริษัททั้งหมด</p>
-            <p class="m-0 text-2xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.totalCompanies }}</p>
+            <p class="text-xs text-gray-500 mb-1 font-prompt font-medium">จำนวนบริษัททั้งหมด</p>
+            <p class="m-0 text-xl font-extrabold leading-none text-gray-900 font-prompt">{{ additionalStats.totalCompanies }}</p>
           </div>
         </div>
       </div>
@@ -182,6 +198,7 @@ import {
   Filler
 } from 'chart.js';
 import { statisticsAPI, vehicleTypesAPI, companiesAPI } from '../services/api';
+import DateRangeFilter from '../components/DateRangeFilter.vue';
 
 // Register Chart.js components
 ChartJS.register(
@@ -195,6 +212,10 @@ ChartJS.register(
   Legend,
   Filler
 );
+
+// ช่วงวันที่กำหนดเอง (เฉพาะหน้านี้ ไม่ใช้ filterStore เพื่อไม่ทับหน้าอื่น)
+const customDateFrom = ref('');
+const customDateTo = ref('');
 
 // Period filter
 const selectedPeriod = ref('week');
@@ -373,7 +394,8 @@ const vehicleChartData = computed(() => {
       ],
       borderWidth: 2,
       borderRadius: 8,
-      barThickness: 50
+      barPercentage: 0.75,
+      categoryPercentage: 0.9
     }]
   };
 });
@@ -381,6 +403,9 @@ const vehicleChartData = computed(() => {
 const vehicleChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  layout: {
+    padding: { top: 8, bottom: 8, left: 8, right: 8 }
+  },
   plugins: {
     legend: {
       display: false
@@ -436,25 +461,36 @@ const vehicleChartOptions = {
         padding: 10
       }
     }
+  },
+  datasets: {
+    bar: {
+      barPercentage: 0.75,
+      categoryPercentage: 0.9
+    }
   }
 };
 
-// Chart Data - Peak Hours
+// Chart Data - Peak Hours (แสดง Top 10 ช่วงเวลาที่มีกิจกรรมมากที่สุด จาก 24 ชม. ที่ backend ส่งมาเสมอ)
 const peakHoursChartData = computed(() => {
   if (!peakHours.value.length) return null;
+  // เรียงตามจำนวนจริง (count) มากไปน้อย แล้วเอา top 10 เพื่อให้รู้ว่า "เลียกมาตอนช่วงไหน"
+  const sorted = [...peakHours.value].sort((a, b) => (b.count || 0) - (a.count || 0));
+  const items = sorted.slice(0, 10);
 
   return {
-    labels: peakHours.value.map(h => h.time),
+    labels: items.map(h => h.time),
     datasets: [{
       label: 'ปริมาณการจราจร',
-      data: peakHours.value.map(h => h.traffic),
-      backgroundColor: peakHours.value.map(h => {
+      data: items.map(h => h.traffic),
+      backgroundColor: items.map(h => {
+        if ((h.count || 0) === 0) return 'rgba(203, 213, 225, 0.6)';
         if (h.traffic >= 90) return 'rgba(239, 68, 68, 0.8)';
         if (h.traffic >= 70) return 'rgba(245, 158, 11, 0.8)';
         if (h.traffic >= 50) return 'rgba(14, 165, 233, 0.8)';
         return 'rgba(59, 130, 246, 0.8)';
       }),
-      borderColor: peakHours.value.map(h => {
+      borderColor: items.map(h => {
+        if ((h.count || 0) === 0) return 'rgba(148, 163, 184, 0.5)';
         if (h.traffic >= 90) return '#ef4444';
         if (h.traffic >= 70) return '#f59e0b';
         if (h.traffic >= 50) return '#0EA5E9';
@@ -462,15 +498,21 @@ const peakHoursChartData = computed(() => {
       }),
       borderWidth: 2,
       borderRadius: 6,
-      barThickness: 25
+      barPercentage: 0.8,
+      categoryPercentage: 0.85
     }]
   };
 });
+
+const peakHoursHasData = computed(() => peakHours.value.some(h => (h.count || 0) > 0));
 
 const peakHoursChartOptions = {
   indexAxis: 'y',
   responsive: true,
   maintainAspectRatio: false,
+  layout: {
+    padding: { top: 10, bottom: 10, left: 8, right: 12 }
+  },
   plugins: {
     legend: {
       display: false
@@ -492,7 +534,9 @@ const peakHoursChartOptions = {
       cornerRadius: 8,
       callbacks: {
         label: function(context) {
-          return ' ปริมาณ: ' + context.parsed.x + '%';
+          const raw = peakHours.value.find(h => h.time === context.label);
+          const count = raw?.count ?? 0;
+          return ' ปริมาณ: ' + context.parsed.x + '%' + (count > 0 ? ' (' + count + ' ครั้ง)' : '');
         }
       }
     }
@@ -523,10 +567,14 @@ const peakHoursChartOptions = {
       ticks: {
         font: {
           family: 'Prompt',
-          size: 12,
+          size: 13,
           weight: '600'
         },
-        color: '#64748b'
+        color: '#475569',
+        autoSkip: false,
+        maxRotation: 0,
+        minRotation: 0,
+        padding: 12
       }
     }
   }
@@ -557,7 +605,8 @@ const companiesChartData = computed(() => {
       ],
       borderWidth: 2,
       borderRadius: 6,
-      barThickness: 35
+      barPercentage: 0.75,
+      categoryPercentage: 0.9
     }]
   };
 });
@@ -566,6 +615,9 @@ const companiesChartOptions = {
   indexAxis: 'y',
   responsive: true,
   maintainAspectRatio: false,
+  layout: {
+    padding: { top: 8, bottom: 8, left: 4, right: 8 }
+  },
   plugins: {
     legend: {
       display: false
@@ -617,8 +669,15 @@ const companiesChartOptions = {
           size: 12,
           weight: '600'
         },
-        color: '#64748b'
+        color: '#64748b',
+        autoSkip: false
       }
+    }
+  },
+  datasets: {
+    bar: {
+      barPercentage: 0.75,
+      categoryPercentage: 0.9
     }
   }
 };
@@ -661,21 +720,36 @@ const fetchCompanies = async () => {
   }
 };
 
-// Fetch all statistics
+// เลือกช่วงวันที่กำหนดเอง แล้วดึงข้อมูล
+const onCustomDateFilter = ({ dateFrom, dateTo }) => {
+  customDateFrom.value = dateFrom || '';
+  customDateTo.value = dateTo || '';
+  fetchStatistics();
+};
+
+// กดปุ่ม period จะล้างช่วงวันที่กำหนดเอง แล้วดึงข้อมูลตาม period
+const onPeriodClick = (period) => {
+  selectedPeriod.value = period;
+  customDateFrom.value = '';
+  customDateTo.value = '';
+  fetchStatistics();
+};
+
+// Fetch all statistics (ใช้ customDateFrom/customDateTo ถ้ามี ไม่ก็ใช้ period)
 const fetchStatistics = async () => {
   loading.value = true;
   try {
-    // Determine companyId to pass (if sub-admin, use their company; if super-admin, use selected or null)
     const companyIdParam = userCompanyId && userCompanyId !== 'null' ? userCompanyId : (selectedCompany.value || null);
+    const dateFrom = customDateFrom.value || undefined;
+    const dateTo = customDateTo.value || undefined;
 
-    // Fetch all data in parallel
     const [overviewRes, vehicleTypesRes, peakHoursRes, topCompaniesRes, trafficTrendRes, additionalRes] = await Promise.all([
-      statisticsAPI.getOverview(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getVehicleTypes(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getPeakHours(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId, companyIdParam, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getTrafficTrend(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null),
-      statisticsAPI.getAdditional(selectedPeriod.value, userId, companyIdParam, null, null, selectedVehicleType.value || null)
+      statisticsAPI.getOverview(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
+      statisticsAPI.getVehicleTypes(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
+      statisticsAPI.getPeakHours(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
+      statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
+      statisticsAPI.getTrafficTrend(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
+      statisticsAPI.getAdditional(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null)
     ]);
 
     overviewStats.value = overviewRes.data.data;
@@ -692,9 +766,9 @@ const fetchStatistics = async () => {
   }
 };
 
-// Watch period change
+// Watch period change (เมื่อเปลี่ยน period จากที่อื่น เช่น dropdown - แต่ปกติใช้ onPeriodClick)
 watch(selectedPeriod, () => {
-  fetchStatistics();
+  if (!customDateFrom.value && !customDateTo.value) fetchStatistics();
 });
 
 // Watch vehicle type change
@@ -761,8 +835,8 @@ onMounted(async () => {
 
 /* 4. Chart Badge Gradient */
 .chart-badge {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
   font-weight: 600;
   border-radius: 9999px;
   font-family: 'Prompt', sans-serif;
@@ -772,35 +846,35 @@ onMounted(async () => {
 
 /* 5. Additional Stats Icon Gradients */
 .stat-box-icon-blue {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, #0090D3, #0B4F6C);
 }
 
 .stat-box-icon-green {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, #10b981, #059669);
 }
 
 .stat-box-icon-sky {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, #0EA5E9, #0284C7);
 }
 </style>

@@ -247,7 +247,7 @@ class DashboardService {
         LEFT JOIN [dbo].[InternalCompany] IC ON WI.IC_ID = IC.IC_ID
         LEFT JOIN [dbo].[WayOut] WO ON WI.WI_ID = WO.WI_ID
         ${whereClause}
-        ORDER BY WI.WI_RecordedOn DESC
+        ORDER BY WI.WI_RecordedOn ASC
       `);
 
       console.log(`📋 Recent Activities for Company ${filterCompanyId || 'ALL'}: ${result.recordset.length} records`);
