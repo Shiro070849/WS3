@@ -25,7 +25,7 @@
               :key="period.value"
               @click="onPeriodClick(period.value)"
               :class="selectedPeriod === period.value ? 'period-btn-active' : 'period-btn'"
-              class="px-3 py-1.5 text-xs font-semibold rounded-md trsition-anall font-prompt"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all font-prompt"
             >
               {{ period.label }}
             </button>
@@ -140,6 +140,59 @@
         </div>
       </div>
 
+      <!-- Entry Locations Chart - แสดงสถิติการเข้าแยกตาม Location -->
+      <div class="grid grid-cols-1 gap-4 mb-4">
+        <div class="p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="m-0 text-base font-bold text-gray-900 font-prompt">สถิติการเข้าแยกตามจุดเข้า-ออก</h3>
+              <p class="m-0 mt-0.5 text-xs text-slate-500 font-prompt">
+                {{ entryLocationsHasData ? 'แสดงจำนวนรถที่เข้าแต่ละจุด (ประตู)' : 'ไม่มีข้อมูลการเข้าในช่วงเวลาที่เลือก' }}
+              </p>
+            </div>
+            <span v-if="entryLocationsHasData" class="chart-badge">{{ entryLocations.length }} จุด</span>
+          </div>
+          <div v-if="!entryLocationsHasData" class="flex flex-col items-center justify-center w-full py-8 text-center rounded-lg bg-slate-50" style="height: 280px;">
+            <p class="text-sm font-medium text-slate-600 font-prompt">ยังไม่มีข้อมูลการเข้ายานพาหนะในช่วงเวลานี้</p>
+            <p class="mt-1 text-xs text-slate-500 font-prompt">ลองเปลี่ยนช่วงเวลา (วันนี้/สัปดาห์นี้/เดือนนี้/ปีนี้) หรือบริษัท/ประเภทรถ</p>
+          </div>
+          <div v-else>
+            <!-- Chart -->
+            <div class="w-full p-1.5" style="height: 320px;">
+              <Bar v-if="entryLocationsChartData" :data="entryLocationsChartData" :options="entryLocationsChartOptions" />
+            </div>
+
+            <!-- Summary Blocks -->
+            <div class="mt-2 pt-2 border-t border-gray-100">
+              <h4 class="mb-1.5 text-[0.65rem] font-semibold text-gray-500 font-prompt">สรุปรายละเอียด</h4>
+              <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5">
+                <div
+                  v-for="(location, index) in entryLocations"
+                  :key="index"
+                  class="relative overflow-hidden transition-all duration-200 border rounded-md hover:shadow-sm"
+                  :style="{ borderColor: location.color, borderWidth: '1px' }"
+                >
+                  <div class="p-2 bg-white">
+                    <div class="flex items-center gap-1 mb-0.5">
+                      <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" :style="{ backgroundColor: location.color }"></div>
+                      <span class="text-[0.55rem] font-semibold text-gray-500 font-prompt uppercase tracking-wide truncate">
+                        {{ location.locationName }}
+                      </span>
+                    </div>
+                    <div class="text-lg font-bold text-gray-900 font-prompt leading-none">
+                      {{ location.count.toLocaleString() }}
+                    </div>
+                    <div class="text-[0.55rem] text-gray-400 font-prompt">คัน</div>
+                  </div>
+                  <!-- Accent bar at bottom -->
+                  <div class="h-0.5" :style="{ backgroundColor: location.color }"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Additional Stats - Tailwind Grid -->
       <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div class="flex items-center gap-3 p-4 transition-all duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:-translate-y-0.5 hover:shadow-md">
@@ -234,8 +287,9 @@ const vehicleTypesList = ref([]);
 const selectedCompany = ref('');
 const companiesList = ref([]);
 
-// Extract user info from localStorage
-const userId = parseInt(localStorage.getItem('userId'));
+// Extract user info from localStorage (ถ้าไม่มีหรือ invalid จะได้ null แทน NaN)
+const _userIdRaw = localStorage.getItem('userId');
+const userId = (_userIdRaw && _userIdRaw !== 'null' && _userIdRaw !== '') ? (parseInt(_userIdRaw) || null) : null;
 const userCompanyId = localStorage.getItem('companyId');
 
 // Loading states
@@ -247,6 +301,7 @@ const vehicleTypes = ref([]);
 const peakHours = ref([]);
 const topCompanies = ref([]);
 const trafficTrend = ref({ labels: [], in: [], out: [] });
+const entryLocations = ref([]);
 const additionalStats = ref({
   averageTime: '0 ชั่วโมง',
   efficiency: '0%',
@@ -506,6 +561,9 @@ const peakHoursChartData = computed(() => {
 
 const peakHoursHasData = computed(() => peakHours.value.some(h => (h.count || 0) > 0));
 
+// Check if entry locations has data
+const entryLocationsHasData = computed(() => entryLocations.value.length > 0);
+
 const peakHoursChartOptions = {
   indexAxis: 'y',
   responsive: true,
@@ -682,6 +740,93 @@ const companiesChartOptions = {
   }
 };
 
+// Chart Data - Entry Locations
+const entryLocationsChartData = computed(() => {
+  if (!entryLocations.value.length) return null;
+
+  return {
+    labels: entryLocations.value.map(loc => loc.locationName),
+    datasets: [{
+      label: 'จำนวนรถ',
+      data: entryLocations.value.map(loc => loc.count),
+      backgroundColor: entryLocations.value.map(loc => loc.color),
+      borderColor: entryLocations.value.map(loc => loc.color.replace('0.8', '1')),
+      borderWidth: 2,
+      borderRadius: 6,
+      barPercentage: 0.75,
+      categoryPercentage: 0.9
+    }]
+  };
+});
+
+const entryLocationsChartOptions = {
+  indexAxis: 'y',
+  responsive: true,
+  maintainAspectRatio: false,
+  layout: {
+    padding: { top: 10, bottom: 10, left: 8, right: 12 }
+  },
+  plugins: {
+    legend: {
+      display: false
+    },
+    tooltip: {
+      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+      padding: 12,
+      borderColor: 'rgba(148, 163, 184, 0.2)',
+      borderWidth: 1,
+      titleFont: {
+        family: 'Prompt',
+        size: 14,
+        weight: '600'
+      },
+      bodyFont: {
+        family: 'Prompt',
+        size: 13
+      },
+      cornerRadius: 8,
+      callbacks: {
+        label: function(context) {
+          return ` จำนวน: ${context.parsed.x} คัน`;
+        }
+      }
+    }
+  },
+  scales: {
+    x: {
+      beginAtZero: true,
+      grid: {
+        color: 'rgba(226, 232, 240, 0.5)',
+        drawBorder: false
+      },
+      ticks: {
+        font: {
+          family: 'Prompt',
+          size: 11
+        },
+        color: '#64748b'
+      }
+    },
+    y: {
+      grid: {
+        display: false
+      },
+      ticks: {
+        font: {
+          family: 'Prompt',
+          size: 13,
+          weight: '600'
+        },
+        color: '#475569',
+        autoSkip: false,
+        maxRotation: 0,
+        minRotation: 0,
+        padding: 12
+      }
+    }
+  }
+};
+
 // Fetch vehicle types for dropdown
 const fetchVehicleTypes = async () => {
   try {
@@ -743,21 +888,23 @@ const fetchStatistics = async () => {
     const dateFrom = customDateFrom.value || undefined;
     const dateTo = customDateTo.value || undefined;
 
-    const [overviewRes, vehicleTypesRes, peakHoursRes, topCompaniesRes, trafficTrendRes, additionalRes] = await Promise.all([
+    const [overviewRes, vehicleTypesRes, peakHoursRes, topCompaniesRes, trafficTrendRes, additionalRes, entryLocationsRes] = await Promise.all([
       statisticsAPI.getOverview(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
       statisticsAPI.getVehicleTypes(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
       statisticsAPI.getPeakHours(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
       statisticsAPI.getTopCompanies(selectedPeriod.value, 5, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
       statisticsAPI.getTrafficTrend(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
-      statisticsAPI.getAdditional(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null)
+      statisticsAPI.getAdditional(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null),
+      statisticsAPI.getEntryLocations(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null)
     ]);
 
-    overviewStats.value = overviewRes.data.data;
-    vehicleTypes.value = vehicleTypesRes.data.data;
-    peakHours.value = peakHoursRes.data.data;
-    topCompanies.value = topCompaniesRes.data.data;
-    trafficTrend.value = trafficTrendRes.data.data;
-    additionalStats.value = additionalRes.data.data;
+    overviewStats.value = overviewRes.data.data ?? [];
+    vehicleTypes.value = vehicleTypesRes.data.data ?? [];
+    peakHours.value = peakHoursRes.data.data ?? [];
+    topCompanies.value = topCompaniesRes.data.data ?? [];
+    trafficTrend.value = trafficTrendRes.data.data ?? { labels: [], in: [], out: [] };
+    additionalStats.value = additionalRes.data.data ?? { averageTime: '0 ชั่วโมง', efficiency: '0%', totalCompanies: '0 บริษัท' };
+    entryLocations.value = entryLocationsRes.data.data ?? [];
   } catch (error) {
     console.error('Error fetching statistics:', error);
     alert('เกิดข้อผิดพลาดในการโหลดข้อมูลสถิติ');
@@ -777,7 +924,7 @@ watch(selectedVehicleType, () => {
 });
 
 // Watch company change - with deep watch to catch all changes
-watch(() => selectedCompany.value, (newVal) => {
+watch(() => selectedCompany.value, () => {
   fetchStatistics();
 }, { immediate: false });
 

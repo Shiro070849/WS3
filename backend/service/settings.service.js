@@ -2025,8 +2025,19 @@ class SettingsService {
         .input('UserId', sql.Int, userId)
         .query(query);
 
-      const companyIds = result.recordset.map(row => row.IC_ID);
-      console.log(`📌 User ${userId} accessible company IDs: [${companyIds.join(', ')}]`);
+      let companyIds = result.recordset.map(row => row.IC_ID);
+      // Fallback: ถ้ายังไม่มีแถวใน SystemUserCompany แต่ SystemUser.IC_ID มีค่า ให้ใช้ค่านั้น (หลัง map/migrate)
+      if (companyIds.length === 0 && (userCompanyId !== null && userCompanyId !== undefined)) {
+        const checkCompany = await pool.request()
+          .input('IC_ID', sql.Int, userCompanyId)
+          .query(`SELECT 1 FROM [dbo].[InternalCompany] WHERE IC_ID = @IC_ID AND IC_IsActive = 1`);
+        if (checkCompany.recordset.length > 0) {
+          companyIds = [userCompanyId];
+          console.log(`📌 User ${userId} accessible company IDs (fallback from SystemUser.IC_ID): [${companyIds.join(', ')}]`);
+        }
+      } else {
+        console.log(`📌 User ${userId} accessible company IDs: [${companyIds.join(', ')}]`);
+      }
       return companyIds;
     } catch (error) {
       console.error('Error getting user accessible company IDs:', error);

@@ -168,6 +168,29 @@ class StatisticsController {
       });
     }
   }
+
+  // ดึงสถิติการเข้าแยกตาม Location
+  async getEntryLocations(req, res) {
+    try {
+      const { period, userId, companyId, vehicleType, dateFrom, dateTo } = req.query;
+      const userIdInt = userId ? parseInt(userId) : null;
+      const filterCompanyId = companyId ? parseInt(companyId) : null;
+
+      const entryLocations = await statisticsService.getEntryLocationStats(period || 'week', userIdInt, filterCompanyId, vehicleType || null, dateFrom || null, dateTo || null);
+
+      res.status(200).json({
+        success: true,
+        data: entryLocations,
+      });
+    } catch (error) {
+      console.error('Error in getEntryLocations:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching entry location statistics',
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new StatisticsController();

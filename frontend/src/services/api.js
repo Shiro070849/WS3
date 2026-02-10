@@ -358,6 +358,15 @@ export const statisticsAPI = {
     if (vehicleType) params.append('vehicleType', vehicleType);
     return apiClient.get(`/statistics/additional?${params}`);
   },
+  getEntryLocations: (period = 'week', userId, companyId, dateFrom, dateTo, vehicleType) => {
+    const params = new URLSearchParams({ period });
+    if (userId) params.append('userId', userId);
+    if (companyId) params.append('companyId', companyId);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    if (vehicleType) params.append('vehicleType', vehicleType);
+    return apiClient.get(`/statistics/entry-locations?${params}`);
+  },
 };
 
 // ==================== SYSTEM SETTINGS API ====================

@@ -530,6 +530,81 @@ class StatisticsService {
       throw error;
     }
   }
+
+  // 7. ดึงสถิติการเข้าแยกตาม Location (ประตู 1, ประตู 2, ฯลฯ)
+  async getEntryLocationStats(period = 'week', userId = null, filterCompanyId = null, vehicleType = null, dateFrom = null, dateTo = null) {
+    try {
+      const pool = await dbService.connect();
+      const { startDate, endDate } = this.getDateRange(period, dateFrom, dateTo);
+
+      // ดึง Company IDs ที่ User เห็นได้
+      const finalCompanyIds = await this.getFinalCompanyIds(userId, filterCompanyId);
+
+      // สร้าง company และ vehicleType filter
+      let companyFilter = '';
+      if (finalCompanyIds && finalCompanyIds.length > 0) {
+        const companyIdsStr = finalCompanyIds.map(id => parseInt(id)).join(', ');
+        companyFilter = `AND WI.IC_ID IN (${companyIdsStr})`;
+      }
+      if (vehicleType) {
+        companyFilter += ` AND WI.WI_VehicleType = N'${vehicleType}'`;
+      }
+
+      // Query: ดึงข้อมูลการเข้าแยกตาม User_Location
+      // ใช้ subquery เพื่อนับจำนวนก่อน แล้วค่อย JOIN กับ GuardLocation
+      // เพื่อหลีกเลี่ยงปัญหา TEXT data type conversion
+      const result = await pool.request()
+        .query(`
+          WITH LocationCounts AS (
+            SELECT
+              LTRIM(RTRIM(CAST(SU.User_Location AS VARCHAR(50)))) as UserLocation,
+              COUNT(DISTINCT WI.WI_ID) as count
+            FROM [dbo].[WayIn] WI
+            LEFT JOIN [dbo].[SystemUser] SU ON WI.SU_ID = SU.SU_ID
+            WHERE WI.WI_RecordedOn >= '${this.formatDateForSQL(startDate)}'
+              AND WI.WI_RecordedOn <= '${this.formatDateForSQL(endDate)}'
+              ${companyFilter}
+              AND SU.User_Location IS NOT NULL
+            GROUP BY LTRIM(RTRIM(CAST(SU.User_Location AS VARCHAR(50))))
+          )
+          SELECT
+            ISNULL(GL.GL_ID, 0) as GL_ID,
+            ISNULL(GL.GL_Name, N'Location ' + LC.UserLocation) as locationName,
+            LC.count
+          FROM LocationCounts LC
+          LEFT JOIN [dbo].[GuardLocation] GL ON
+            LTRIM(RTRIM(LC.UserLocation)) = CAST(GL.GL_ID AS VARCHAR(50))
+          WHERE LC.UserLocation IS NOT NULL AND LC.UserLocation != ''
+          ORDER BY LC.count DESC
+        `);
+
+      const data = result.recordset;
+      const totalCount = data.reduce((sum, item) => sum + item.count, 0);
+
+      // สร้าง color palette
+      const colors = [
+        'rgba(0, 144, 211, 0.8)',    // Primary blue
+        'rgba(16, 185, 129, 0.8)',   // Green
+        'rgba(59, 130, 246, 0.8)',   // Light blue
+        'rgba(245, 158, 11, 0.8)',   // Orange
+        'rgba(14, 165, 233, 0.8)',   // Sky
+        'rgba(139, 92, 246, 0.8)',   // Purple
+        'rgba(236, 72, 153, 0.8)',   // Pink
+        'rgba(251, 146, 60, 0.8)'    // Amber
+      ];
+
+      return data.map((item, index) => ({
+        locationId: item.GL_ID,
+        locationName: item.locationName,
+        count: item.count,
+        percentage: totalCount > 0 ? ((item.count / totalCount) * 100).toFixed(1) : 0,
+        color: colors[index % colors.length]
+      }));
+    } catch (error) {
+      console.error('Error getting entry location stats:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new StatisticsService();

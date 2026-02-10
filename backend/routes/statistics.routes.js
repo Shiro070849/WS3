@@ -20,4 +20,7 @@ module.exports = (app) => {
 
   // ดึงสถิติเพิ่มเติม
   app.get('/api/statistics/additional', checkScreenPermission(SYSTEM_SCREENS.STATISTICS), (req, res) => statisticsController.getAdditionalStats(req, res));
+
+  // ดึงสถิติการเข้าแยกตาม Location
+  app.get('/api/statistics/entry-locations', checkScreenPermission(SYSTEM_SCREENS.STATISTICS), (req, res) => statisticsController.getEntryLocations(req, res));
 };

@@ -33,6 +33,7 @@ class VehicleController {
       });
     } catch (error) {
       console.error('Error in getAllVehicles:', error);
+      console.error('Stack:', error.stack);
       res.status(500).json({
         success: false,
         message: 'Error fetching vehicles',
