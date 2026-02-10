@@ -14,6 +14,14 @@ class StatisticsService {
     return `${y}-${m}-${d} ${h}:${min}:${sec}`;
   }
 
+  // Format สำหรับ input / แสดงใน UI (YYYY-MM-DD) ใช้ local date
+  formatDateForInput(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   // Helper function สำหรับคำนวณวันที่: ถ้ามี dateFrom หรือ dateTo (YYYY-MM-DD) ใช้ช่วงวันที่ ไม่ก็ใช้ period
   getDateRange(period, dateFromStr, dateToStr) {
     const from = (dateFromStr && typeof dateFromStr === 'string') ? dateFromStr.trim() : '';
@@ -48,10 +56,23 @@ class StatisticsService {
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
         endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
         break;
-      case 'week':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-        endDate = new Date();
+      case 'week': {
+        // สัปดาห์นี้: นับตั้งแต่วันแรกของสัปดาห์ (จันทร์) ถึงเวลาปัจจุบัน
+        // JS: getDay() → อาทิตย์=0, จันทร์=1, ... เสาร์=6
+        const dayOfWeek = now.getDay();
+        const daysSinceMonday = (dayOfWeek + 6) % 7; // จันทร์=0, อังคาร=1, ... อาทิตย์=6
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - daysSinceMonday,
+          0,
+          0,
+          0,
+          0
+        );
+        endDate = new Date(); // ถึงเวลาปัจจุบัน
         break;
+      }
       case 'month':
         // วันที่ 1 ของเดือนนี้ 00:00:00 ถึงเวลาปัจจุบัน (ตามค่าใน DB / WI_RecordedOn)
         startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
@@ -193,7 +214,7 @@ class StatisticsService {
         ? ((current.totalOut / current.totalIn) * 100).toFixed(1)
         : 0;
 
-      return [
+      const items = [
         {
           label: 'รถเข้าทั้งหมด',
           value: current.totalIn.toLocaleString(),
@@ -227,6 +248,13 @@ class StatisticsService {
           icon: '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>'
         }
       ];
+
+      const range = {
+        startDate: this.formatDateForInput(startDate),
+        endDate: this.formatDateForInput(endDate),
+      };
+
+      return { items, range };
     } catch (error) {
       console.error('Error getting overview stats:', error);
       throw error;

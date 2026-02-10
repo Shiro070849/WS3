@@ -30,11 +30,19 @@ class StatisticsController {
       const userIdInt = userId ? parseInt(userId) : null;
       const filterCompanyId = companyId ? parseInt(companyId) : null;
 
-      const overview = await statisticsService.getOverviewStats(period || 'week', userIdInt, filterCompanyId, vehicleType || null, dateFrom || null, dateTo || null);
+      const overview = await statisticsService.getOverviewStats(
+        period || 'week',
+        userIdInt,
+        filterCompanyId,
+        vehicleType || null,
+        dateFrom || null,
+        dateTo || null
+      );
 
       res.status(200).json({
         success: true,
-        data: overview,
+        data: overview.items,
+        range: overview.range,
       });
     } catch (error) {
       console.error('Error in getOverview:', error);

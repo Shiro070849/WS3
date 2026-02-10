@@ -898,6 +898,13 @@ const fetchStatistics = async () => {
       statisticsAPI.getEntryLocations(selectedPeriod.value, userId, companyIdParam, dateFrom, dateTo, selectedVehicleType.value || null)
     ]);
 
+    // Sync ช่วงวันที่จาก backend เฉพาะกรณีที่ไม่ได้เลือก custom เอง
+    const backendRange = overviewRes.data.range;
+    if (backendRange && !customDateFrom.value && !customDateTo.value) {
+      customDateFrom.value = backendRange.startDate || '';
+      customDateTo.value = backendRange.endDate || '';
+    }
+
     overviewStats.value = overviewRes.data.data ?? [];
     vehicleTypes.value = vehicleTypesRes.data.data ?? [];
     peakHours.value = peakHoursRes.data.data ?? [];
