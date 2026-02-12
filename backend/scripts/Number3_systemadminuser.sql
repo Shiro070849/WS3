@@ -2,6 +2,11 @@
 -- วิธีใช้:
 --   1) เลือก Database ให้ถูกใน SSMS
 --   2) รันไฟล์นี้ทั้งไฟล์
+--
+-- หมายเหตุสิทธิ์ Super Admin:
+--   - IC_ID = NULL  → เห็นทุกบริษัท (ต้องเป็น NULL)
+--   - SR_ID = 1     → Role ADM ใช้ได้ ไม่ต้องเป็น NULL
+-- ถ้า sysadmin ดูได้แค่ 1 บริษัท ให้รัน fix-sysadmin-see-all-companies.sql
 
 DECLARE @ExistingId INT;
 

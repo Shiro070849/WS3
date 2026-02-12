@@ -29,10 +29,10 @@ export const REPRINT_CONFIG = {
 
   // URL Template - เลือกใช้ตามบริษัทที่ Deploy
   // สำหรับ Ruxchai:
-  // QR_URL_TEMPLATE: process.env.VUE_APP_QR_URL || 'https://smartsecurity.ruxchai.co.th/index.php?param=',
+  QR_URL_TEMPLATE: process.env.VUE_APP_QR_URL || 'https://smartsecurity.ruxchai.co.th/index.php?param=',
 
   // สำหรับ MRG Shrimp:
-  QR_URL_TEMPLATE: process.env.VUE_APP_QR_URL || 'https://smartsecurity.mrgshrimp.com/index.php?param=',
+  // QR_URL_TEMPLATE: process.env.VUE_APP_QR_URL || 'https://smartsecurity.mrgshrimp.com/index.php?param=',
 
   // Footer Warning Text
   FOOTER_WARNING_TEXT: {

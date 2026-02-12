@@ -152,13 +152,13 @@
             </div>
             <span v-if="entryLocationsHasData" class="chart-badge">{{ entryLocations.length }} จุด</span>
           </div>
-          <div v-if="!entryLocationsHasData" class="flex flex-col items-center justify-center w-full py-8 text-center rounded-lg bg-slate-50" style="height: 280px;">
+          <div v-if="!entryLocationsHasData" class="flex flex-col items-center justify-center w-full py-8 text-center rounded-lg bg-slate-50" style="height: 240px;">
             <p class="text-sm font-medium text-slate-600 font-prompt">ยังไม่มีข้อมูลการเข้ายานพาหนะในช่วงเวลานี้</p>
             <p class="mt-1 text-xs text-slate-500 font-prompt">ลองเปลี่ยนช่วงเวลา (วันนี้/สัปดาห์นี้/เดือนนี้/ปีนี้) หรือบริษัท/ประเภทรถ</p>
           </div>
           <div v-else>
             <!-- Chart -->
-            <div class="w-full p-1.5" style="height: 320px;">
+            <div class="w-full p-1.5" style="height: 240px;">
               <Bar v-if="entryLocationsChartData" :data="entryLocationsChartData" :options="entryLocationsChartOptions" />
             </div>
 
