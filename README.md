@@ -69,7 +69,7 @@ npm run serve
 PORT=8088
 SQL_SERVER=localhost
 SQL_DATABASE=SmartSecurity
-SQL_USER=sa
+SQL_USER=dev
 SQL_PASSWORD=your_password
 NODE_ENV=development
 ```
